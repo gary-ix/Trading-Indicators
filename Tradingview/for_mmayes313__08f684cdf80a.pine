@@ -1,0 +1,165 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+strategy("for_mmayes313", overlay=true, margin_long=100, margin_short=100)
+// tf settings
+timeframe1 = input.timeframe('30', title = 'Timeframe 1', group = 'Timeframe Settings', inline = '1')
+timeframe2 = input.timeframe('60', title = 'Timeframe 2', group = 'Timeframe Settings', inline = '2')
+timeframe3 = input.timeframe('240', title = 'Timeframe 3', group = 'Timeframe Settings', inline = '3')
+
+if timeframe.in_seconds("") > math.min( timeframe.in_seconds(timeframe1), math.min(timeframe.in_seconds(timeframe2), timeframe.in_seconds(timeframe3)))
+    runtime.error('Your lowest selected timeframe cannot be less than the main chart timeframe.')
+
+
+// sma settings
+sma1_length = input.int(30, title = 'SMA 1 Length', group = 'SMA Settings', inline = '1')
+sma2_length = input.int(50, title = 'SMA 2 Length', group = 'SMA Settings', inline = '2')
+
+
+// obv settings
+obv_typema = input.string(title = "OBV MA Method", defval = "SMA", options=["SMA", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="OBV Settings", inline = '1')
+obv_smoothinglength = input.int(title = "OBV MA Length", defval = 20, minval = 1, maxval = 100, group="OBV Settings", inline = '2')
+obv_offset = input.int(title = "OBV MA Offset", defval = 9, minval = 1, maxval = 100, group="OBV Settings", inline = '3')
+
+
+// cci settings
+cci_source = input.source(hlc3, title = 'CCI Source', group = 'CCI Settings', inline = '1')
+cci_length = input.int(title = "CCI Length", defval = 14, minval = 1, maxval = 100, group="CCI Settings", inline = '2')
+cci_typema = input.string(title = "CCI MA Method", defval = "SMA", options=["SMA", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="CCI Settings", inline = '3')
+cci_smoothinglength = input.int(title = "CCI MA Length", defval = 1, minval = 1, maxval = 100, group="CCI Settings", inline = '4')
+cci_offset = input.int(title = "CCI MA Offset", defval = 9, minval = 1, maxval = 100, group="CCI Settings", inline = '5')
+
+
+// function ma
+ma(source, length, type, offset) =>
+    switch type
+        "SMA" => ta.sma(source, length)[offset]
+        "EMA" => ta.ema(source, length)[offset]
+        "SMMA (RMA)" => ta.rma(source, length)[offset]
+        "WMA" => ta.wma(source, length)[offset]
+        "VWMA" => ta.vwma(source, length)[offset]
+
+
+// timeframe lookback for security calls
+tf1_src = timeframe.in_seconds("") == timeframe.in_seconds(timeframe1) ? 0 : 1
+tf2_src = timeframe.in_seconds("") == timeframe.in_seconds(timeframe2) ? 0 : 1
+tf3_src = timeframe.in_seconds("") == timeframe.in_seconds(timeframe3) ? 0 : 1
+
+
+// calculate trends
+tf1_trend = request.security(syminfo.ticker, timeframe1, ma(close[tf1_src],sma1_length,'SMA', 0) > ma(close[tf1_src],sma2_length,'SMA', 0), lookahead = barmerge.lookahead_on)
+tf2_trend = request.security(syminfo.ticker, timeframe2, ma(close[tf2_src],sma1_length,'SMA', 0) > ma(close[tf2_src],sma2_length,'SMA', 0), lookahead = barmerge.lookahead_on)
+tf3_trend = request.security(syminfo.ticker, timeframe3, ma(close[tf3_src],sma1_length,'SMA', 0) > ma(close[tf3_src],sma2_length,'SMA', 0), lookahead = barmerge.lookahead_on)
+
+// sma calculate just to display on chart
+sma1_value = ta.sma(close, sma1_length)
+sma2_value = ta.sma(close, sma2_length)
+sma1plot = plot(sma1_value, title = 'SMA 1', color = color.yellow)
+sma2plot = plot(sma2_value, title = 'SMA 2', color = color.aqua)
+fill(sma1plot, sma2plot, color = sma1_value > sma2_value ? color.new(color.teal, 80) : color.new(color.red, 80))
+
+
+// calculate obv
+obv1 = request.security(syminfo.ticker, timeframe1, ta.obv[tf1_src] > ma(ta.obv, obv_smoothinglength, obv_typema, obv_offset)[tf1_src], lookahead = barmerge.lookahead_on)
+obv2 = request.security(syminfo.ticker, timeframe2, ta.obv[tf2_src] > ma(ta.obv, obv_smoothinglength, obv_typema, obv_offset)[tf2_src], lookahead = barmerge.lookahead_on)
+obv3 = request.security(syminfo.ticker, timeframe3, ta.obv[tf3_src] > ma(ta.obv, obv_smoothinglength, obv_typema, obv_offset)[tf3_src], lookahead = barmerge.lookahead_on)
+
+
+// calculate cci
+cc1 = request.security(syminfo.ticker, timeframe1, ta.cci(cci_source, cci_length)[tf1_src] > ma(ta.cci(cci_source, cci_length)[tf1_src], cci_smoothinglength, cci_typema, cci_offset)[tf1_src] , lookahead = barmerge.lookahead_on)
+cc2 = request.security(syminfo.ticker, timeframe2, ta.cci(cci_source, cci_length)[tf2_src] > ma(ta.cci(cci_source, cci_length)[tf2_src], cci_smoothinglength, cci_typema, cci_offset)[tf2_src] , lookahead = barmerge.lookahead_on)
+cc3 = request.security(syminfo.ticker, timeframe3, ta.cci(cci_source, cci_length)[tf3_src] > ma(ta.cci(cci_source, cci_length)[tf3_src], cci_smoothinglength, cci_typema, cci_offset)[tf3_src] , lookahead = barmerge.lookahead_on)
+
+
+// entries
+longCondition = (tf1_trend and tf2_trend and tf3_trend)
+ and (obv1 and cc1)
+ and (obv2 or cc2)
+ and (obv3 or cc3)
+if (longCondition)
+    strategy.entry("LE", strategy.long, comment = 'LE')
+
+shortCondition = (not tf1_trend and not tf2_trend and not tf3_trend)
+ and (not obv1 and not cc1)
+ and (not obv2 or not cc2)
+ and (not obv3 or not cc3)
+if (shortCondition)
+    strategy.entry("SS_E", strategy.short, comment = 'SS_E')
+
+
+// exit
+var float last_swinghigh = 0.00
+var float last_swinglow = 0.00
+
+swing_length = input.int(5, title = 'Fractal Length', group = 'Exit Settings', inline = '1')
+take_profit_pct = input.float(50.00, title = 'Take Profit Percent of Fractal Distance', group = 'Exit Settings', inline = '2')
+
+swing_high = ta.pivothigh(high, swing_length, swing_length)
+swing_low = ta.pivotlow(low, swing_length, swing_length)
+plotchar(swing_high, title = 'Swing Highs', color = color.white, char = 'X', offset = -swing_length, location = location.abovebar)
+plotchar(swing_low, title = 'Swing Lows', color = color.white, char = 'X', offset = -swing_length, location = location.belowbar)
+
+last_swinghigh := ta.valuewhen(swing_high, high[swing_length], 0)
+last_swinglow := ta.valuewhen(swing_low, low[swing_length], 0)
+
+var float entryprice = na
+entryprice := nz(strategy.position_avg_price, 0)
+
+var float long_stop = 0.00
+var float short_stop = 0.00
+long_stop := entryprice != entryprice[1] ? last_swinglow : long_stop[1]
+short_stop := entryprice != entryprice[1] ? last_swinghigh : short_stop[1]
+
+var float long_target = 0.00
+var float short_target = 0.00
+long_target := entryprice != entryprice[1] ? (strategy.position_avg_price + math.abs(strategy.position_avg_price-long_stop)*(take_profit_pct/100)) : long_target[1]
+short_target := entryprice != entryprice[1] ? (strategy.position_avg_price - math.abs(strategy.position_avg_price-short_stop)*(take_profit_pct/100)) : short_target[1]
+
+if strategy.position_size > 0
+    strategy.exit(id = "LE", from_entry = "LE", comment = "TP/SL", limit = long_target, stop = long_stop)
+
+if strategy.position_size < 0
+    strategy.exit(id = "SS_E", from_entry = "SS_E", comment = "TP/SL", limit = short_target, stop = short_stop)
+
+plot(strategy.position_avg_price, title = 'Entry Price', color = color.blue, style = plot.style_circles, linewidth = 2)
+plot(strategy.position_size > 0 ? long_target : strategy.position_size < 0 ? short_target : na , title = 'Target Price', color = color.green, style = plot.style_circles, linewidth = 2)
+plot(strategy.position_size > 0 ? long_stop : strategy.position_size < 0 ? short_stop : na , title = 'Stop Price', color = color.red, style = plot.style_circles, linewidth = 2)
+// barcolor(strategy.position_size > 0 ? color.teal : strategy.position_size < 0 ? color.red : na )
+
+
+// alerts
+if strategy.position_size > 0 and strategy.position_size[1] <= 0
+    alert('Long Entry: ' + str.tostring(strategy.position_avg_price)
+     + ', Target: ' + str.tostring(long_target)
+     + ', Stop Loss: ' + str.tostring(long_stop) , alert.freq_once_per_bar_close)
+if strategy.position_size < 0 and strategy.position_size[1] >= 0
+    alert('Short Entry: ' + str.tostring(strategy.position_avg_price)
+     + ', Target: ' + str.tostring(short_target)
+     + ', Stop Loss: ' + str.tostring(short_stop),  alert.freq_once_per_bar_close)
+
+if strategy.position_size[1] < 0 and strategy.position_size >= 0
+    alert('Short Exit: ' + str.tostring(strategy.closedtrades.exit_price(strategy.closedtrades-1)), alert.freq_once_per_bar_close)
+if strategy.position_size[1] > 0 and strategy.position_size <= 0
+    alert('Long Exit: ' + str.tostring(strategy.closedtrades.exit_price(strategy.closedtrades-1)), alert.freq_once_per_bar_close)
+
+
+// table
+var table = table.new(position = position.top_right, columns = 3, rows = 3, bgcolor = color.new(color.black,20), border_width = 2, frame_width = 2)
+table_bull = input.color(color.teal, title = 'Dashboard Bull⠀⠀ ⠀', group = 'Dashboard Settings', inline = '1')
+table_bear = input.color(color.red, title = 'Dashboard Bear⠀⠀⠀', group = 'Dashboard Settings', inline = '2')
+table_neutral = input.color(color.gray, title = 'Dashboard Neutral⠀', group = 'Dashboard Settings', inline = '3')
+if barstate.islast or barstate.islastconfirmedhistory
+    table.cell(table_id = table, column = 0, row = 0, text = timeframe1, bgcolor = tf1_trend == true ? table_bull : tf1_trend == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 0, row = 1, text = timeframe2, bgcolor = tf2_trend == true ? table_bull : tf2_trend == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 0, row = 2, text = timeframe3, bgcolor = tf3_trend == true ? table_bull : tf3_trend == false ? table_bear : table_neutral)
+
+    table.cell(table_id = table, column = 1, row = 0, text = 'OBV', bgcolor = obv1 == true ? table_bull : obv1 == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 1, row = 1, text = 'OBV', bgcolor = obv1 == true ? table_bull : obv2 == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 1, row = 2, text = 'OBV', bgcolor = obv1 == true ? table_bull : obv3 == false ? table_bear : table_neutral)
+
+    table.cell(table_id = table, column = 2, row = 0, text = 'CCI', bgcolor = cc1 == true ? table_bull : cc1 == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 2, row = 1, text = 'CCI', bgcolor = cc2 == true ? table_bull : cc2 == false ? table_bear : table_neutral)
+    table.cell(table_id = table, column = 2, row = 2, text = 'CCI', bgcolor = cc3 == true ? table_bull : cc3 == false ? table_bear : table_neutral)
+
+

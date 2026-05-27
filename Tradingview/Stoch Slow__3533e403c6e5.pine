@@ -1,0 +1,22 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Stoch Slow")
+
+//STOCH
+stoch_kperiod = input.int(10, title = 'K Period', group = 'Stoch Settings')
+stoch_dperiod = input.int(10, title = 'D Period', group = 'Stoch Settings')
+stoch_overbought = input(80, title = 'Overbought', group = 'Stoch Settings')
+stoch_mid = input(50, title = 'Other Alert Level', group = 'Stoch Settings')
+stoch_oversold = input(20, title = 'Oversold', group = 'Stoch Settings')
+
+stoch_k = ta.sma(ta.stoch(close, high, low, 3), stoch_kperiod)
+stoch_d = ta.sma(stoch_k, stoch_dperiod)
+
+plot(stoch_k)
+plot(stoch_k)
+plot(stoch_overbought)
+plot(stoch_mid)
+plot(stoch_oversold)
+

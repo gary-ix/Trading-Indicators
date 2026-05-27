@@ -1,0 +1,83 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=5
+indicator("2TF TMO", timeframe = '', timeframe_gaps = false)
+
+tf1_bull = input.color(color.green, title='TF1 Bull Color', inline='1', group='Visual Settings')
+tf1_bear = input.color(color.red, title='TF1 Bear Color', inline='2', group='Visual Settings')
+
+NX_OBLine_color = input.color(color.new(#801922,0), title='NX_OBLine Color', inline='3', group='Visual Settings')
+NX_NEUTRAL_color = input.color(color.new(#2a2e39,0), title='NX_NEUTRAL Color', inline='4', group='Visual Settings')
+NX_OSLine_color = input.color(color.new(#134416,0), title='NX_OSLine Color', inline='5', group='Visual Settings')
+
+NX_OBLine = (80-50) / 5
+NX_OSLine = (20-50) / 5
+
+ShowTF1 = input.bool(true)
+ShowAVG_TF1 = input.bool(true)
+show_labels = input.bool(true, title = "Show_Labels")
+
+// ##################################
+// ##################################
+// ########## TF1 TMO LINE ##########
+// ##################################
+// ##################################
+NX_TMO_A1_Length = 12
+NX_TMO_A1_CalcLength = 2
+NX_TMO_A1_SmoothLength = 3
+
+// #1
+// #AGGREGATION 1
+data_function(length) =>
+    value = 0.00
+    for i = 0 to length - 1
+        value += (close > open[i] ? 1 : close < open[i] ? -1 : 0)
+    value
+
+NX_TMO_A1_Data = data_function(NX_TMO_A1_Length)
+NX_TMO_A1_EMA = ta.ema(NX_TMO_A1_Data, NX_TMO_A1_CalcLength)
+NX_TMO_A1_Main = ta.ema(NX_TMO_A1_EMA, NX_TMO_A1_SmoothLength)
+NX_TMO_A1_Signal = ta.ema(NX_TMO_A1_Main, NX_TMO_A1_SmoothLength)
+
+NX_TMO_A1_Value = NX_TMO_A1_Main > NX_TMO_A1_Main[1] ? 1 : -1
+NX_TMO_A1_Signal_Value = NX_TMO_A1_Signal > NX_TMO_A1_Signal[1] ? 1 : -1
+
+plot(ShowTF1 ? NX_TMO_A1_Main * 0.5 : na, title = 'NX_TMO_A1_FIRSTLINE', color = NX_TMO_A1_Value == 1 ? tf1_bull : tf1_bear)
+plot(ShowAVG_TF1 ? NX_TMO_A1_Signal * 0.5 : na, title = 'NX_TMO_A1_AVGLINE', color = NX_TMO_A1_Signal_Value == 1 ? color.gray : color.gray)
+
+// ### OB OS LINE ###
+plot(NX_OBLine, title = 'NX_OBLine', color = NX_OBLine_color)
+plot(0, title = 'NX_NEUTRAL', color = NX_NEUTRAL_color)
+plot(NX_OSLine, title = 'NX_OSLine', color = NX_OSLine_color)
+
+NX_DNLIMIT1 = plot((80-50) / 5, display = display.none, editable = false)
+NX_DNLIMIT2 = plot((70-50) / 5, display = display.none, editable = false)
+NX_UPLIMIT1 = plot((30-50) / 5, display = display.none, editable = false)
+NX_UPLIMIT2 = plot((20-50) / 5, display = display.none, editable = false)
+
+fill(NX_DNLIMIT1, NX_DNLIMIT2, color.new(NX_OBLine_color,70))
+fill(NX_UPLIMIT1, NX_UPLIMIT2, color.new(NX_OSLine_color,70))
+
+// //LABELS
+// drawLabels(position, custom_text, textcolor) =>
+//     label = label.new(bar_index + 3, y = position, text = custom_text, color = color.new(#000000,100), textcolor= textcolor, style = label.style_label_left, size = size.small, textalign = text.align_center)
+//     label.delete(label[1])
+
+// if show_labels
+//     drawLabels(NX_TMO_A1_Main * 0.5, str.tostring(NX_TMO_A1_Main * 0.5), color.white)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

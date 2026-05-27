@@ -1,0 +1,61 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © GM_Trades
+
+//@version=5
+indicator("Auto S/R v2", overlay = true)
+//Auto Support / Resistance
+show_supportresistance = input.bool(title='Power S/R', defval=false, inline='1', group='Power S/R Settings')
+supportresistance_tf = input.timeframe(defval='', title='', inline='1', group='Power S/R Settings')
+sr_length = 5
+sr_closeness = input.float(defval=5.00, step=0.25, minval=0, maxval=10, title='Spacer', inline='1', group='Power S/R Settings', tooltip = "Power S/R takes the work of plotting lines on your chart and does it for you! There are two settings you can change. \n\nBy default Power S/R plots support and resistance on whatever timeframe your chart is on. However you could choose another timeframe to show support and resistance on. For example say you are a scalper and trade off the 1 minute chart, but use the 15 minute chart to do your chart work. All you would need to do is set the timeframe to 15 minutes. \n\nThe other adjuster you have is the spacer. If the S/R lines are too close or too far apart for your liking you can change the value of the adjuster.")
+sr_color = input.color(color.new(color.red,0), title='S/R Color', inline='2', group='Power S/R Settings')
+sr_width = input.int(1, minval = 1, maxval = 10, title='S/R Width', inline='2', group='Power S/R Settings')
+sr_label_offset = 70
+
+//Get Pivot Boolean Function
+createLines(srcHigh, srcLow, strength) =>
+    pivotHigh = ta.pivothigh(srcHigh, strength, strength)
+    pivotLow = ta.pivotlow(srcLow, strength, strength)
+
+    levelHigh = ta.valuewhen(pivotHigh, srcHigh[strength], 0)
+    levelLow = ta.valuewhen(pivotLow, srcLow[strength], 0)
+
+    [pivotHigh, pivotLow, levelHigh, levelLow]
+    
+//  Calculate average candle size over the last n bars. 
+avg_candle(n, tf) =>
+    high_price = request.security(syminfo.tickerid, tf, high)
+    low_price = request.security(syminfo.tickerid, tf, low)
+    ta.sma(math.abs(high_price - low_price), n)
+
+//DEFEAT LEVEL CLUSTERING
+validate_proximity(y, levels, m, tf) =>
+    avg = avg_candle(100, tf) * m
+    x = 0
+    for i = 0 to array.size(levels) - 1 by 1
+        level = array.get(levels, i)
+        if math.abs(level - y) < avg
+            x := x + 1
+            x
+    x == 0
+
+[is_bear_fractal, is_bull_fractal, high_level, low_level] = request.security(syminfo.tickerid, supportresistance_tf, createLines(high, low, sr_length))
+var float[] key_levels = array.new_float(20, 0.0)
+
+if is_bear_fractal and validate_proximity(high_level, key_levels, sr_closeness, supportresistance_tf)
+    array.unshift(key_levels, high_level)
+    array.remove(key_levels, 20)
+
+if is_bull_fractal and validate_proximity(low_level, key_levels, sr_closeness, supportresistance_tf)
+    array.unshift(key_levels, low_level)
+    array.remove(key_levels, 20)
+
+drawSR(key_levels,line_color,sr_width) =>
+    for i = 0 to 19 by 1
+        line_value = array.get(key_levels,i)
+        line sr_line = line.new(x1=bar_index[1], x2=bar_index, y1=line_value, y2=line_value, xloc=xloc.bar_index, width=sr_width, color=line_color, extend=extend.both)
+        label sr_label = label.new(x=bar_index + sr_label_offset, y=line_value, xloc=xloc.bar_index, yloc=yloc.price, text=str.tostring(line_value, format.mintick), textcolor=color.new(line_color,0) ,style=label.style_none, color=color.white, textalign=text.align_right, size=size.normal)
+
+if show_supportresistance and barstate.islast
+    drawSR(key_levels,sr_color,sr_width)
+//SR END

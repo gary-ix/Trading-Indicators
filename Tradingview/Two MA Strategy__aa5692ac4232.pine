@@ -1,0 +1,662 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © SimpleSignalsOfficial
+
+//@version=5
+strategy("Two MA Strategy", overlay=true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, default_qty_value=100, initial_capital=100000, default_qty_type=strategy.percent_of_equity)
+
+// two ma settings
+twoma_filter = true
+twoma_length1 = input.int(10, title = 'Short MA', group='2MA Settings', inline = '2')
+two_matype1 = input.string("SMA", title = ' ', 
+ options = ['SMA', 'EMA', 'HMA', 'RMA'],
+ group = '2MA Settings', inline = '2')
+twoma_length2 = input.int(50, title = 'Long MA ', group='2MA Settings', inline = '3')
+two_matype2 = input.string("SMA", title = ' ', 
+ options = ['SMA', 'EMA', 'HMA', 'RMA'],
+ group = '2MA Settings', inline = '3')
+
+two_ma_mindistance = input.float(150.00,   title = 'Invalid MA Distance             ',
+ group = '2MA Settings', inline = '4', minval = 0.01, maxval = 999.99)
+two_ma_signaldistance = input.float(50.00, title = 'Signal Location between MAs',
+ group = '2MA Settings', inline = '5', minval = 0.01, maxval = 99.99)
+
+
+// trade settings
+inverse_settings = input.bool(false, title = 'Inverse Signals', group = 'Trade Settings', inline = '1')
+long_to_short_lock = input.bool(false, title = 'Next Trade Cannot Be Same Side', group = 'Trade Settings', inline = '1')
+tradeType = input.string('BOTH', title='What trades should be taken ?⠀ ⠀', options=['LONG', 'SHORT', 'BOTH'], group = 'Trade Settings', inline = '3')
+
+trade_sydney    = input.bool(true, title = 'Sydney Session   ', group = 'Trade Settings', inline = '5')
+sydney_session  = input.session("1800-0200", title = '', group = 'Trade Settings', inline = '5')
+
+trade_tokyo     = input.bool(true, title = 'Tokyo Session     ', group = 'Trade Settings', inline = '6')
+tokyo_session   = input.session("1900-0400", title = '', group = 'Trade Settings', inline = '6')
+
+trade_london    = input.bool(true, title = 'London Session   ', group = 'Trade Settings', inline = '7')
+london_session  = input.session("0300-1200", title = '', group = 'Trade Settings', inline = '7')
+
+trade_newyork   = input.bool(true, title = 'New York Session', group = 'Trade Settings', inline = '8')
+newyork_session = input.session("0800-1700", title = '', group = 'Trade Settings', inline = '8')
+
+trade_monday    = input.bool(true, "Trade Mondays", group = 'Trade Settings', inline = '9')
+trade_tuesday   = input.bool(true, "Trade Tuesdays", group = 'Trade Settings', inline = '10')
+trade_wednesday = input.bool(true, "Trade Wednesdays", group = 'Trade Settings', inline = '11')
+trade_thursday  = input.bool(true, "Trade Thursdays", group = 'Trade Settings', inline = '12')
+trade_friday    = input.bool(true, "Trade Fridays", group = 'Trade Settings', inline = '13')
+trade_saturday  = input.bool(true, "Trade Saturdays", group = 'Trade Settings', inline = '14')
+trade_sunday    = input.bool(true, "Trade Sundays", group = 'Trade Settings', inline = '15')
+
+
+// filter settings
+use_prev_candle = input(false, title='Previous Candle Filter⠀⠀⠀⠀', group = 'Filter Settings', inline = '2')
+prev_tf = input.timeframe('', title=' ', group = 'Filter Settings', inline = '2')
+
+use_ma = input.bool(title='MA Filter', defval=false, group='Filter Settings', inline = '3')
+ma_type = input.string(title=' ', defval='SMA', options=['SMA', 'EMA', 'SMMA (RMA)', 'WMA', 'VWMA'],  group='Filter Settings', inline = '3')
+ma_source = input.source(title=' ', defval=close, group='Filter Settings', inline = '3')
+ma_length = input.int(defval=50, title=' ', minval=1,  group='Filter Settings', inline = '3')
+
+prev_day_range = input.string('None', title = 'Prior Days Range⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', options = ['Outside', 'Inside', 'None'], group = 'Filter Settings', inline = '4')
+
+use_day_open = input.bool(false, title = 'Daily Open Filter⠀⠀⠀ ⠀⠀⠀⠀', group = 'Filter Settings', inline = '5')
+day_open = input.session("0930-0931", title = ' ', group = 'Filter Settings', inline = '5')
+
+use_support_resistance = input.bool(false, title = 'Support/Resistance Break', group = 'Filter Settings', inline = '8')
+left_bars = input.int(15, title = "S/R Left Bars", group = 'Filter Settings', inline = '9')
+right_bars = input.int(15, title = "S/R Right Bars", group = 'Filter Settings', inline = '9')
+sr_volumethres = input.int(20, minval = 0, maxval = 100, title = 'S/R Volume Threshold', group = 'Filter Settings', inline = '10')
+
+ichi_type = input.string("None", title = 'Cloud Filter', options = ['Inside', 'Outside', 'None'],
+ group = 'Filter Settings', inline = '11')
+conversionPeriods = 9
+basePeriods = 26
+laggingSpan2Periods = 52
+displacement = 26
+
+use_efi = input.bool(false, title = '' , group='Filter Settings', inline = '12')
+input_efibuy = input.int(0, title = 'EFI Buy', group='Filter Settings', inline = '12')
+input_efisell = input.int(0, title = 'EFI Sell', group='Filter Settings', inline = '12')
+efi_length = 13
+efi_type =  'EMA'
+
+
+// risk management settings
+use_tp = input.bool(true, title = 'Target⠀⠀ ⠀⠀⠀⠀⠀', group = 'Risk Management', inline = '2')
+tp_type = input.string('TWO MA', title = '', options = ['Percent', 'Price', 'TWO MA'], group = 'Risk Management', inline = '2')
+tp_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '2')
+
+use_sl = input.bool(true, title = 'Stop Loss⠀ ⠀⠀⠀⠀', group = 'Risk Management', inline = '3')
+sl_type = input.string('TWO MA', title = '', options = ['Percent', 'Price', 'TWO MA'], group = 'Risk Management', inline = '3')
+sl_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '3')
+
+
+// max gains & max losses
+trade_size = input.float(1, title = 'Trade Size', group = 'Max Gain/Loss', inline = '1')
+
+use_max_daily_gain = input.bool(false, title = 'Max Daily Gain (pips)    ', group = 'Max Gain/Loss', inline = '2')
+max_daily_gain = input.int(3000, title = '', group = 'Max Gain/Loss', inline = '2', step = 1000)
+
+use_max_daily_loss = input.bool(false, title = 'Max Daily Loss (pips)    ', group = 'Max Gain/Loss', inline = '3')
+max_daily_loss = input.int(3000, title = '', group = 'Max Gain/Loss', inline = '3', step = 1000)
+
+use_max_weekly_gain = input.bool(false, title = 'Max Weekly Gain (pips) ', group = 'Max Gain/Loss', inline = '4')
+max_weekly_gain = input.int(25000, title = '', group = 'Max Gain/Loss', inline = '4', step = 1000)
+
+use_max_weekly_loss = input.bool(false, title = 'Max Weekly Loss (pips) ', group = 'Max Gain/Loss', inline = '5')
+max_weekly_loss = input.int(25000, title = '', group = 'Max Gain/Loss', inline = '5', step = 1000)
+
+use_max_monthly_gain = input.bool(false, title = 'Max Monthly Gain (pips)', group = 'Max Gain/Loss', inline = '6')
+max_monthly_gain = input.int(100000, title = '', group = 'Max Gain/Loss', inline = '6', step = 1000)
+
+use_max_monthly_loss = input.bool(false, title = 'Max Monthly Loss (pips)', group = 'Max Gain/Loss', inline = '7')
+max_monthly_loss = input.int(100000, title = '', group = 'Max Gain/Loss', inline = '7', step = 1000)
+
+
+// position lines
+line_showing = input.string('Current & Past', title = 'Position Tool', options = ['None', 'Current', 'Current & Past'], group = 'Position Line Settings', inline = '1')
+css_targetline = input.color(color.new(color.green,80), title = 'Profit', group = 'Position Line Settings', inline = '2')
+css_stopline = input.color(color.new(color.red,80), title = 'Loss', group = 'Position Line Settings', inline = '2')
+css_toolcolor = input.color(color.white, title = 'Text', group = 'Position Line Settings', inline = '2')
+
+
+// error catching
+// if long_to_short_lock and tradeType != 'BOTH'
+//     runtime.error("You cannot require the next trade to be a different side if 'BOTH' is not enabled in 'What Trades should be taken'")
+
+
+
+  
+
+// timeframe calculations
+is_sydney_session = time(timeframe.period, str.format('{0}:1234567', sydney_session), 'America/New_York') and trade_sydney
+is_tokyo_session = time(timeframe.period, str.format('{0}:1234567', tokyo_session), 'America/New_York') and trade_tokyo
+is_euro_session = time(timeframe.period, str.format('{0}:1234567', london_session), 'America/New_York') and trade_london
+is_newyork_session = time(timeframe.period, str.format('{0}:1234567', newyork_session), 'America/New_York') and trade_newyork
+
+current_day = dayofweek(time)
+is_tradeable_day = (trade_monday and current_day == dayofweek.monday)
+ or (trade_tuesday and current_day == dayofweek.tuesday)
+ or (trade_wednesday and current_day == dayofweek.wednesday)
+ or (trade_thursday and current_day == dayofweek.thursday)
+ or (trade_friday and current_day == dayofweek.friday)
+ or (trade_saturday and current_day == dayofweek.saturday)
+ or (trade_sunday and current_day == dayofweek.sunday)
+
+is_trade_sess = (is_sydney_session or is_tokyo_session or is_euro_session or is_newyork_session) and is_tradeable_day
+
+
+// prev candle calculations
+green = close > open
+red = close < open
+prev_candle_src = request.security(syminfo.tickerid, prev_tf, green[1] ? true : false, lookahead = barmerge.lookahead_on)
+prev_candle_long = use_prev_candle ? (prev_candle_src == true) : true
+prev_candle_short = use_prev_candle ? (prev_candle_src == false) : true
+
+
+// ma filter calculations
+ma(source, length, type) =>
+    type == 'SMA' ? ta.sma(source, length) : type == 'EMA' ? ta.ema(source, length) : type == 'SMMA (RMA)' ? ta.rma(source, length) : type == 'WMA' ? ta.wma(source, length) : type == 'VWMA' ? ta.vwma(source, length) : na
+ma = ma(ma_source, ma_length, ma_type)
+plot(use_ma ? ma : na, color=color.yellow, title='Filter MA')
+
+ma_long = use_ma ? close > ma : true
+ma_short = use_ma ? close < ma : true
+
+// prior day h/l calculations
+prior_high = request.security(syminfo.tickerid, 'D', high[1], lookahead=barmerge.lookahead_on)
+prior_low = request.security(syminfo.tickerid, 'D', low[1], lookahead=barmerge.lookahead_on)
+
+prior_day_cond = prev_day_range == 'Outside' and (close > prior_high or close < prior_low) ? true :
+ prev_day_range == 'Inside' and (close < prior_high and close > prior_low) ? true : prev_day_range == 'None' ? true : false
+
+
+// open price calculations
+open_time = time(timeframe.period, day_open, "America/New_York")
+var float open_price = na
+open_price := open_time ? open : open_price[1]
+var line open_line = na
+// bgcolor(open_time ? color.new(color.yellow,70) : na)
+
+if use_day_open
+    if open_time
+        // adjust yesterdays line
+        // line.set_extend(open_line, extend.none)
+        // new line
+        open_line := line.new(x1 = time, y1 = open_price, x2 = time + 1, y2 = open_price, 
+         xloc = xloc.bar_time, extend = extend.none,
+         color = close > open_price ? color.new(#2ba12f, 0) : color.new(#ff0000, 0),
+         style = line.style_solid, width = 2)
+    else
+        line.set_x2(open_line, time)
+        line.set_color(open_line, close > open_price ? color.new(#2ba12f, 0) : color.new(#ff0000, 0))
+
+open_price_buy = close > open_price or not use_day_open
+open_price_sell = close < open_price or not use_day_open
+
+
+// array management
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+
+
+// support and resistance calculations
+resistance_value = ta.valuewhen(ta.pivothigh(high,left_bars,right_bars), high[right_bars], 0)
+support_value = ta.valuewhen(ta.pivotlow(low,left_bars,right_bars), low[right_bars], 0)
+var line resistance = na
+var line support = na
+if use_support_resistance
+    if resistance_value != resistance_value[1]
+        line.set_extend(resistance, extend.none)
+        resistance := line.new(x1 = time[right_bars], y1 = resistance_value, x2 = time[right_bars + 1], y2 = resistance_value,
+         color = color.new(#FF0000,0), extend = extend.right, xloc = xloc.bar_time)
+    else
+        line.set_x2(resistance, time)
+    if support_value != support_value[1]
+        line.set_extend(support, extend.none)
+        support := line.new(x1 = time[right_bars], y1 = support_value, x2 = time[right_bars + 1], y2 = support_value,
+         color = color.new(#233dee,0), extend = extend.right, xloc = xloc.bar_time)
+    else
+        line.set_x2(support, time)
+
+sr_short = ta.ema(volume, 5)
+sr_long = ta.ema(volume, 10)
+sr_osc = 100 * (sr_short - sr_long) / sr_long
+sr_buy = (close >= line.get_y1(resistance) and sr_osc > sr_volumethres) or not use_support_resistance
+sr_sell = (close <= line.get_y1(support) and  sr_osc > sr_volumethres ) or not use_support_resistance
+
+
+// ichimoku calculations
+donchian(len) => 
+    math.avg(ta.lowest(len), ta.highest(len))
+conversionLine = donchian(conversionPeriods)
+baseLine = donchian(basePeriods)
+leadLine1 = math.avg(conversionLine, baseLine)
+leadLine2 = donchian(laggingSpan2Periods)
+
+ichi_inside = close <= math.max(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ and close >= math.min(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ichi_outside = close >= math.max(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ or close <= math.min(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+
+ichi_cond = (ichi_type == 'Inside' and ichi_inside)
+ or (ichi_type == 'Outside' and ichi_outside)
+ or ichi_type == 'None'
+
+
+// efi calculations
+f_efi(calc_bool) =>
+    var float efi_value = na
+    if calc_bool
+        efi_value := switch efi_type
+            "EMA" => math.round(ta.ema(ta.change(close[1]) * volume[1], efi_length),0)
+            "SMA" => math.round(ta.sma(ta.change(close[1]) * volume[1], efi_length),0)
+            "VWMA" => math.round(ta.vwma(ta.change(close[1]) * volume[1], efi_length),0)
+            "RMA" => math.round(ta.rma(ta.change(close[1]) * volume[1], efi_length),0)
+            "HMA" => math.round(ta.hma(ta.change(close[1]) * volume[1], efi_length),0)
+    efi_value
+
+efi_val = f_efi(use_efi)
+efi_buy = use_efi and efi_val > input_efibuy or not use_efi
+efi_sell = use_efi and efi_val < input_efisell or not use_efi
+
+
+// two ma calculations
+float two_mavalue1 = switch two_matype1
+    "EMA" => ta.ema(close, twoma_length1)
+    "SMA" => ta.sma(close, twoma_length1)
+    "RMA" => ta.rma(close, twoma_length1)
+    "HMA" => ta.hma(close, twoma_length1)
+    => ta.sma(close, twoma_length1)
+
+float two_mavalue2 = switch two_matype2
+    "EMA" => ta.ema(close, twoma_length2)
+    "SMA" => ta.sma(close, twoma_length2)
+    "RMA" => ta.rma(close, twoma_length2)
+    "HMA" => ta.hma(close, twoma_length2)
+    => ta.sma(close, twoma_length2)
+
+ptwoma1 = plot(twoma_filter ? two_mavalue1 : na, title = 'TWO MA Filter 1',
+ color = color.new(color.silver,90))
+ptwoma2 = plot(twoma_filter ? two_mavalue2 : na, title = 'TWO MA Filter 2',
+ color = color.new(color.silver,90))
+
+atr_value = ta.atr(500)
+twoma_atrcond = math.abs(two_mavalue1 - two_mavalue2) / atr_value * 100 >= two_ma_mindistance
+
+var int twoma_nextside = 0
+var float twoma_stopentryprice = 0.00
+
+twoma_nextside := close <= math.min(two_mavalue1, two_mavalue2) ? 1
+ : close >= math.max(two_mavalue1, two_mavalue2) ? -1 : twoma_nextside[1]
+
+twoma_stopentryprice := twoma_nextside == 1 ? math.min(two_mavalue1,two_mavalue2) + (math.abs(two_mavalue1 - two_mavalue2) * (two_ma_signaldistance/100))
+ : twoma_nextside == -1 ? math.max(two_mavalue1,two_mavalue2) - (math.abs(two_mavalue1 - two_mavalue2) * (two_ma_signaldistance/100))
+ : na
+
+
+//  define vars
+var bool in_trade = false
+var int trade_side = 0
+var int last_trade = na
+
+var float target = 99999999.99
+var float stop = 0.000000
+var float entry_price = 0.00
+
+var bool long_entry = false
+var bool short_entry = false
+
+var bool tgt_hit = false
+var bool stop_hit = false
+
+var bool long_exit = false
+var bool short_exit = false
+
+var float twoma_long_tp = 0.00
+var float twoma_short_tp = 0.00
+var float twoma_long_sl = 0.00
+var float twoma_short_sl = 0.00
+
+var max_daily_gain_hit = false
+var max_daily_loss_hit = false
+var max_weekly_gain_hit = false
+var max_weekly_loss_hit = false
+var max_monthly_gain_hit = false
+var max_monthly_loss_hit = false
+var max_gains_hit = false
+var max_losses_hit = false
+
+var float strategy_openpips = 0.00
+var float strategy_newclosedpips = 0.00
+var float daily_pips = 0.00
+var float weekly_pips = 0.00
+var float monthly_pips = 0.00
+var float beginning_of_day_pips = 0.00
+var float beginning_of_week_pips = 0.00
+var float beginning_of_month_pips = 0.00
+
+
+// define entry
+long_trade_side = long_to_short_lock ? (last_trade == -1 or na(last_trade)) : trade_side != 1 
+short_trade_side = long_to_short_lock ? (last_trade == 1 or na(last_trade)) : trade_side != -1 
+
+long_cond = is_trade_sess 
+ and prev_candle_long 
+ and ma_long 
+ and sr_buy 
+ and efi_buy 
+ and ichi_cond 
+ and tradeType != "SHORT"
+ and prior_day_cond
+ and open_price_buy  
+ and (inverse_settings ? short_trade_side : long_trade_side)
+ and twoma_nextside == 1 and twoma_atrcond
+
+short_cond = is_trade_sess 
+ and prev_candle_short 
+ and ma_short 
+ and sr_sell 
+ and efi_sell 
+ and ichi_cond 
+ and tradeType != "LONG" 
+ and prior_day_cond
+ and open_price_sell
+ and (inverse_settings ? long_trade_side : short_trade_side)
+ and twoma_nextside == -1 and twoma_atrcond
+
+
+long_conditions = (inverse_settings ? short_cond : long_cond)
+ and not (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit)
+ and not (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit)
+
+short_conditions = (inverse_settings ? long_cond : short_cond)
+ and not (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit)
+ and not (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit)
+
+
+high_cross = ta.crossover(high, twoma_stopentryprice[1])
+low_cross = ta.crossunder(low, twoma_stopentryprice[1])
+
+long_entry := long_conditions[1] and (inverse_settings ? low_cross: high_cross)
+ and trade_side[1] != 1
+
+short_entry :=  short_conditions[1] and (inverse_settings ? high_cross : low_cross)
+ and trade_side[1] != -1
+
+// fill(ptwoma1, ptwoma2,
+//  color = long_conditions[1] ? color.new(color.green,80) : short_conditions[1] ? color.new(color.red,80) : na)
+plot(not twoma_atrcond ? na : twoma_stopentryprice,
+ color = long_conditions ? color.lime : short_conditions ? color.rgb(255, 0, 0) : na,
+ style = plot.style_steplinebr, offset = 1, title = 'Entry Trigger Line')
+
+// define position
+entry_price := long_entry or short_entry ? twoma_stopentryprice[1] : in_trade == true ? entry_price[1] : na
+trade_side := long_entry ? 1 : short_entry ? -1 : in_trade == false ? 0 : trade_side[1]
+last_trade := (trade_side != 0 and trade_side != trade_side[1]) ? trade_side : last_trade[1]
+
+
+if use_tp
+    if tp_type == 'TWO MA'
+        if in_trade and trade_side == 1
+            twoma_long_tp := twoma_long_tp[1]
+        else
+            twoma_long_tp := math.max(two_mavalue1, two_mavalue2)
+        if in_trade and trade_side == -1          
+            twoma_short_tp := twoma_short_tp[1]
+        else
+            twoma_short_tp := math.min(two_mavalue1, two_mavalue2)
+
+        target := long_conditions or trade_side == 1 ? twoma_long_tp 
+         : short_conditions or trade_side == -1 ? twoma_short_tp : na
+
+    else if tp_type == 'Percent'
+        target := long_conditions ? (entry_price + (entry_price * (tp_amount/100))) 
+         : short_conditions ? (entry_price - (entry_price * (tp_amount/100))) 
+         : trade_side != 0 ? target[1]
+         : na
+
+    else
+        target := long_conditions ? entry_price + tp_amount 
+         : short_conditions ? entry_price - tp_amount  
+         : trade_side != 0 ? target[1] 
+         : na
+
+
+if use_sl
+    if sl_type == 'TWO MA'
+        if in_trade and trade_side == 1
+            twoma_long_sl := twoma_long_sl[1]     
+        else
+            twoma_long_sl := math.min(two_mavalue1, two_mavalue2)    
+
+        if in_trade and trade_side == -1          
+            twoma_short_sl := twoma_short_sl[1]     
+        else
+            twoma_short_sl := math.max(two_mavalue1, two_mavalue2) 
+
+        stop := long_conditions or trade_side == 1 ? twoma_long_sl 
+         : short_conditions or trade_side == -1 ? twoma_short_sl : na
+
+    else if sl_type == 'Percent'
+        stop := long_conditions ? (entry_price - (entry_price * (sl_amount/100))) 
+         : short_conditions  ? (entry_price + (entry_price * (sl_amount/100))) 
+         : trade_side != 0 ? stop[1]
+         : na
+
+    else
+        stop := long_conditions ? entry_price - tp_amount 
+         : short_conditions ? entry_price + tp_amount  
+         : trade_side != 0 ? stop[1] 
+         : na
+
+
+// MAX DAILY GAIN / LOSS CALCULATIONS
+pip_mult = syminfo.mintick
+//open pnl
+if in_trade
+    if trade_side == 1
+        strategy_openpips := (close - entry_price) / pip_mult * trade_size
+    else if trade_side == -1
+        strategy_openpips := (entry_price - close) / pip_mult * trade_size
+    else
+        strategy_openpips := 0
+else 
+    strategy_openpips := 0   
+
+
+// see if max profit/loss thresholds are met
+max_daily_gain_hit := dayofweek != dayofweek[1] ? false : use_max_daily_gain and daily_pips[1] + strategy_openpips >= max_daily_gain ? true : max_daily_gain_hit[1]
+max_weekly_gain_hit :=  weekofyear != weekofyear[1] ? false : use_max_weekly_gain and weekly_pips[1] + strategy_openpips >= max_weekly_gain ? true : max_weekly_gain_hit[1]
+max_monthly_gain_hit := month != month[1] ? false : use_max_monthly_gain and monthly_pips[1] + strategy_openpips >= max_monthly_gain ? true : max_monthly_gain_hit[1]
+
+max_daily_loss_hit := dayofweek != dayofweek[1] ? false : use_max_daily_loss and daily_pips[1] + strategy_openpips <= -max_daily_loss ? true : max_daily_loss_hit[1]
+max_weekly_loss_hit :=  weekofyear != weekofyear[1] ? false : use_max_weekly_loss and weekly_pips[1] + strategy_openpips <= -max_weekly_loss ? true : max_weekly_loss_hit[1]
+max_monthly_loss_hit := month != month[1] ? false : use_max_monthly_loss and monthly_pips[1] + strategy_openpips <= -max_monthly_loss ? true : max_monthly_loss_hit[1]
+
+
+// update position management
+max_gains_hit := trade_side != 0 and (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit)
+max_losses_hit := trade_side != 0 and (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit)
+tgt_hit := trade_side == 1 and high >= target or trade_side == -1 and low <= target
+stop_hit := trade_side == 1 and low <= stop or trade_side == -1 and high >= stop
+
+long_exit := ( (tgt_hit or stop_hit or max_gains_hit or max_losses_hit or not is_trade_sess)  and in_trade[1] == true and trade_side[1] == 1)
+short_exit := ( (tgt_hit or stop_hit or max_gains_hit or max_losses_hit or not is_trade_sess) and in_trade[1] == true and trade_side[1] == -1)
+
+in_trade := long_entry and long_exit ? false
+ : short_entry and short_exit ? false 
+ : long_entry or short_entry ? true 
+ : long_exit or short_exit ?  false 
+ : in_trade[1]
+
+
+
+// closed pnl calculations
+// reversal trades pnl calculation
+if trade_side[1] == 1 and trade_side == -1 
+    strategy_newclosedpips := (open - entry_price) / pip_mult * trade_size
+else  if trade_side[1] == -1 and trade_side == 1 
+    strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+    
+// time exits pnl calculation
+if not is_trade_sess[1] and is_trade_sess[2] 
+    if trade_side[1] == 1 and trade_side == 0
+        strategy_newclosedpips := (open - entry_price) / pip_mult * trade_size
+    if trade_side[1] == -1 and trade_side == 0
+        strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+
+
+// all other exits pnl calculation
+if long_exit[1]
+    if tgt_hit[1]
+        strategy_newclosedpips := (target[1] - entry_price[1]) / pip_mult * trade_size
+    else if stop_hit[1]
+        strategy_newclosedpips := (stop[1] - entry_price[1]) / pip_mult * trade_size
+    else
+        strategy_newclosedpips := (open - entry_price[1]) / pip_mult * trade_size
+else if short_exit[1]
+    if tgt_hit[1]
+        strategy_newclosedpips := (entry_price[1] - target[1]) / pip_mult * trade_size
+    else if stop_hit[1]
+        strategy_newclosedpips := (entry_price[1] - stop[1]) / pip_mult * trade_size
+    else
+        strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+
+
+// // calculate pips
+daily_pips := dayofweek != dayofweek[1] ? 0 : daily_pips[1] + strategy_newclosedpips
+weekly_pips := weekofyear != weekofyear[1] ? 0 : weekly_pips[1] + strategy_newclosedpips
+monthly_pips := month != month[1] ? 0 : monthly_pips[1] + strategy_newclosedpips
+
+
+// --PLOT SIGNALS-- //
+plotshape(long_entry, style = shape.triangleup, location = location.belowbar, color=color.new(color.green, 30), size=size.small, title = 'Long Entry')
+plotshape(short_entry, style = shape.triangledown, location = location.abovebar, color=color.new(color.red, 30), size=size.small, title = 'SS Entry')
+
+plotshape(short_exit, style = shape.triangleup, location = location.belowbar, color=color.new(color.gray, 30), size=size.small, title = 'SS Exit')
+plotshape(long_exit, style = shape.triangledown, location = location.abovebar, color=color.new(color.gray, 30), size=size.small, title = 'Long Exit')
+// --PLOT SIGNALS-- //
+
+
+//  calculate variables for text / box
+box_tgt = tp_type == 'TWO MA' ? target[1] : target
+box_stop = sl_type == 'TWO MA' ? stop[1] : stop
+
+
+
+profit_pct = math.round(math.abs((box_tgt - entry_price) / box_tgt * 100),2)
+stop_pct = math.round(math.abs((box_stop - entry_price) / box_stop * 100),2)
+
+target_text = 'TGT: ' + str.tostring(math.round_to_mintick(box_tgt)) + ' (' + str.tostring(profit_pct) + '%)'
+stoploss_text = 'SL: ' + str.tostring(math.round_to_mintick(box_stop)) + ' (' + str.tostring(stop_pct) + '%)'
+
+
+// --TRADE POSIITION LINES-- //
+var profit_box = array.new_box(1,na)
+var loss_box = array.new_box(1,na)
+
+show_position_tool = line_showing != 'None' 
+show_previous = line_showing == 'Past' or line_showing == 'Current & Past'
+
+// new lines
+if show_position_tool
+    if (long_entry or short_entry)
+
+        if not show_previous
+            box.delete(array.get(profit_box,0))
+            box.delete(array.get(loss_box,0))
+        else
+            box.set_extend(array.get(profit_box,0), extend.none)
+            box.set_extend(array.get(loss_box,0), extend.none)
+
+        array.unshift(profit_box, box.new(left = time[1], top = box_tgt, right = time + 1, bottom = entry_price, 
+         border_color = color.new(css_targetline, 50), border_width = 1, border_style = line.style_solid, 
+         xloc = xloc.bar_time, extend = extend.right, bgcolor = css_targetline, 
+         text = target_text, text_size = size.small, text_color = css_toolcolor, 
+         text_halign = text.align_center, text_valign = long_entry[1] ? text.align_top : text.align_bottom))
+
+        f_array_add_pop(loss_box, box.new(left = time[1], top = entry_price, right = time + 1, bottom = box_stop,
+         border_color = color.new(css_stopline, 50), border_width = 1, border_style = line.style_solid,
+         xloc = xloc.bar_time, extend = extend.right, bgcolor = css_stopline, text = stoploss_text,
+         text_size = size.small, text_color = css_toolcolor,
+         text_halign = text.align_center, text_valign =  long_entry[1] ?text.align_bottom : text.align_top))
+        
+    // manage lines
+    else if long_exit or short_exit
+        box.set_extend(array.get(profit_box,0), extend.none)
+        box.set_extend(array.get(loss_box,0), extend.none)
+
+    else if in_trade
+        box.set_right(array.get(profit_box,0), time+1)
+        box.set_right(array.get(loss_box,0), time+1)
+// --TRADE POSIITION LINES-- //
+
+
+
+// --ORDERS-- //
+if not is_trade_sess
+    strategy.close_all(comment = 'EOD', immediately = true)
+
+// if strategy.position_size != strategy.position_size[1]
+//     strategy.cancel_all() 
+
+
+// entry orders
+if not inverse_settings
+    if long_conditions and high < twoma_stopentryprice[1]
+        strategy.entry("LE", strategy.long, stop = twoma_stopentryprice)
+
+    if short_conditions and low > twoma_stopentryprice[1]
+        strategy.entry("SS_E", strategy.short, stop = twoma_stopentryprice)
+else
+    if long_conditions and low > twoma_stopentryprice[1]
+        strategy.entry("LE", strategy.long, limit = twoma_stopentryprice)
+
+    if short_conditions and high < twoma_stopentryprice[1]
+        strategy.entry("SS_E", strategy.short, limit = twoma_stopentryprice)
+
+
+// exit orders
+strategy.exit(id="LE", from_entry = "LE", limit=target, stop=stop , comment = "TP/SL")
+strategy.exit(id="SS_E", from_entry = "SS_E", limit=target, stop=stop , comment = "TP/SL")
+
+if strategy.position_size == 0 and not twoma_atrcond
+    strategy.cancel_all() 
+// --ORDERS-- //
+
+
+
+// plot(target, color = color.lime, style = plot.style_circles)
+// plot(stop, color = color.fuchsia, style = plot.style_circles)
+// barcolor(trade_side == 1 ? color.lime : trade_side == -1 ? color.fuchsia : na)
+
+// barcolor(long_entry ? color.lime
+//  : short_entry ? color.red
+//  : long_exit ? color.aqua
+//  : short_exit ? color.rgb(235, 163, 168)
+//  : na)
+
+// barcolor(long_exit ? color.blue
+//  : short_exit ? color.orange
+//  : na)
+
+// bgcolor(long_exit ? color.new(color.green,80)
+//  : short_exit ? color.new(color.red,80)
+//  : na)
+
+
+// plot(in_trade ? target : na, color = color.green, linewidth = 5, style = plot.style_circles)
+// plot(in_trade ? stop : na, color = color.fuchsia, linewidth = 5, style = plot.style_circles)
+// barcolor(trade_side == 1 ? color.lime : trade_side == -1 ? color.fuchsia : na)
+// barcolor(long_entry ? color.lime : short_entry ? color.fuchsia : na)
+
+
+// bgcolor(in_trade ? color.new(color.yellow,80) : na)
+// bgcolor(long_entry == 1  ? color.new(color.green,80) : short_entry == -1 ? color.new(color.red, 80) : na)

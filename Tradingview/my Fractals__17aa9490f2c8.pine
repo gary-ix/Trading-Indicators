@@ -1,0 +1,25 @@
+//@version=5
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © igor_teixeira
+
+indicator(title='my Fractals', overlay=true)
+
+n = input.int(title='Periods', defval=1, minval=1)
+
+//High(n-2) < High(n)
+//High(n-1) < High(n)
+//High(n + 1) < High(n)
+//High(n + 2) < High(n)
+
+dnFractal = high[n - 2] < high[n] and high[n - 1] < high[n] and high[n + 1] < high[n] and high[n + 2] < high[n]
+
+//Low(n-2) > Low(n) 
+//Low(n-1) > Low(n)
+//Low(n + 1) > Low(n) 
+//Low(n + 2) > Low(n)
+
+upFractal = low[n - 2] > low[n] and low[n - 1] > low[n] and low[n + 1] > low[n] and low[n + 2] > low[n]
+
+plotchar(dnFractal, char='⮝', location=location.abovebar, offset=-2, color=color.new(color.lime, 0), title='Down Fractal')
+plotchar(upFractal, char='⮟', location=location.belowbar, offset=-2, color=color.new(color.red, 0), title='Up Fractal')
+

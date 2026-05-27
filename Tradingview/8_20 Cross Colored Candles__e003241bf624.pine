@@ -1,0 +1,11 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=5
+indicator("8/20 Cross Colored Candles", overlay = true)
+
+ema8 = plot(ta.ema(close,8), color = color.orange)
+ema20 = plot(ta.ema(close,20), color = color.blue)
+
+bar_color = ta.ema(close,8) > ta.ema(close,20) ? 1 : -1
+barcolor(bar_color == 1 ? color.green : color.red)
+
+

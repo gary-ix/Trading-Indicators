@@ -1,0 +1,135 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+
+//@version=4
+study("Normalized Oscillators Spider Chart [LUX]",overlay=true,scale=scale.none,max_lines_count=500,max_labels_count=500)
+rsi_tog   = input(true,'RSI  ',inline='inline1')
+rsi_len   = input(14,'',inline='inline1')
+
+stoch_tog = input(true,'%K ',inline='inline1')
+stoch_len = input(14,'',inline='inline1')
+
+cor_tog   = input(true,'COR',inline='inline2')
+cor_len   = input(14,'',inline='inline2')
+
+mfi_tog   = input(true,'MFI',inline='inline2')
+mfi_len   = input(14,'',inline='inline2')
+
+wpr_tog   = input(true,'WPR',inline='inline3')
+wpr_len   = input(14,'',inline='inline3')
+
+pr_tog    = input(true,'%UP',inline='inline3')
+pr_len    = input(14,'',inline='inline3')
+
+cmo_tog   = input(true,'CMO',inline='inline4')
+cmo_len   = input(14,'',inline='inline4')
+
+aos_tog   = input(true,'AOS',inline='inline4')
+aos_len   = input(14,'',inline='inline4')
+
+glen_tog  = input(false,'Global Oscillators Length',inline='inline5')
+glen      = input(14,'',inline='inline5')
+//------------------------------------------------------------------------------
+radius  = input(100,'Spider Chart Length',group='Style Settings')
+offset  = input(50,'Spider Chart Offset',group='Style Settings')
+//----
+n = bar_index
+src = close
+
+rsi   = rsi(src,glen_tog ? glen : rsi_len)/100
+
+stoch = stoch(src,high,low,glen_tog ? glen : stoch_len)/100
+
+r     = .5*correlation(src,n,glen_tog ? glen : cor_len)+.5
+
+mfi   = sma(volume*(hlc3 > hlc3[1] ? hlc3 : 0),glen_tog ? glen : mfi_len)
+  /sma(volume*hlc3,glen_tog ? glen : mfi_len)
+  
+wpr   = wpr(glen_tog ? glen : wpr_len)/100 + 1
+
+pr    = sma(max(sign(change(src)),0),glen_tog ? glen : pr_len)
+
+cmo   = sum(max(change(src),0),glen_tog ? glen : cmo_len)
+  /sum(abs(change(src)),glen_tog ? glen : cmo_len)
+  
+aos   = (highestbars(high,glen_tog ? glen+1 : aos_len+1) 
+  - lowestbars(low,glen_tog ? glen+1 : aos_len+1))
+  /(glen_tog ? glen*2 : aos_len*2) + .5
+
+//------------------------------------------------------------------------------
+var names = array.new_string(0)
+var values = array.new_float(0)
+
+if barstate.islast
+    if rsi_tog
+        array.push(values,rsi)
+    if stoch_tog
+        array.push(values,stoch)
+    if cor_tog
+        array.push(values,r)
+    if mfi_tog
+        array.push(values,mfi)
+    if wpr_tog
+        array.push(values,wpr)
+    if pr_tog
+        array.push(values,pr)
+    if cmo_tog
+        array.push(values,cmo)
+    if aos_tog
+        array.push(values,aos)
+    array.push(values,array.get(values,0))
+
+
+//------------------------------------------------------------------------------
+var scale_lines   = array.new_line(0)
+
+// //----
+if barstate.isfirst
+    for i = 0 to 99
+        array.push(scale_lines,line.new(na,na,na,na))
+//------------------------------------------------------------------------------
+dt = round(time - time[1])
+
+//------------------------------------------------------------------------------
+if barstate.islast
+    for i = 1 to 99
+        y1 = ((i-1)/99 - .5)*2
+        y2 = (i/99 - .5)*2
+        
+        css = color.from_gradient(i,1,100,#b63632,#27a69b)
+        scale_line = array.get(scale_lines,i)
+        line.set_xloc(scale_line,time+dt*offset+dt*(radius+25),time+dt*offset+dt*(radius+25),xloc=xloc.bar_time)
+        line.set_y1(scale_line,y1)
+        line.set_y2(scale_line,y2)
+        line.set_width(scale_line,5)
+        line.set_color(scale_line,css)
+    
+    label.delete(label.new(time+dt*offset+dt*(radius+25),1,"100",xloc.bar_time,yloc.price,color=#00000000
+      ,style=label.style_label_left,textcolor=#27a69b,textalign=text.align_center)[1]) 
+    label.delete(label.new(time+dt*offset+dt*(radius+25),-1,"0",xloc.bar_time,yloc.price,color=#00000000
+      ,style=label.style_label_left,textcolor=#b63632,textalign=text.align_center)[1])
+    label.delete(label.new(time+dt*offset+dt*(radius+25),1.1,"0",xloc.bar_time,yloc.price,color=#00000000
+      ,style=label.style_label_left,textcolor=#b63632,textalign=text.align_center)[1])
+      
+    avg = (array.avg(values) - .5)*2
+    avg_css = color.from_gradient(avg,-1,1,#b63632,#27a69b)
+    
+    label.delete(label.new(time+dt*offset+dt*(radius+25),avg,"◄",xloc.bar_time,color=#00000000
+      ,style=label.style_label_left,textcolor=avg_css,textalign=text.align_left)[1]) 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      

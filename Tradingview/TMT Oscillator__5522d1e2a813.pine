@@ -1,0 +1,339 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © www.themarketthief.com
+
+
+//@version=4
+study("TMT Oscillator", max_bars_back=600)
+
+//Levels
+
+oblevel = 60
+obtrigger = 53
+oslevel = -60
+ostrigger = -53
+onehundredline = 100
+
+ob = 80
+os = 20
+bearT = 40
+bullT = 60
+zeroline = 0
+
+//Level Plots
+
+plot(oblevel, title="OB Level", color=#F06292, linewidth=3, style=plot.style_line, transp=40)
+plot(oslevel, title="OS Level", color=#00BCD4, linewidth=3, style=plot.style_line, transp=40)
+plot(obtrigger, title="OB Trigger", color=#FFFFFF, linewidth=1, style=plot.style_circles, transp=70)
+plot(ostrigger, title="OS Trigger", color=#FFFFFF, linewidth=1, style=plot.style_circles, transp=70)
+plot(onehundredline, title="100% Line", color=#F57F17, linewidth=1, style=plot.style_circles, transp=70)
+
+// Waves / Momentum X/Y
+n1 = 9
+n2 = 13
+
+ap = hlc3 
+esa = ema(ap, n1)
+d = ema(abs(ap - esa), n1)
+ci = (ap - esa) / (0.015 * d)
+tci = ema(ci, n2)
+ 
+wt1 = tci
+wt2 = sma(wt1,4)
+
+col = wt2 > 0 ? #0D47A1 : wt2 < 0 ? #434651 : na
+
+plot(wt1, title="Momentum X", color=#FFFFFF, linewidth=2, style=plot.style_area, transp=25)
+plot(wt2, title="Momentum Y", color=#0D47A1, linewidth=2, style=plot.style_area, transp=10)
+plot(wt2, title="Momentum Y Colors", linewidth=2, color=col, style=plot.style_area, transp=50)
+
+//LT TrendFlow
+
+length = 30
+src = close
+
+ema1 = ema(src, length)
+calc = (src-ema1) / (0.015*ema(abs(src-ema1), length))
+ema2 = ema (calc, length)
+sma1 = sma (ema2, 4)
+ 
+col2 = ema2 > 0 ? #3ee145 : #ff3d2e
+
+trendFlow = max(min(ema(calc, length), 50), -50)
+
+momz = (wt1-wt2)
+ 
+col4 = momz > 0 ? #005cff : 0 > momz ? #ffffff : na
+col5 = wt1 > 0 ? #005cff : 0 > wt1 ? #ffffff : na
+ 
+plot(trendFlow, color=col2, transp=40, style=plot.style_area, linewidth=2, title="Long-Term Trend Flow")
+plot(trendFlow, color=#000000, transp=100, style=plot.style_line, linewidth=4, title="LT Trendflow Shadow")
+plot(trendFlow, color=col4, transp=0, style=plot.style_line, linewidth=2, title="LT MomZ Trendflow Color Shift")
+plot(trendFlow, color=col5, transp=0, style=plot.style_line, linewidth=2, title="LT MomX Trendflow Color Shift")
+
+//plot(trendFlow, color=col2, linewidth=2, trackprice=true, show_last=1, editable=false)
+
+//VWAP
+
+plot(wt1-wt2, title="Momentum Z (Mom X/Y Delta)", color=#FFFF00, linewidth=1, style=plot.style_line, transp=40)
+
+//C Dots
+
+cond1 = wt2 > obtrigger
+cond2 = wt2 < ostrigger
+
+plot(crossunder(wt1,wt2) ? wt2 : na, title="C Dot Crossing Down", color=#FF5252, style=plot.style_circles, linewidth = 2, transp=0)
+plot(crossover(wt1,wt2) ? wt2 : na, title="C Dot Crossing Up", color=#00E676, style=plot.style_circles, linewidth = 2, transp=0)
+
+cond = wt2 < -60
+plotshape(cond and crossover(wt1,wt2) ? wt2 : na, title="Positive Pulse Signal", style=shape.labelup, location=location.bottom, color=color.new(#00ff00,50), size=size.auto, textcolor=color.white, text="+")
+
+cond5 = wt2 > 60
+plotshape(cond5 and crossunder(wt1,wt2) ? wt2 : na, title="Negative Pulse Signal", style=shape.labeldown, location=location.top, color=color.new(#ff0500,50), size=size.auto, textcolor=color.white, text="-")
+
+//MFI Levels
+
+p1 = plot(ob, title="Getting Overbought", color=#808080, style=plot.style_line, linewidth=1, transp=90)
+p2 = plot(os, title="Getting Oversold", color=#808080, style=plot.style_line, linewidth=1, transp=90)
+p3 = plot(bearT, title="Bears Territory", color=#808080, style=plot.style_line, linewidth=1, transp=90)
+p4 = plot(bullT, title="Bulls Territory", color=#808080, style=plot.style_line, linewidth=1, transp=90)
+p5 = plot(zeroline, title="0 Line", color=#FFFFFF, style=plot.style_line, linewidth=1, transp=90)
+
+//MFI Fills
+
+fill(p1,p4, color=#4896F3, transp=90, title="MFI Uptrend")
+fill(p2,p3, color=#FFFFFF, transp=90, title="MFI Downtrend")
+fill(p3,p4, color=#b6b6b6, transp=100, title="MFI Transition Zone")
+
+//Trend Bar
+
+h6 = hline(-90, color=#FFFFFF00, editable=false)
+h7 = hline(-100, color=#FFFFFF00, editable=false)
+h8 = hline(-125, color=#FFFFFF00, editable=false)
+
+col3 = ema2 > 0 ? #4CAF50 : 0 > ema2 ? #B71C1C : na
+
+fill(h6,h7, color=col3, title="Barmageddon", transp=60)
+
+
+/// RSI
+
+rsiLen = 14
+
+rsiSRC = close
+rsi = rsi(rsiSRC, rsiLen)
+
+rsiCol = rsi >= 65 ? #FF9800 : rsi <= 35 ? #4CAF50 : #b2b5be
+
+plot(rsi, title = 'RSI', color=rsiCol, linewidth = 3)
+
+//MF
+
+length3 = 7
+upper = sum(volume * (change(ap) <= 0 ? 0 : ap), 10)
+lower = sum(volume * (change(ap) >= 0 ? 0 : ap), 10)
+mf = rsi(upper, lower)
+
+plot(mf, "Lightning (Fast MF)", color=#00BCD4, style=plot.style_area, linewidth=2, transp=90)
+
+mfCol = mf <= 10 ? #8CAEFC : mf >= 90 ? #D85D89 : na
+
+plot(crossunder(mf,10) ? mf : na, title="MFI Warning Spots", color=#8CAEFC, style=plot.style_circles, linewidth = 5, transp=20)
+plot(crossover(mf,90) ? mf : na, title="MFI Warning Sports", color=#D85D89, style=plot.style_circles, linewidth = 5, transp=20)
+
+
+//Fast & Slow
+
+slowHigh=sma(high, 16)
+slowLow=sma(low, 16)
+
+//Slow Values
+Hlv2 = int(na)
+Hlv2 := close > slowHigh ? 1 : close < slowLow ? -1 : Hlv2[1]
+sslDown2 = Hlv2 < 0 ? slowHigh : slowLow
+
+//Plots
+
+col7 = close > sslDown2 ? #787b86 : close < sslDown2 ? #d71616 : na
+
+plot(-120, title="Confirmation Dots", color=col7, linewidth=3, style=plot.style_circles, transp=75)
+
+
+// Divergence
+
+lbR = input(title="Pivot Lookback Right", defval=2)
+lbL = input(title="Pivot Lookback Left", defval=2)
+rangeUpper = input(title="Max of Lookback Range", defval=60)
+rangeLower = input(title="Min of Lookback Range", defval=4)
+plotBull = input(title="Plot Bullish", defval=true)
+plotHiddenBull = input(title="Plot Hidden Bullish", defval=true)
+plotBear = input(title="Plot Bearish", defval=true)
+plotHiddenBear = input(title="Plot Hidden Bearish", defval=true)
+bearColor = color.red
+bullColor = color.green
+hiddenBullColor = color.new(#005cff, 0)
+hiddenBearColor = color.new(color.orange, 0)
+textColor = color.white
+noneColor = color.new(color.white, 100)
+osc = wt1
+
+plFound = na(pivotlow(osc, lbL, lbR)) ? false : true
+phFound = na(pivothigh(osc, lbL, lbR)) ? false : true
+_inRange(cond) =>
+	bars = barssince(cond == true)
+	rangeLower <= bars and bars <= rangeUpper
+
+//------------------------------------------------------------------------------
+// Regular Bullish
+// Osc: Higher Low
+
+oscHL = osc[lbR] > valuewhen(plFound, osc[lbR], 1) and _inRange(plFound[1])
+
+// Price: Lower Low
+
+priceLL = low[lbR] < valuewhen(plFound, low[lbR], 1)
+bullCond = plotBull and priceLL and oscHL and plFound
+
+plot(
+     plFound ? osc[lbR] : na,
+     offset=-lbR,
+     title="Regular Bullish",
+     linewidth=2,
+     color=(bullCond ? bullColor : noneColor),
+     transp=0
+     )
+
+plotshape(
+	 bullCond ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Regular Bullish Label",
+	 text=" R Bull ",
+	 style=shape.labelup,
+	 location=location.absolute,
+	 color=bullColor,
+	 textcolor=textColor,
+	 transp=40
+	 )
+
+//------------------------------------------------------------------------------
+// Hidden Bullish
+// Osc: Lower Low
+
+oscLL = osc[lbR] < valuewhen(plFound, osc[lbR], 1) and _inRange(plFound[1])
+
+// Price: Higher Low
+
+priceHL = low[lbR] > valuewhen(plFound, low[lbR], 1)
+hiddenBullCond = plotHiddenBull and priceHL and oscLL and plFound
+
+plot(
+	 plFound ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Hidden Bullish",
+	 linewidth=2,
+	 color=(hiddenBullCond ? hiddenBullColor : noneColor),
+	 transp=0
+	 )
+
+plotshape(
+	 hiddenBullCond ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Hidden Bullish Label",
+	 text=" H Bull ",
+	 style=shape.labelup,
+	 location=location.absolute,
+	 color=#005cff,
+	 textcolor=textColor,
+	 transp=40
+	 )
+
+//------------------------------------------------------------------------------
+// Regular Bearish
+// Osc: Lower High
+
+oscLH = osc[lbR] < valuewhen(phFound, osc[lbR], 1) and _inRange(phFound[1])
+
+// Price: Higher High
+
+priceHH = high[lbR] > valuewhen(phFound, high[lbR], 1)
+
+bearCond = plotBear and priceHH and oscLH and phFound
+
+plot(
+	 phFound ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Regular Bearish",
+	 linewidth=2,
+	 color=(bearCond ? bearColor : noneColor),
+	 transp=0
+	 )
+
+plotshape(
+	 bearCond ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Regular Bearish Label",
+	 text=" R Bear ",
+	 style=shape.labeldown,
+	 location=location.absolute,
+	 color=bearColor,
+	 textcolor=textColor,
+	 transp=40
+	 )
+
+//------------------------------------------------------------------------------
+// Hidden Bearish
+// Osc: Higher High
+
+oscHH = osc[lbR] > valuewhen(phFound, osc[lbR], 1) and _inRange(phFound[1])
+
+// Price: Lower High
+
+priceLH = high[lbR] < valuewhen(phFound, high[lbR], 1)
+
+hiddenBearCond = plotHiddenBear and priceLH and oscHH and phFound
+
+plot(
+	 phFound ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Hidden Bearish",
+	 linewidth=2,
+	 color=(hiddenBearCond ? hiddenBearColor : noneColor),
+	 transp=0
+	 )
+
+plotshape(
+	 hiddenBearCond ? osc[lbR] : na,
+	 offset=-lbR,
+	 title="Hidden Bearish Label",
+	 text=" H Bear ",
+	 style=shape.labeldown,
+	 location=location.absolute,
+	 color=color.orange,
+	 textcolor=textColor,
+	 transp=40
+	 )
+
+/// Dashboard
+
+transp = input(true,"Transparent Panel")
+colu = input(1,"Number Of Columns")
+//------------------------------------------------------------------------------
+up = "📈"
+dn = "📉"
+string txt = na
+for i = 1 to 1
+    sym = mf > 50 ? up : dn
+    sym1 = rsi > 50 ? up : dn
+    sym2 = close > sslDown2 ? up : dn
+    sym3 = ema2 > 0 ? up : dn
+    sym4 = wt1 > wt2 ? up : dn
+    space = (i - 1)%colu == (colu-1) ? "\n" + "\n" : ""
+    txt := space + space + txt + "｜" + " MFI " + sym + space + txt + "｜" + " RSI " + sym1 + space + txt + "｜" + " C-Bar " + sym2 + space + txt + "｜" + " Trend Flow " + sym3 + space + txt + "｜" + " Momentum" + sym4 + space 
+//------------------------------------------------------------------------------
+n = bar_index
+css = transp ? #00000000 : color.black
+tss = transp ? color.gray : color.white
+print(txt) => 
+    var lbl = label.new(n, 1, txt, xloc.bar_index, yloc.price, css, 
+      label.style_label_left, tss, size.normal, text.align_left)
+    label.set_xy(lbl, n, 1), label.set_text(lbl, txt)
+print(txt)

@@ -1,0 +1,488 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=5
+indicator("Xact Reversal Signals", overlay=true, max_bars_back = 2000)
+
+//--INSTRUCTIONS--//
+instructions_tooltip = "The Xact Reversal Pro is a Buy/Sell Indicator that uses bands and addtional algorithmic
+ \nlogic to plot Buy, Sell, Trim, and Exit Signals. The Buy & Sell signals wait for price action to enter the band.
+ \nOnce other confirming logic takes place a Buy or Sell signal will be shown on the chart. 
+ \nThe system is not a simple Buy or Sell once price enters that band. That would be too easy,
+ \nbut if you are following current trend, when price enters the bands you can still take trades
+ \nwithout confirmation signals. Like all of the Litindicators, these are confirmations signals. 
+ \nFading trend, (Taking reversal trades), is a lot harder than joining the current trend. 
+ \nIn order to be profitable playing reversals, the Xact Reversal Pro shows Trim signals once 
+ \nprice returns to the mean and Exit Signals when prices visits the opposite side of the bands. 
+ \n\nThe bands can be colored multiple ways. By default they are a gradient. The gradient color will 
+ \nbe a yellowish or orangish color if the bands are moving closer together. The bands will be green or red if the bands
+ \nare a large distance from each other. If you dont like this it can be changed in the settings below.
+ \n\nThe Xact Reversal Pro also features a trailing stop to maximize profitable gains. 
+ \nThe stop can be adjusted as well."
+
+instructions = input.bool(title='Show Instructions', defval=false, inline='1', tooltip = instructions_tooltip)
+var table instruction_label = table.new(position.middle_center, 1, 1,
+ frame_color=color.new(#000000, 0), frame_width=0, 
+ border_color=color.new(#000000,100), border_width=0)
+if barstate.islast and instructions
+    table.cell(instruction_label, 0, 0, text=instructions_tooltip, width=0, 
+     bgcolor=color.black, text_color=color.white, text_size=size.normal, text_halign=text.align_left)
+//--INSTRUCTIONS--//
+
+
+// signal settings
+show_signals = input.string('Buy, Sell, TP, Exit', title = 'Show Signals',
+ options = ['Buy, Sell, TP, Exit', 'Buy, Sell, Exit', 'Buy, Sell', 'None'],
+ inline = '1', group = 'Signal Settings')
+
+band_length = input.int(title='', defval=10, minval=1, maxval=15, step=1,
+ inline='1', group='Signal Settings')
+
+signal_text = input.bool(false, title = 'Text', inline='1', group='Signal Settings')
+
+bottom_band_width = input.float(title='Buy Adjuster', defval=3.00, minval=1.00, maxval=5.00, step=0.20,
+ inline='3', group='Signal Settings')
+
+top_band_width = input.float(title='Sell Adjuster', defval=3.00, minval=1.00, maxval=5.00, step=0.20,
+ inline='3', group='Signal Settings')
+
+stop_adj  = input.float(title='Stop Adjuster', defval=3.0, minval=1.00, maxval=5.00, step=0.5,
+ inline='4', group='Signal Settings')
+
+
+// visual settings
+buy_color = input.color(#05cd0e, title='Buy Color', inline='5', group='Visual Settings')
+sell_color = input.color(#c30616, title='Sell Color', inline='5', group='Visual Settings')
+neutral_color = input.color(#434651, title='Neutral Color', inline='5', group='Visual Settings')
+
+text_color = chart.fg_color
+trimcolor = input.color(color.new(#fbc02d,30), title = 'TP Color', inline='6', group='Visual Settings')
+exitcolor = input.color(color.new(color.silver,30), title = 'Exit Color', inline='6', group='Visual Settings')
+
+color_candles = input.string('Gradient', title = 'Outer Band Color',
+ options = ['Gradient', 'Two-Colors', 'None'],
+ inline = '7', group = 'Visual Settings')
+
+fill_color = input.color(color.new(#000000,82), title='Inner Color',
+ inline='7', group='Visual Settings')
+
+band_line_color = input.color(color.white, title='Line Color',
+ inline='7', group='Visual Settings')
+
+show_trailing_stop = input.bool(false, title = 'Show Trailing Stop', inline='8', group='Visual Settings')
+stop_color = input.color(color.new(#fbc02d, 30), title = ' ', inline='8', group='Visual Settings')
+
+hide_bands = input.bool(false, title = 'Hide Xtreme Bands', inline='9', group='Visual Settings')
+
+show_scalp      = input.bool(title='Xact Scalping Channel', defval=false,
+ inline='4', group='Visual Settings',
+ tooltip = 'The Xact Scalping Channel is used for alternate scalping entries after a signal has been
+ placed on the chart. The channel can also be used for take profits.')
+
+
+// confrimation settings
+_use_confirmation_signals = input.bool(true, title = 'Confirmation Signals',
+ group = 'Confirmation Signals', inline = '1')
+
+
+//CALCULATE BANDS
+var top_band_color = #000000
+var bot_band_color = #000000
+
+band_sma = ta.sma(ohlc4, (band_length + 2) * 2)
+band_atr = ta.atr((band_length + 5) * 2)
+
+top_band_mult = (top_band_width + 1.5) / 3
+bottom_band_mult = (bottom_band_width + 1.5) / 3
+
+top3 = band_sma + (band_atr * (4.45 * top_band_mult))
+top2 = band_sma + (band_atr * (3.8 * top_band_mult))
+top1 = band_sma + (band_atr * (2.618 * top_band_mult))
+
+bott3 = band_sma - (band_atr * (4.45 * bottom_band_mult))
+bott2 = band_sma - (band_atr * (3.8 * bottom_band_mult))
+bott1 = band_sma - (band_atr * (2.618 * bottom_band_mult))
+
+t3=plot(top3,title="Upper Line 3",color=color.new(sell_color,30), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+t2=plot(top2,title="Upper Line 2",color=color.new(band_line_color,95), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+t1=plot(top1,title="Upper Line 1",color=color.new(sell_color,70), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+b1=plot(bott1,title="Lower Line 1",color=color.new(buy_color,70), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+b2=plot(bott2,title="Lower Line 2",color=color.new(band_line_color,95), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+b3=plot(bott3,title="Lower Line 3",color=color.new(buy_color,30), style = plot.style_stepline,
+ editable = false, display = not hide_bands ? display.all : display.none)
+plot(band_sma, style = plot.style_line, title="Middle Line",color = color.new(band_line_color,80), linewidth = 3,
+ editable = false, display = not hide_bands ? display.all : display.none)
+
+band_distance = math.abs(top1 - band_sma)
+bull_color = color.from_gradient(band_distance, ta.lowest(band_distance, 100), ta.highest(band_distance, 100), neutral_color, buy_color)
+bear_color = color.from_gradient(band_distance, ta.lowest(band_distance, 100), ta.highest(band_distance, 100), neutral_color, sell_color)
+
+if color_candles == 'Gradient'
+    top_band_color := bear_color
+    bot_band_color := bull_color
+if color_candles == 'Two-Colors'
+    top_band_color := sell_color
+    bot_band_color := buy_color
+
+fill(t3,t2,color_candles == "None" ? color.new(fill_color,70) : color.new(top_band_color,80),
+ editable = false, display = not hide_bands ? display.all : display.none)
+fill(t2,t1,color_candles == "None" ? color.new(fill_color,70) : color.new(top_band_color,90),
+ editable = false, display = not hide_bands ? display.all : display.none)
+
+fill(b3,b2,color_candles == "None" ? color.new(fill_color,70) : color.new(bot_band_color,80),
+ editable = false, display = not hide_bands ? display.all : display.none)
+fill(b2,b1,color_candles == "None" ? color.new(fill_color,70) : color.new(bot_band_color,90),
+ editable = false, display = not hide_bands ? display.all : display.none)
+fill(t1,b1,fill_color, editable = false, display = not hide_bands ? display.all : display.none)
+
+
+// CALCULATE SIGNALS
+long_cond = low <= bott1 and close < bott1
+short_cond = high >= top1 and close > top1
+
+var long_entry = false
+var short_entry = false
+var bars_since_last_possible_long = 0
+var bars_since_last_possible_short = 0
+var long_entry_count = 0
+var short_entry_count = 0 
+
+possible_long = long_cond[1] and not long_cond
+possible_short = short_cond[1] and not short_cond
+
+bars_since_last_possible_long := possible_long ? 1 : bars_since_last_possible_long[1] + 1
+bars_since_last_possible_short := possible_short ? 1 : bars_since_last_possible_short[1] + 1
+
+long_entry_count := possible_long ? long_entry_count[1] + 1 
+ : possible_short or bars_since_last_possible_long > 30 ? 0 
+ : long_entry_count[1]
+
+short_entry_count := possible_short ? short_entry_count[1] + 1 
+ : possible_long or bars_since_last_possible_short > 30 ? 0 
+ : short_entry_count[1]
+
+long_entry := possible_long and barstate.isconfirmed and long_entry_count <= 3 
+ and bars_since_last_possible_long[1] >= 5
+short_entry := possible_short and barstate.isconfirmed and short_entry_count <= 3 
+ and bars_since_last_possible_short[1] >= 5
+
+
+// MANAGE POSITIONS
+var position = 0
+
+// trim
+var trimmed = false
+trimmed := (position == 1 and ta.crossover(close, band_sma)) 
+ or (position == -1 and ta.crossunder(close, band_sma)) 
+ and barstate.isconfirmed ? true 
+ : (long_entry or short_entry) ? false : trimmed[1]
+
+// exit
+var exit = false
+var trail_longs = 0.00
+var trail_shorts = 0.00
+
+trail_atr = ta.atr(10)
+trail_mult = stop_adj * 1.5
+
+trail_longs := long_entry ?  high - trail_atr * trail_mult : math.max(trail_longs[1], high - trail_atr * trail_mult) 
+trail_shorts := short_entry ?  low + trail_atr * trail_mult : math.min(trail_shorts[1], low + trail_atr * trail_mult) 
+
+exit := (position[1] == 1 and ta.crossover(high, top1)) 
+ or (position[1] == -1 and ta.crossunder(low, bott1)) ? true 
+ : (position == 1 and low <= trail_longs) 
+ or (position == -1 and high >= trail_shorts) ? true : false 
+position := long_entry? 1 : short_entry? -1 : exit ? 0 : position[1]
+
+plot(show_trailing_stop and position == 1 ? trail_longs 
+ : show_trailing_stop and position == -1 ? trail_shorts
+ : na, style = plot.style_steplinebr, linewidth = 2, color = stop_color, editable = true,
+ title = 'Trail Stop')
+
+
+// DISPLAY SIGNALS
+var show_buy_sell = false
+var show_exits = false
+var show_trims = false
+if barstate.isfirst
+    if show_signals == 'Buy, Sell, TP, Exit'
+        show_buy_sell := true
+        show_exits := true
+        show_trims := true
+    if show_signals == 'Buy, Sell, Exit'
+        show_buy_sell := true
+        show_exits := true
+        show_trims := false
+    if show_signals == 'Buy, Sell'
+        show_buy_sell := true
+        show_exits := false
+        show_trims := false
+    if show_signals == 'None'
+        show_buy_sell := false
+        show_exits := false
+        show_trims := false
+else
+    show_buy_sell := show_buy_sell[1]
+    show_exits := show_exits[1]
+    show_trims := show_trims[1]
+
+plotshape(show_buy_sell and signal_text and long_entry ?  bott2 : na,
+ style=shape.triangleup, editable=false, text= 'BUY', textcolor=text_color,
+ location= location.absolute, color=color.new(buy_color, 30), size=size.tiny)
+plotshape(show_buy_sell and signal_text and short_entry ? top2 : na,
+ style=shape.triangledown, editable=false, text='SELL', textcolor=text_color,
+ location=location.absolute, color=color.new(sell_color, 30), size=size.tiny)
+plotchar(show_trims and signal_text and position == 1 and trimmed and not trimmed[1] ,
+ char = '●', editable=false, text='TP', textcolor=text_color, location=location.abovebar,
+ color=color.new(trimcolor, 50), size=size.tiny)
+plotchar(show_trims and signal_text and position == -1 and trimmed and not trimmed[1],
+ char = '●', editable=false, text= "TP", textcolor=text_color, location= location.belowbar,
+ color=color.new(trimcolor, 50), size=size.tiny)
+plotshape(show_exits and signal_text and position[1] == 1 and exit,
+ style=shape.triangledown, editable=false, text='Exit', textcolor=text_color,
+ location=location.abovebar, color=color.new(exitcolor, 40), size=size.tiny)
+plotshape(show_exits and signal_text and position[1] == -1 and exit,
+ style=shape.triangleup, editable=false, text= "Exit", textcolor=text_color,
+ location= location.belowbar, color=color.new(exitcolor, 40), size=size.tiny)
+
+
+plotshape(show_buy_sell and not signal_text and long_entry ? bott2 : na,
+ style=shape.triangleup, editable=false, text= '', textcolor=text_color,
+ location= location.absolute, color=color.new(buy_color, 30), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+plotshape(show_buy_sell and not signal_text and short_entry ? top2 : na,
+ style=shape.triangledown, editable=false, text='', textcolor=text_color,
+ location=location.absolute, color=color.new(sell_color, 30), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+plotchar(show_trims and not signal_text and position == 1 and trimmed and not trimmed[1],
+ editable=false, char='●', textcolor=text_color, location=location.abovebar,
+ color=color.new(trimcolor, 50), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+plotchar(show_trims and not signal_text and position == -1 and trimmed and not trimmed[1],
+ editable=false, char= "●", textcolor=text_color, location= location.belowbar,
+ color=color.new(trimcolor, 50), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+plotshape(show_exits and not signal_text and position[1] == 1 and exit,
+ style=shape.xcross, editable=false, text='', textcolor=text_color,
+ location=location.abovebar, color=color.new(exitcolor, 40), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+plotshape(show_exits and not signal_text and position[1] == -1 and exit,
+ style=shape.xcross, editable=false, text= "", textcolor=text_color,
+ location= location.belowbar, color=color.new(exitcolor, 40), size=size.tiny,
+ display = signal_text ? display.none : display.all)
+
+
+
+// CONFIRMATION SIGNALS (rsi, last 20 candles, daily range %, adx )
+c_rsi_length        = input.int(14, title = 'RSI                   Length',
+ minval = 3, maxval = 200, step = 1,
+ group = 'Confirmation Signals', inline = '2',
+ tooltip = 'For Buy Signals - RSI is less than 40 \nFor Sell Signals - RSI is greater than 60')
+
+c_wr_length = input.int(50, title = 'Williams %R           Length',
+ minval = 3, maxval = 200, step = 1,
+ group = 'Confirmation Signals', inline = '3',
+ tooltip = 'For Buy Signals - %R is greater than 70 \nFor Sell Signals - %R is less than 30')
+
+c_daily_length      = input.int(20, title = 'ADR %                Length',
+ minval = 3, maxval = 200, step = 1,
+ group = 'Confirmation Signals', inline = '4',
+ tooltip = 'For Buy & Sell Signals - Current day range is 80% of ADR')
+
+c_adx_length        = input.int(20, title = 'ADX                  Length',
+ minval = 3, maxval = 200, step = 1,
+ group = 'Confirmation Signals', inline = '5',
+ tooltip = 'For Buy & Sell Signals - ADX is greater than 35')
+
+
+// CALCULATE CONFIRMATION SIGNALS
+var float   rsi_value   =   na
+var float   r_percent  =   na
+var float   adx_value   =   na
+var float   adr_percent =   na
+
+
+// williams %r
+f_pr(length) =>
+	max = ta.highest(length)
+	min = ta.lowest(length)
+	100 * (close - max) / (max - min)
+
+
+// adr % function
+f_adr() =>
+    request.security(syminfo.tickerid, "D", math.round(ta.sma(high - low, 1) / ta.sma(high[1] - low[1], c_daily_length) * 100,2), lookahead = barmerge.lookahead_on)
+
+// adx functions
+dirmov(len) =>
+	up = ta.change(high)
+	down = -ta.change(low)
+	plusDM = na(up) ? na : (up > down and up > 0 ? up : 0)
+	minusDM = na(down) ? na : (down > up and down > 0 ? down : 0)
+	truerange = ta.rma(ta.tr, len)
+	plus = fixnan(100 * ta.rma(plusDM, len) / truerange)
+	minus = fixnan(100 * ta.rma(minusDM, len) / truerange)
+	[plus, minus]
+adx(dilen, adxlen) =>
+	[plus, minus] = dirmov(dilen)
+	sum = plus + minus
+	adx = 100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+
+
+f_display_confirmations(signal_type,
+ rsi_value,
+ r_percent,
+ adr_percent,
+ adx_value,
+ y_axis) =>
+
+    confirmation1_value = ((signal_type == 1 and rsi_value <= 40) or (signal_type == -1 and rsi_value >= 60)) ? 1 : 0
+    confirmation2_value = ((signal_type == 1 and r_percent >= 70) or (signal_type == -1 and r_percent <= 30)) ? 1 : 0
+    confirmation3_value = (adr_percent >= 80) ? 1 : 0
+    confirmation4_value = (adx_value >= 35) ? 1 : 0
+
+    confirmation_values = confirmation1_value + confirmation2_value + confirmation3_value + confirmation4_value
+    
+    confirmation_tooltip =  
+     ( (confirmation1_value == 1 ? '✅' : '❌') + ' RSI - ' + str.tostring(rsi_value)) + 
+     '\n' +
+     ( (confirmation2_value == 1 ? '✅' : '❌') + ' Williams R% - ' + str.tostring(r_percent, format.percent)) +
+     '\n' +
+     ( (confirmation3_value == 1 ? '✅' : '❌') + ' ADR - ' + str.tostring(adr_percent, format.percent)) + 
+     '\n' +
+     ( (confirmation4_value == 1 ? '✅' : '❌') + ' ADX - ' + str.tostring(adx_value)) +
+     '\n\nCONFIRMED: ' + str.tostring(confirmation_values) + '/4'
+
+    if signal_type == 1
+        label.new( x = bar_index, y = y_axis, text = '\n\n' + str.tostring(confirmation_values) + '/4',
+         textcolor = chart.fg_color, color = color.new(buy_color, 100), style = label.style_label_center, 
+         size = size.small, tooltip = confirmation_tooltip, textalign = text.align_center, yloc = yloc.price)
+
+    else if signal_type == -1
+        label.new( x = bar_index, y = y_axis, text = str.tostring(confirmation_values) + '/4' +'\n\n',
+         textcolor = chart.fg_color, color = color.new(sell_color, 100), style = label.style_label_center, 
+         size = size.small, tooltip = confirmation_tooltip, textalign = text.align_center, yloc = yloc.price)
+
+
+if _use_confirmation_signals
+    rsi_value   := math.round(ta.rsi(close, c_rsi_length),2)
+    r_percent   := math.abs(math.round(f_pr(c_wr_length)))
+    adx_value   := math.round(adx(c_adx_length, c_adx_length),2)
+    adr_percent := f_adr()
+
+    if long_entry
+        f_display_confirmations(1,
+         rsi_value,
+         r_percent,
+         adr_percent,
+         adx_value,
+         bott2)
+
+    if short_entry
+        f_display_confirmations(-1,
+         rsi_value,
+         r_percent,
+         adr_percent,
+         adx_value,
+         signal_text ? top3 : top2)
+
+// visualized scalping channel
+f_calculate_linreg(source, length, deviation1, deviation2) =>
+
+    var line upper1 = na
+    var line upper2 = na
+    var line mid    = na
+    var line lower1 = na
+    var line lower2 = na
+
+    if show_scalp
+        a = ta.wma(source, length)
+        b = ta.sma(source, length)
+
+        if barstate.islast
+            A = 4 * b - 3 * a
+            B = 3 * a - 2 * b
+            m = (A - B) / (length - 1)
+            
+            d = 0.00
+            for i = 0 to length - 1 by 1
+                l = B + m * i
+                d += math.pow(source[i] - l, 2)
+                d
+            linreg_1 = math.sqrt(d / (length - 1)) * deviation1
+            linreg_2 = math.sqrt(d / (length - 1)) * deviation2
+
+            // mid 
+            y1_midvalue = A + 0
+            y2_midvalue = -m + (B + 0)
+            
+            // zone 1
+            y1_lowervalue = A - linreg_1
+            y2_lowervalue = -m + (B - linreg_1)
+            y1_uppervalue = A + linreg_1
+            y2_uppervalue = -m + (B + linreg_1)
+
+            // zone 2
+            y1_lowervalue2 = A - linreg_2
+            y2_lowervalue2 = -m + (B - linreg_2)
+            y1_uppervalue2 = A + linreg_2
+            y2_uppervalue2 = -m + (B + linreg_2)
+
+            x1_value = time[length]    
+
+            if na(mid[1])
+                mid := line.new(x1_value, y1_midvalue, time, y2_midvalue, xloc = xloc.bar_time,
+                 extend = extend.right, color = color.new(chart.fg_color,50), width = 1, style = line.style_dotted)
+
+                upper1 := line.new(x1_value, y1_uppervalue, time, y2_uppervalue, xloc = xloc.bar_time,
+                 extend = extend.right, color = color.new(sell_color,50), width = 1, style = line.style_solid)
+                upper2 := line.new(x1_value, y1_uppervalue2, time, y2_uppervalue2, xloc = xloc.bar_time,
+                 extend = extend.right, color = color.new(sell_color,50), width = 1, style = line.style_solid)
+
+                lower1 := line.new(x1_value, y1_lowervalue, time, y2_lowervalue, xloc = xloc.bar_time,
+                 extend = extend.right, color = color.new(buy_color,50), width = 1, style = line.style_solid)
+                lower2 := line.new(x1_value, y1_lowervalue2, time, y2_lowervalue2, xloc = xloc.bar_time,
+                 extend = extend.right, color = color.new(buy_color,50), width = 1, style = line.style_solid)
+            else if barstate.isconfirmed
+                line.set_xy1(mid, x1_value, y1_midvalue)
+                line.set_xy2(mid, time, y2_midvalue)
+                
+                line.set_xy1(upper1, x1_value, y1_uppervalue)
+                line.set_xy2(upper1, time, y2_uppervalue)
+                line.set_xy1(upper2, x1_value, y1_uppervalue2)
+                line.set_xy2(upper2, time, y2_uppervalue2)
+
+                line.set_xy1(lower1, x1_value, y1_lowervalue)
+                line.set_xy2(lower1, time, y2_lowervalue)
+                line.set_xy1(lower2, x1_value, y1_lowervalue2)
+                line.set_xy2(lower2, time, y2_lowervalue2)
+        0.00
+
+
+var int bars_since_last_signal = 20
+bars_since_last_signal := long_entry or short_entry ? 1 : bars_since_last_signal[1] + 1
+f_calculate_linreg(hlc3, math.min(nz(math.max(bars_since_last_signal,20),20), 2000), 2.5, 3.5)
+
+
+//--ALERTS--//
+alertcondition(long_entry, "Long Entry", "Long Entry")
+alertcondition(short_entry, "Short Entry", "Short Entry")
+
+alertcondition(position == 1 and trimmed and not trimmed[1], "Long TP", "Long TP")
+alertcondition(position == -1 and trimmed and not trimmed[1], "Short TP", "Short TP")
+
+alertcondition(position[1] == 1 and exit, "Long Exit", "Long Exit")
+alertcondition(position[1] == -1 and exit, "Short Exit", "Short Exit")
+//--ALERTS--//
+
+    
+    
+    
+    
+    
+    
+    
+    

@@ -1,0 +1,50 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("LinReg MTF More TFs EXPORT ONLY", overlay=true)
+
+
+// linear regression
+lengthInput = input.int(100, title="Length  ", minval = 1, maxval = 5000, group = 'Linear Regression Settings', inline = '1', step=10)
+sourceInput = input.source(close, title="Source  ", group = 'Linear Regression Settings', inline = '2')
+devInput    = input.float(2.00, title="Deviation", group = 'Linear Regression Settings', inline = '3')
+lr_color    = input.color(color.gray, title = 'Color', group = 'Linear Regression Settings', inline = '4')
+
+calculate_linreg(length, deviation) =>
+    a = ta.wma(sourceInput, length)
+    b = ta.sma(sourceInput, length)
+    A = 4 * b - 3 * a
+    B = 3 * a - 2 * b
+    m = (A - B) / (length - 1)
+    d = 0.00
+    for i = 0 to length - 1 by 1
+        l = B + m * i
+        d += math.pow(sourceInput[i] - l, 2)
+        d
+    linreg_1 = math.sqrt(d / (length - 1)) * deviation
+    [A, m, B, linreg_1]
+    
+drawLinReg(color_input, A, m, B, k) =>
+    lr_ext = 0
+    _x1 = bar_index - lengthInput + 1
+    _x2 = bar_index + lr_ext
+    _y1 = A + k
+    _y2 = -m*lr_ext + (B + k)
+    current_value = -m*0 + (B + k)
+    line lr = line.new(x1=_x1, y1=_y1, x2=_x2, y2=_y2, extend = extend.none, color = color_input, width = 1)
+    line.delete(lr[1])
+    
+    current_value
+
+
+[tf1_A, tf1_m, tf1_B, tf1_linreg1] = calculate_linreg(lengthInput, devInput)
+lr_mid = drawLinReg(lr_color, tf1_A, tf1_m, tf1_B, 0)
+lr_upper = drawLinReg(color.new(lr_color,0), tf1_A, tf1_m, tf1_B, tf1_linreg1)
+lr_lower = drawLinReg(color.new(lr_color,0), tf1_A, tf1_m, tf1_B, -tf1_linreg1)
+
+
+plot(lr_lower, title = 'LR Lower', color = color.green)
+plot(lr_mid, title = 'LR Mid', color = color.gray)
+plot(lr_upper, title = 'LR Upp', color = color.red)
+

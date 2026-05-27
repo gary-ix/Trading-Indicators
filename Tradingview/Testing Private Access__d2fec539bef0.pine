@@ -1,0 +1,6 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Testing Private Access", overlay = true)
+plot(close, display = display.none)

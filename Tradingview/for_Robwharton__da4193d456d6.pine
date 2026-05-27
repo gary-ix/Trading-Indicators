@@ -1,0 +1,226 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+strategy("for_Robwharton", overlay=true, margin_long=100, margin_short=100, max_lines_count = 500, calc_on_order_fills = true)
+
+lastPeriod  = input.bool(false, title = 'Last Period Only', group = 'Settings')
+aggPeriod   = input.timeframe("D", title = 'Aggregation Period', group = 'Settings')
+length      = input.int(1, title = 'Length', group = 'Settings')
+rr          = input.float(0.3, step = 0.1, title = 'rr', group = 'Settings')
+tradeTime   = input.session("0930-1600", title = 'Trade Time (EST)', group = 'Settings')
+exitAtEnd   = input.bool(true, title = 'Exit at End of Trade Time', group = 'Settings')
+
+if timeframe.in_seconds(aggPeriod) < timeframe.in_seconds()
+    runtime.error("Aggregation Period cannot be less than main chart")
+
+
+show_pHigh      = input.bool(true, title = 'pHigh⠀⠀', group = 'Visual Settings', inline = '1')
+css_pHigh       = input.color(color.rgb(30, 136, 37, 30), title = '', group = 'Visual Settings', inline = '1')
+
+show_pLow       = input.bool(true, title = 'pLow', group = 'Visual Settings', inline = '1')
+css_pLow        = input.color(color.rgb(170, 25, 25, 30), title = '', group = 'Visual Settings', inline = '1')
+
+show_pMid       = input.bool(true, title = 'pMid⠀ ⠀', group = 'Visual Settings', inline = '2')
+css_pMid        = input.color(color.rgb(166, 230, 239, 30), title = '', group = 'Visual Settings', inline = '2')
+
+show_twofive    = input.bool(true, title = 'TwoFive', group = 'Visual Settings', inline = '3')
+css_twofive     = input.color(color.rgb(90, 148, 187, 30), title = '', group = 'Visual Settings', inline = '3')
+
+show_s_twofive  = input.bool(true, title = 'sTwoFive', group = 'Visual Settings', inline = '3')
+css_s_twofive   = input.color(color.rgb(90, 148, 187, 30), title = '', group = 'Visual Settings', inline = '3')
+
+show_one        = input.bool(true, title = 'One⠀⠀⠀', group = 'Visual Settings', inline = '4')
+css_one         = input.color(color.rgb(166, 239, 181, 30), title = '', group = 'Visual Settings', inline = '4')
+
+show_sone       = input.bool(true, title = 'sOne', group = 'Visual Settings', inline = '4')
+css_sone        = input.color(color.rgb(239, 166, 166, 30), title = '', group = 'Visual Settings', inline = '4')
+
+
+[pHighraw, pLowraw, hraw, lraw, pTime] = request.security(syminfo.tickerid, aggPeriod,
+ [high[1], low[1], ta.highest(high[1], length), ta.lowest(low[1], length), time], 
+ lookahead = barmerge.lookahead_on)
+
+pHigh       = math.round_to_mintick(pHighraw)
+pLow        = math.round_to_mintick(pLowraw)
+h           = math.round_to_mintick(hraw)
+l           = math.round_to_mintick(lraw)
+pMid        = math.round_to_mintick((pHigh+pLow)/2)
+twofive     = math.round_to_mintick((pHigh+pMid)/2)
+s_twofive   = math.round_to_mintick((pLow+pMid)/2)
+one         = math.round_to_mintick(((h-twofive)*rr)+h)
+sone        = math.round_to_mintick(((l-s_twofive)*rr)+l)
+
+// plot(pHigh, style = plot.style_stepline, linewidth = 4)
+
+f_draw_lines() =>
+    var line line_pHigh     = na
+    var line line_pLow      = na
+    var line line_pMid      = na
+    var line line_twofive   = na
+    var line line_s_twofive = na
+    var line line_one       = na
+    var line line_sone      = na
+
+    if pTime != pTime[1]
+
+        if show_pHigh
+            line_pHigh := line.new(x1 = bar_index, y1 = pHigh, x2 = bar_index + 1, y2 = pHigh,
+             extend = extend.right, color = css_pHigh)
+
+        if show_pLow
+            line_pLow := line.new(x1 = bar_index, y1 = pLow, x2 = bar_index + 1, y2 = pLow,
+             extend = extend.right, color = css_pLow)
+
+        if show_pMid
+            line_pMid := line.new(x1 = bar_index, y1 = pMid, x2 = bar_index + 1, y2 = pMid,
+             extend = extend.right, color = css_pMid)
+
+        if show_twofive
+            line_twofive := line.new(x1 = bar_index, y1 = twofive, x2 = bar_index + 1, y2 = twofive,
+             extend = extend.right, color = css_twofive)
+
+        if show_s_twofive
+            line_s_twofive := line.new(x1 = bar_index, y1 = s_twofive, x2 = bar_index + 1, y2 = s_twofive,
+             extend = extend.right, color = css_s_twofive)
+
+        if show_one
+            line_one := line.new(x1 = bar_index, y1 = one, x2 = bar_index + 1, y2 = one,
+             extend = extend.right, color = css_one)
+
+        if show_sone
+            line_sone := line.new(x1 = bar_index, y1 = sone, x2 = bar_index + 1, y2 = sone,
+             extend = extend.right, color = css_sone)
+
+        line.set_extend(line_pHigh, extend.none)
+        line.set_extend(line_pLow, extend.none)
+        line.set_extend(line_pMid, extend.none)
+        line.set_extend(line_twofive, extend.none)
+        line.set_extend(line_s_twofive, extend.none)
+        line.set_extend(line_one, extend.none)
+        line.set_extend(line_sone, extend.none)
+
+        if lastPeriod
+            line.delete(line_pHigh[1])
+            line.delete(line_pLow[1])
+            line.delete(line_pMid[1])
+            line.delete(line_twofive[1])
+            line.delete(line_s_twofive[1])
+            line.delete(line_one[1])
+            line.delete(line_sone[1])
+
+    else
+        line.set_x2(line_pHigh, bar_index) 
+        line.set_x2(line_pLow, bar_index) 
+        line.set_x2(line_pMid, bar_index) 
+        line.set_x2(line_twofive, bar_index) 
+        line.set_x2(line_s_twofive, bar_index) 
+        line.set_x2(line_one, bar_index) 
+        line.set_x2(line_sone, bar_index) 
+
+
+
+f_draw_lines()
+
+
+
+
+// labels
+ticksize    = syminfo.mintick
+tickvalue   = syminfo.pointvalue*ticksize
+multiplier  = tickvalue * (1 / ticksize)
+
+tp_ticks    = math.round_to_mintick(one - pHigh) / ticksize
+sl_ticks    = math.round_to_mintick(pHigh - twofive) / ticksize
+
+var labels = table.new(position.bottom_center, 2, 2, border_color = chart.bg_color, frame_color = chart.bg_color, border_width = 0, frame_width = 0)
+if barstate.islast
+
+    // table.clear(labels, 0, 0, 1, 1)
+
+    table.cell(labels, 0, 0, "TP Ticks: " + str.tostring(tp_ticks), text_color = color.white, bgcolor = color.rgb(45, 171, 70))
+    table.cell(labels, 1, 0, "SL Ticks: " + str.tostring(sl_ticks), text_color = color.white, bgcolor = color.rgb(200, 35, 35))
+
+    table.cell(labels, 0, 1, "Tick Size: " + str.tostring(ticksize), text_color = color.white, bgcolor = color.rgb(107, 110, 113))
+    table.cell(labels, 1, 1, "Tick Value: $" + str.tostring(tickvalue), text_color = color.white, bgcolor = color.rgb(107, 110, 113))
+
+
+
+
+
+// strategy
+var bool longsOkay      = true
+var bool shortsOkay     = true
+
+var float longTarget    = na
+var float shortTarget   = na
+
+var float longStop      = na
+var float shortStop     = na
+
+
+isTradeTime = time == time(timeframe.period, tradeTime, "America/New_York")
+resetLongs  = isTradeTime and (low <= twofive or pHigh != pHigh[1])
+resetShorts = isTradeTime and (high >= s_twofive or pHigh != pHigh[1])
+longEntry   = isTradeTime and ta.crossover(high, pHigh)
+shortEntry  = isTradeTime and ta.crossunder(low, pLow)
+oneTradePerBar = strategy.closedtrades < strategy.closedtrades[1] + 1
+
+longsOkay   := not isTradeTime ? true
+     : (isTradeTime and not isTradeTime[1] and longEntry) ? false
+     : (longEntry and high >= one) ? false
+     : (strategy.position_size > 0) ? false
+     : (resetLongs) ? true
+     : longsOkay[1]
+
+shortsOkay  := not isTradeTime ? true
+     : (isTradeTime and not isTradeTime[1] and shortEntry) ? false
+     : (shortEntry and low <= sone) ? false
+     : (strategy.position_size < 0) ? false
+     : (resetShorts) ? true
+     : shortsOkay[1]
+
+
+longTarget := strategy.position_size > 0 and strategy.position_size[1] <= 0 ? one
+     : strategy.position_size > 0 ? longTarget[1] : na
+shortTarget := strategy.position_size < 0 and strategy.position_size[1] >= 0 ? sone
+     : strategy.position_size < 0 ? shortTarget[1] : na
+
+
+longStop := strategy.position_size > 0 and strategy.position_size[1] <= 0 ? twofive
+     : strategy.position_size > 0 ? longStop[1] : na
+shortStop := strategy.position_size < 0 and strategy.position_size[1] >= 0 ? s_twofive
+     : strategy.position_size < 0 ? shortStop[1] : na
+
+
+
+if isTradeTime and oneTradePerBar
+
+    if longsOkay and close < pHigh
+        strategy.entry("LE", strategy.long, stop = pHigh, comment = "LE")
+
+    if shortsOkay and close > pLow
+        strategy.entry("SS_E", strategy.short, stop = pLow, comment = "SS_E")
+
+if exitAtEnd and not isTradeTime
+    strategy.close_all("TX", "TX", immediately = true)
+
+
+if strategy.position_size > 0
+    strategy.exit("LX", "LE", limit = longTarget, stop = longStop, comment_profit = "TP", comment_loss = "SL")
+
+if strategy.position_size < 0
+    strategy.exit("SS_X", "SS_E", limit = shortTarget, stop = shortStop, comment_profit = "TP", comment_loss = "SL")
+
+
+
+
+// bgcolor(not isTradeTime ? na 
+//  : longsOkay and shortsOkay ? color.new(color.yellow, 90) : longsOkay ? color.new(color.green, 90) : shortsOkay ? color.new(color.red, 90) : na)
+
+// barcolor(longEntry ? color.lime : shortEntry ? color.red : na)
+
+// barcolor(low <= pLow ? color.red : high >= pHigh ? color.green : color.black)
+// bgcolor(isTradeTime ? color.new(color.blue, 85) : na)
+// plot(pLow, color = color.white, style = plot.style_steplinebr, linewidth = 5)
+// plot

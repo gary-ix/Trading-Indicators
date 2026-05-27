@@ -1,0 +1,61 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © GoodGains
+
+//@version=6
+indicator("TSS v1", overlay = false)
+
+// inputs
+sourceInput = input.source(defval=close, title='Source Input')
+sourceDouble = input.bool(defval=true, title='Source Boolean')
+sourceOffset = input.int(defval = 5,  title = 'Source Offset')
+sourceLength = input.int(defval=20, title='Average Lookback')
+sourceColor = input.color(defval = #000000, title='Average Color')
+sourceString = input.string(defval = 'Hello World')
+
+// assertions
+if (sourceLength < 5 or sourceLength > 50)
+    runtime.error('Invalid source Length')
+
+
+isBlack(c) =>
+    color.r(c) == 0 and
+     color.g(c) == 0 and
+     color.b(c) == 0 and
+     color.t(c) == 0
+if not isBlack(sourceColor)
+    runtime.error("Invalid source color...this is a sample error")
+
+// functions
+simpleMovingAverage(src, length) =>
+    sum = 0.0
+    for i = 0 to length - 1
+        sum += src[i]
+    sum / length
+
+// calc
+var int mult = sourceDouble ? 2 : 1
+value1 = sourceInput * mult
+value2 = value1[sourceOffset]
+value3 = simpleMovingAverage(value1, sourceLength)
+
+// plot
+plot(value1, title='Plot Name', linewidth = 2, color=color.yellow)
+plot(value2, title='Plot Offset', linewidth = 2, color=color.blue)
+plot(value3, title='Plot SMA', linewidth = 2, color=sourceColor)
+
+// bg
+bgcolor(value1 > value3 ? color.rgb(76, 175, 79, 65) : color.rgb(255, 82, 82, 69))
+
+// label
+var label sourceLabel = na
+
+if barstate.islast
+    label.delete(sourceLabel)
+    sourceLabel := label.new(
+         x = bar_index,
+         y = value3,
+         text = sourceString,
+         style = label.style_label_left,
+         textcolor = color.white,
+         color = sourceColor
+     )

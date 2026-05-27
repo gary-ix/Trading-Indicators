@@ -1,0 +1,58 @@
+//@version=6
+indicator("TSS v2", overlay = true)
+
+// input
+leftBars = input.int(3, "Left Bars", minval = 1)
+rightBars = input.int(3, "Right Bars", minval = 1)
+
+lineColor = input.color(color.blue, "Line Color")
+lineWidth = input.int(2, "Line Width", minval = 1, maxval = 5)
+lineExtend = input.bool(true, "Extend Right")
+
+// function
+isPivotLow(src, leftBars, rightBars) =>
+    pivotOffset = rightBars
+    pivotValue = src[pivotOffset]
+    isPivot = true
+
+    for i = 1 to leftBars
+        isPivot := isPivot and pivotValue < src[pivotOffset + i]
+
+    for i = 1 to rightBars
+        isPivot := isPivot and pivotValue < src[pivotOffset - i]
+
+    isPivot ? pivotValue : na
+
+// vars for drawing annotations
+var int pivotX1 = na
+var float pivotY1 = na
+var int pivotX2 = na
+var float pivotY2 = na
+
+pivotLow = isPivotLow(low, leftBars, rightBars)
+
+if not na(pivotLow)
+    pivotX1 := pivotX2
+    pivotY1 := pivotY2
+
+    pivotX2 := bar_index - rightBars
+    pivotY2 := pivotLow
+
+// draw annotation
+var line trendLine = na
+
+if not na(pivotX1) and not na(pivotX2) and barstate.islast
+    line.delete(trendLine)
+    trendLine := line.new(
+         x1 = pivotX1,
+         y1 = pivotY1,
+         x2 = pivotX2,
+         y2 = pivotY2,
+         xloc = xloc.bar_index,
+         extend = lineExtend ? extend.right : extend.none,
+         color = lineColor,
+         width = lineWidth
+     )
+
+// plotshape(series=pivotLow, location=location.belowbar)
+plotshape(series=pivotLow, location=location.belowbar, offset = -3, color= color.green)

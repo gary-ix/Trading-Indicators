@@ -1,0 +1,64 @@
+
+
+//@version=5
+indicator(title='Sandbox', overlay=true, max_bars_back=1000, max_lines_count=500)
+
+vp_mode = input.string('Light', title = 'Marker Mode', options = ['Dark', 'Light'], group = 'PRO VP Settings', inline = '1')
+vp_length = 1000
+vp_row = 500
+vp_width = 8
+bar_vp_width = 4
+
+var vol_css = array.new_color(na)
+var a = array.new_line()
+var b = array.new_line()
+
+if barstate.isfirst
+    for i = 0 to 100 
+        if vp_mode == 'Light'
+            array.push(vol_css, color.rgb( (i*2) + 40, (i*2) + 40, (i*2) + 40, 50))
+        else
+            array.push(vol_css, color.rgb( 220 - (i*2), 220 - (i*2) , 220 - (i*2) , 59))
+    for i = 0 to vp_row - 1 by 1
+        array.push(a, line.new(na, na, na, na, width=2))
+    array.push(b, line.new(na, na, na, na, width=2))
+
+n = bar_index + 100
+src = close
+v = volume
+
+var Alvl = 0.
+var Blvl = 0.
+var current_num_conf = 0
+var current_num_cont = 0
+highest = ta.highest(vp_length)
+lowest = ta.lowest(vp_length)
+
+line l = na
+line poc = na
+levels = array.new_float(0)
+sumv = array.new_float(0)
+
+if barstate.islast
+    for i = 0 to vp_row by 1
+        array.push(levels, lowest + i / vp_row * (highest - lowest))
+    for j = 0 to vp_row - 1 by 1
+        sum = 0.
+        for k = 0 to vp_length - 1 by 1
+            sum := high[k] > array.get(levels, j) and low[k] < array.get(levels, j + 1) ? sum + v[k] : sum
+            sum
+        array.push(sumv, sum)
+    for j = 0 to vp_row - 1 by 1
+        mult = array.get(sumv, j) / array.max(sumv)
+        l := array.get(a, j)
+        get = array.get(levels, j)
+        line.set_xy1(l, n, get)
+        line.set_xy2(l, n - math.round(vp_length * vp_width / 100 * mult), array.get(levels, j))
+        line.set_color(l, array.get(vol_css, math.round(mult * 99)) )
+        line.set_width(l, bar_vp_width)
+        if mult == 1
+            avg = math.avg(get, array.get(levels, j + 1))
+
+
+
+

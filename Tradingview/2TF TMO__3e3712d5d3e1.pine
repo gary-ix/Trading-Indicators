@@ -1,0 +1,167 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=5
+indicator("2TF TMO")
+
+tf1_bull = input.color(color.green, title='TF1 Bull Color', inline='1', group='Visual Settings')
+tf1_bear = input.color(color.red, title='TF1 Bear Color', inline='1', group='Visual Settings')
+
+tf2_bull = input.color(color.aqua, title='TF2 Bull Color', inline='2', group='Visual Settings')
+tf2_bear = input.color(color.fuchsia, title='TF2 Bear Color', inline='2', group='Visual Settings')
+
+NX_OBLine_color = input.color(color.new(#801922,0), title='NX_OBLine Color', inline='3', group='Visual Settings')
+NX_NEUTRAL_color = input.color(color.new(#2a2e39,0), title='NX_NEUTRAL Color', inline='4', group='Visual Settings')
+NX_OSLine_color = input.color(color.new(#134416,0), title='NX_OSLine Color', inline='5', group='Visual Settings')
+
+tmo_tf1 = input.string("D", options = ['1','2','3','4','5','10','15','20','30','60','120','240', 'D', '2D', '3D', '4D', 'W', 'M', '12M'], title = "TMO TF 1")
+tmo_tf2 = input.string("2D", options = ['1','2','3','4','5','10','15','20','30','60','120','240', 'D', '2D', '3D', '4D', 'W', 'M', '12M'], title = "TMO TF 2")
+
+NX_OBLine = (80-50) / 5
+NX_OSLine = (20-50) / 5
+
+ShowTF1 = input.bool(true)
+ShowTF2 = input.bool(true)
+ShowAVG_TF1 = input.bool(true)
+ShowAVG_TF2 = input.bool(false)
+
+// ##################################
+// ##################################
+// ########## TF1 TMO LINE ##########
+// ##################################
+// ##################################
+NX_TMO_A1_Length = 12
+NX_TMO_A1_CalcLength = 2
+NX_TMO_A1_SmoothLength = 3
+
+// #1
+// // #AGGREGATION 1
+
+[tf1_open0, tf1_open1, tf1_open2, tf1_open3, tf1_open4, tf1_open5, tf1_open6, tf1_open7, tf1_open8, tf1_open9, tf1_open10, tf1_open11] = 
+     request.security(syminfo.tickerid, tmo_tf1, [open[0], open[1], open[2], open[3], open[4], open[5], open[6], open[7], open[8], open[9], open[10], open[11]], barmerge.gaps_off, barmerge.lookahead_on) 
+
+tf1_close = request.security(syminfo.tickerid, tmo_tf1, close, barmerge.gaps_off, barmerge.lookahead_on) 
+
+// data_function(length, open_data, close_data) =>
+//     value = 0.00
+//     for i = 0 to length - 1
+//         open_data = request.security(syminfo.tickerid, tf, open[i], barmerge.gaps_off, barmerge.lookahead_on) 
+//         value += (close_value > open_data ? 1 : close_value < open_data ? -1 : 0)
+//     value
+
+NX_TMO_A1_Data = request.security(syminfo.tickerid, tmo_tf1,
+     (tf1_close > tf1_open0 ? 1 : tf1_close < tf1_open0 ? -1 : 0) +
+     (tf1_close > tf1_open1 ? 1 : tf1_close < tf1_open1 ? -1 : 0) +
+     (tf1_close > tf1_open2 ? 1 : tf1_close < tf1_open2 ? -1 : 0) +
+     (tf1_close > tf1_open3 ? 1 : tf1_close < tf1_open3 ? -1 : 0) +
+     (tf1_close > tf1_open4 ? 1 : tf1_close < tf1_open4 ? -1 : 0) +
+     (tf1_close > tf1_open5 ? 1 : tf1_close < tf1_open5 ? -1 : 0) +
+     (tf1_close > tf1_open6 ? 1 : tf1_close < tf1_open6 ? -1 : 0) +
+     (tf1_close > tf1_open7 ? 1 : tf1_close < tf1_open7 ? -1 : 0) +
+     (tf1_close > tf1_open8 ? 1 : tf1_close < tf1_open8 ? -1 : 0) +
+     (tf1_close > tf1_open9 ? 1 : tf1_close < tf1_open9 ? -1 : 0) +
+     (tf1_close > tf1_open10 ? 1 : tf1_close < tf1_open10 ? -1 : 0) +
+     (tf1_close > tf1_open11 ? 1 : tf1_close < tf1_open11 ? -1 : 0), barmerge.gaps_off, barmerge.lookahead_on)
+
+NX_TMO_A1_EMA = request.security(syminfo.tickerid, tmo_tf1, ta.ema(NX_TMO_A1_Data, NX_TMO_A1_CalcLength), barmerge.gaps_off, barmerge.lookahead_on) 
+NX_TMO_A1_Main = request.security(syminfo.tickerid, tmo_tf1, ta.ema(NX_TMO_A1_EMA, NX_TMO_A1_SmoothLength), barmerge.gaps_off, barmerge.lookahead_on) 
+NX_TMO_A1_Signal = request.security(syminfo.tickerid, tmo_tf1, ta.ema(NX_TMO_A1_Main, NX_TMO_A1_SmoothLength), barmerge.gaps_off, barmerge.lookahead_on) 
+
+var NX_TMO_A1_Value = 0
+var NX_TMO_A1_Signal_Value = 0
+
+NX_TMO_A1_Value := NX_TMO_A1_Main == NX_TMO_A1_Main[1] ? NX_TMO_A1_Value[1] : NX_TMO_A1_Main > NX_TMO_A1_Main[1] ? 1 : -1
+NX_TMO_A1_Signal_Value := NX_TMO_A1_Signal == NX_TMO_A1_Signal[1] ? NX_TMO_A1_Signal_Value[1] : NX_TMO_A1_Signal > NX_TMO_A1_Signal[1] ? 1 : -1
+
+plot(ShowTF1 ? NX_TMO_A1_Main * 0.5 : na, title = 'NX_TMO_A1_FIRSTLINE', color = NX_TMO_A1_Value == 1 ? tf1_bull : tf1_bear)
+plot(ShowAVG_TF1 ? NX_TMO_A1_Signal * 0.5 : na, title = 'NX_TMO_A1_AVGLINE', color = NX_TMO_A1_Signal_Value == 1 ? color.gray : color.gray)
+
+// ##################################
+// ##################################
+// ########## TF2 TMO LINE ##########
+// ##################################
+// ##################################
+
+// #2
+// #AGGREGATION 2
+[tf2_open0, tf2_open1, tf2_open2, tf2_open3, tf2_open4, tf2_open5, tf2_open6, tf2_open7, tf2_open8, tf2_open9, tf2_open10, tf2_open11] = 
+     request.security(syminfo.tickerid, tmo_tf2, [open[0], open[1], open[2], open[3], open[4], open[5], open[6], open[7], open[8], open[9], open[10], open[12]], barmerge.gaps_off, barmerge.lookahead_on) 
+
+tf2_close = request.security(syminfo.tickerid, tmo_tf2, close, barmerge.gaps_off, barmerge.lookahead_on) 
+
+NX_TMO_A2_Data = request.security(syminfo.tickerid, tmo_tf2,
+     (tf2_close > tf2_open0 ? 1 : tf2_close < tf2_open0 ? -1 : 0) +
+     (tf2_close > tf2_open1 ? 1 : tf2_close < tf2_open1 ? -1 : 0) +
+     (tf2_close > tf2_open2 ? 1 : tf2_close < tf2_open2 ? -1 : 0) +
+     (tf2_close > tf2_open3 ? 1 : tf2_close < tf2_open3 ? -1 : 0) +
+     (tf2_close > tf2_open4 ? 1 : tf2_close < tf2_open4 ? -1 : 0) +
+     (tf2_close > tf2_open5 ? 1 : tf2_close < tf2_open5 ? -1 : 0) +
+     (tf2_close > tf2_open6 ? 1 : tf2_close < tf2_open6 ? -1 : 0) +
+     (tf2_close > tf2_open7 ? 1 : tf2_close < tf2_open7 ? -1 : 0) +
+     (tf2_close > tf2_open8 ? 1 : tf2_close < tf2_open8 ? -1 : 0) +
+     (tf2_close > tf2_open9 ? 1 : tf2_close < tf2_open9 ? -1 : 0) +
+     (tf2_close > tf2_open10 ? 1 : tf2_close < tf2_open10 ? -1 : 0) +
+     (tf2_close > tf2_open11 ? 1 : tf2_close < tf2_open11 ? -1 : 0), barmerge.gaps_off, barmerge.lookahead_on)
+     
+     
+NX_TMO_A2_EMA = request.security(syminfo.tickerid, tmo_tf2, ta.ema(NX_TMO_A2_Data, NX_TMO_A1_CalcLength), barmerge.gaps_off, barmerge.lookahead_on) 
+NX_TMO_A2_Main = request.security(syminfo.tickerid, tmo_tf2, ta.ema(NX_TMO_A2_EMA, NX_TMO_A1_SmoothLength), barmerge.gaps_off, barmerge.lookahead_on) 
+NX_TMO_A2_Signal = request.security(syminfo.tickerid, tmo_tf2, ta.ema(NX_TMO_A2_Main, NX_TMO_A1_SmoothLength), barmerge.gaps_off, barmerge.lookahead_on) 
+
+var NX_TMO_A2_Value = 0
+var NX_TMO_A2_Signal_Value = 0
+
+NX_TMO_A2_Value := NX_TMO_A2_Main == NX_TMO_A2_Main[1] ? NX_TMO_A2_Value[1] : NX_TMO_A2_Main > NX_TMO_A2_Main[1]  ? 1 : -1
+NX_TMO_A2_Signal_Value := NX_TMO_A2_Signal == NX_TMO_A2_Signal[1] ? NX_TMO_A2_Signal_Value[1] : NX_TMO_A2_Signal > NX_TMO_A2_Signal[1] ? 1 : -1
+
+plot(ShowTF2 ? NX_TMO_A2_Main * 0.5 : na, title = 'NX_TMO_A2_FIRSTLINE', color = NX_TMO_A2_Value == 1 ? tf2_bull : tf2_bear)
+plot(ShowAVG_TF2 ? NX_TMO_A2_Signal * 0.5 : na, title = 'NX_TMO_A2_AVGLINE', color = NX_TMO_A2_Signal_Value == 1 ? color.gray : color.gray)
+
+// ### OB OS LINE ###
+plot(NX_OBLine, title = 'NX_OBLine', color = NX_OBLine_color)
+plot(0, title = 'NX_NEUTRAL', color = NX_NEUTRAL_color)
+plot(NX_OSLine, title = 'NX_OSLine', color = NX_OSLine_color)
+
+NX_DNLIMIT1 = plot((80-50) / 5, display = display.none, editable = false)
+NX_DNLIMIT2 = plot((70-50) / 5, display = display.none, editable = false)
+NX_UPLIMIT1 = plot((30-50) / 5, display = display.none, editable = false)
+NX_UPLIMIT2 = plot((20-50) / 5, display = display.none, editable = false)
+
+fill(NX_DNLIMIT1, NX_DNLIMIT2, color.new(NX_OBLine_color,70))
+fill(NX_UPLIMIT1, NX_UPLIMIT2, color.new(NX_OSLine_color,70))
+
+//DASHBOARD
+//INPUTS
+LabelSize = input.string(defval='Medium', options=['Small', 'Medium', 'Large'], title='Dashboard Size', inline='6', group='Dashboard Settings')
+label_size = LabelSize == 'Small' ? size.small : LabelSize == 'Medium' ? size.normal : LabelSize == 'Large' ? size.large : size.small
+positioning = position.bottom_right 
+dashboard_color = input.color(color.new(#131722, 0), title='BG Color', inline='7', group='Dashboard Settings')
+dashboard_text = input.color(#ffffff, title='Text Color', inline='7', group='Dashboard Settings')
+
+
+var table t = table.new(positioning, 3, 1,frame_color=color.new(dashboard_color, 100), frame_width=1, border_color=color.new(dashboard_color, 100), border_width=1)
+if barstate.islast
+
+    //Column 1
+    table.cell(t, 0, 0, text='     ', width=0, bgcolor=dashboard_color, text_color=dashboard_text, text_size=label_size, text_halign=text.align_center)
+    table.cell(t, 1, 0, text='TMO1 ' + str.tostring(math.round(NX_TMO_A1_Main * 0.5, 4)), width=0, bgcolor=NX_TMO_A1_Value == 1 ? tf1_bull : tf1_bear, text_color=dashboard_text, text_size=label_size, text_halign=text.align_center)
+    table.cell(t, 2, 0, text='TMO2 ' + str.tostring(math.round(NX_TMO_A2_Main * 0.5, 4)), width=0, bgcolor=NX_TMO_A2_Value == 1 ? tf2_bull : tf2_bear, text_color=dashboard_text, text_size=label_size, text_halign=text.align_center)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

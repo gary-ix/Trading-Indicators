@@ -1,0 +1,90 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("MACD - Divergence", overlay = false)
+
+
+// macd settings
+swing_length_compare = 10
+macd_source = close
+macd_fast   = 12 
+macd_slow   = 26
+macd_signal = 9
+
+
+f_get_swing_values(sd_length) =>
+
+
+    // price action
+    sh = ta.pivothigh(high, sd_length, sd_length)
+    sl = ta.pivotlow(low, sd_length, sd_length)
+
+    csh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), high[sd_length], 0)
+    csl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), low[sd_length], 0)
+
+    psh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), high[sd_length], 1)
+    psl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), low[sd_length], 1)
+
+    hh = sh >= psh
+    lh = sh < psh
+    ll = sl <= psl
+    hl = sl > psl
+
+    var int trend = na
+    trend := ((hh and high >= psh) or close > csh) ? 1 : ((ll and low <= psl) or close < csl) ? -1 : lh or hl ? 0 : trend[1]
+
+    var int last_signal = na
+    last_signal := hh ? 2 : lh ? -1 : ll ? -2 : hl ? 1 : last_signal[1]
+
+
+    // macd
+    [macdLine, signalLine, histLine] = ta.macd(macd_source, macd_fast, macd_slow, macd_signal)
+
+    macd_csh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), macdLine[sd_length], 0)
+    macd_csl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), macdLine[sd_length], 0)
+
+    macd_psh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), macdLine[sd_length], 1)
+    macd_psl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), macdLine[sd_length], 1)
+
+    macd_hh = macd_csh >= macd_psh
+    macd_lh = macd_csh < macd_psh
+    macd_ll = macd_csl <= macd_psl
+    macd_hl = macd_csl > macd_psl
+
+    var int macd_trend = na
+    macd_trend := ((macd_hh and macdLine >= macd_psh) or macdLine > macd_csh) ? 1 
+     : ((macd_ll and macdLine <= macd_psl) or macdLine < macd_csl) ? -1 
+     : macd_lh or macd_hl ? 0 : macd_trend[1]
+
+    var int macd_last_signal = na
+    macd_last_signal := macd_hh ? 2 : macd_lh ? -1 : macd_ll ? -2 : macd_hl ? 1 : macd_last_signal[1]
+
+    [sh, sl, psh, psl, csh, csl, hh, lh, ll, hl, trend, last_signal,
+     macd_psh, macd_psl, macd_csh, macd_csl, macd_hh, macd_lh, macd_ll, macd_hl, macd_trend, macd_last_signal]
+
+// macd logic with price action to find divergence
+[sh, sl, psh, psl, csh, csl, hh, lh, ll, hl, trend, last_ts,
+ macd_psh, macd_psl, macd_csh, macd_csl, macd_hh, macd_lh, macd_ll, macd_hl, macd_trend, macd_last_signal] = f_get_swing_values(swing_length_compare)
+
+
+// macd calculations
+[macdLine, signalLine, histLine] = ta.macd(macd_source, macd_fast, macd_slow, macd_signal)
+
+col_macd = input(#2962FF, "MACD Line  ", group="Color Settings", inline="MACD")
+col_signal = input(#FF6D00, "Signal Line  ", group="Color Settings", inline="Signal")
+col_grow_above = input(#26A69A, "Above   Grow", group="Histogram", inline="Above")
+col_fall_above = input(#B2DFDB, "Fall", group="Histogram", inline="Above")
+col_grow_below = input(#FFCDD2, "Below Grow", group="Histogram", inline="Below")
+col_fall_below = input(#FF5252, "Fall", group="Histogram", inline="Below")
+
+hline(0, "Zero Line", color=color.new(#787B86, 50))
+plot(histLine, title="Histogram", style=plot.style_columns, color=(histLine>=0 ? (histLine[1] < histLine ? col_grow_above : col_fall_above) 
+ : (histLine[1] < histLine ? col_grow_below : col_fall_below)))
+plot(macdLine, title="MACD", color=col_macd)
+plot(signalLine, title="Signal", color=col_signal)
+
+
+bgcolor(macd_trend == 1 ? color.new(color.lime, 85)
+ : macd_trend == -1 ? color.new(color.rgb(255, 0, 0),85)
+ : color.new(color.yellow, 70))

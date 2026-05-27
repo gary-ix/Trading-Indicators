@@ -1,0 +1,89 @@
+//@version=6
+indicator("Daily High Levels", overlay=true, max_labels_count=50)
+import TradingView/ta/12
+
+rth_session = input.session('1800-1600', title='RTH Session (EST)', group = 'Symbol Settings')
+f_calculate_sess_ohlc(is_sess) =>
+    var float sess_high     = na
+    var float sess_low      = na
+    var float sess_open     = na
+    var float sess_close    = na
+    sess_high     := is_sess and not is_sess[1] ? high : is_sess ? math.max(high, sess_high[1]) : sess_high[1]
+    sess_low      := is_sess and not is_sess[1] ? low : is_sess ? math.min(low, sess_low[1]) : sess_low[1]
+    sess_open     := is_sess and not is_sess[1] ? open : sess_open[1]
+    sess_close    := not is_sess and is_sess[1] ? close : sess_close[1]
+
+    [sess_high, sess_low, sess_open, sess_close]
+is_rth = time == time(timeframe.period, str.format('{0}:1234567', rth_session), 'America/New_York')
+[rth_h, rth_l, rth_o, rth_c] = f_calculate_sess_ohlc(is_rth)
+realtimeValue = (rth_h+rth_l)/2
+
+
+// valueRequest = request.security('NQ1!', "D", (high+low)/2, lookahead=barmerge.lookahead_on)
+valueRequest = request.security('NQ1!', "D", close[1], lookahead=barmerge.lookahead_on)
+
+
+
+
+
+
+
+
+
+
+
+
+// using daily bars
+// bgcolor(high > realtimeValue ? color.rgb(76, 175, 79, 64) : color.rgb(255, 82, 82, 62))
+// plot(realtimeValue, color=color.blue, title="Value")
+
+
+// using realtime chart bars
+// barcolor(high > valueRequest ? color.green : color.red)
+plot(valueRequest, color=color.green, title="Value")
+
+
+
+myValue = ta.atr(length = 14)
+myRma = ta.rma(length = 14, source=close)
+
+
+
+plot(low, style=plot.style_columns)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// var label myLabel = na
+// if barstate.islast
+//     label.delete(myLabel)
+
+//     myLabel := label.new(
+//          bar_index+10,
+//          valueRequest,
+//          "Today Day High",
+//          style=label.style_label_left,
+//          textcolor=color.white,
+//          color=color.green
+//     )
+

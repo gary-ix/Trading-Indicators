@@ -1,0 +1,47 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("🧰 Volume Toolbox", overlay = false, precision = 0, format = format.volume)
+
+var cumVol = 0.
+cumVol += nz(volume)
+if barstate.islast and cumVol == 0
+    runtime.error("No volume is provided by the data vendor.")
+
+lookback = input.int(20, minval = 5, title = "Length for Average", group = 'Settings', inline = '2')
+mult = input.float(2.50, minval = 1.00, title = "Mult for Average", group = 'Settings', inline = '3')
+default_color = input.color(color.new(#9598a1,0), title = 'Default Color', group = 'Settings', inline = '4')
+asia_color = input.color(color.new(#ff0014,0), title = 'Asia Session', group = 'Settings', inline = '5')
+asia_time = input.session("1800-0259", title = '', group = 'Settings', inline = '5')
+euro_color = input.color(color.new(#ffe500,0), title = 'Euro Session', group = 'Settings', inline = '6')
+euro_time = input.session("0300-0929", title = '', group = 'Settings', inline = '6')
+usa_color = input.color(color.new(#005eff,0), title = 'USA Session', group = 'Settings', inline = '7')
+usa_time = input.session("0930-1600", title = '', group = 'Settings', inline = '7')
+
+is_asia = time(timeframe.period, asia_time, "America/New_York")
+is_euro = time(timeframe.period, euro_time, "America/New_York")
+is_usa = time(timeframe.period, usa_time, "America/New_York")
+
+var volume_color = #000000
+volume_color := is_asia ? asia_color : is_euro ? euro_color : is_usa ? usa_color : volume_color[1]
+volume_avg = ta.sma(volume,lookback) * mult
+exhaustion = volume >= volume_avg
+
+true_volume_color = timeframe.isintraday and timeframe.multiplier <= 60 ? color.from_gradient(volume, ta.lowest(volume,lookback*4), ta.highest(volume,lookback*4), color.new(default_color,80), volume_color) : color.new(default_color,80)
+
+plot(volume_avg, title = 'Avg. Volume', style = plot.style_line, color = color.new(default_color,70))
+plot(volume, title = 'Volume', style = plot.style_columns, color = exhaustion ? color.new(true_volume_color, 0) : color.new(true_volume_color, 50), editable = false)
+plotshape(-5, title = 'Session Indicator', style = shape.circle, color = timeframe.isintraday and timeframe.multiplier <= 60 ? volume_color : na, location = location.absolute, editable = false)
+
+
+dashboard_color = input.color(color.new(#131722, 0), title='BG Color', inline='2', group='Dashboard Settings')
+dashboard_text = input.color(#ffffff, title='Text Color', inline='2', group='Dashboard Settings')
+var table = table.new(position = position.top_right, columns = 2, rows = 2, bgcolor = dashboard_color, border_width = 1, frame_width = 1, frame_color = color.new(dashboard_color, 90))
+
+daily_volume = request.security(syminfo.tickerid, "D", volume)
+adv = request.security(syminfo.tickerid, "D", ta.sma(volume,20))
+    
+if barstate.islast
+    table.cell(table_id = table, column = 0, row = 0, text = "🔨 Toolbox Volume", bgcolor = dashboard_color, text_color = dashboard_text)
+    table.cell(table_id = table, column = 0, row = 1, text = "ADV: " + str.tostring(math.round(daily_volume/adv*100,2)) + "%", bgcolor = dashboard_color, text_color = dashboard_text)

@@ -1,0 +1,760 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Xact Sessions - PREMIUM", overlay = true, max_lines_count = 500)
+
+if timeframe.isdwm or (timeframe.multiplier > 30)
+    runtime.error('The Sessions Toolbox is designed to only work on intraday charts of 30 minutes or less.')
+
+
+// SESSION SETTINGS
+default_color = input.color(color.new(#9598a1,0), title = 'Default Color', group = 'Session Settings', inline = '4')
+asia_color = input.color(color.new(#ff0014,0), title = 'Asia  Session', group = 'Session Settings', inline = '5')
+asia_time = input.session("1800-0259", title = ' ', group = 'Session Settings', inline = '5')
+euro_color = input.color(color.new(#ffe500,0), title = 'Euro Session', group = 'Session Settings', inline = '6')
+euro_time = input.session("0300-0929", title = ' ', group = 'Session Settings', inline = '6')
+usa_color = input.color(color.new(#005eff,0), title = 'USA  Session', group = 'Session Settings', inline = '7')
+usa_time = input.session("0930-1759", title = ' ', group = 'Session Settings', inline = '7')
+
+show_stats = input.bool(true, title = 'Show Session Stats', inline = '8', group = 'Session Settings')
+position = input.string(defval='Right Top',
+ options=['Right Top', 'Right Middle', 'Right Bottom', 'Center Bottom', 'Center Top', 'Left Bottom', 'Left Middle'],
+ title='', inline = '8', group = 'Session Settings')
+dashboard_type = input.string('Desktop', title = '', options = ['Desktop', 'Desktop Small', 'Mobile', 'Mobile Small'],
+ inline = '8', group = 'Session Settings')
+only_show_current_session_stats = input.bool(false, title = 'Only Show Current Session Stats',
+ inline = '9', group = 'Session Settings')
+
+is_asia = time(timeframe.period, asia_time, "America/New_York")
+is_euro = time(timeframe.period, euro_time, "America/New_York")
+is_usa = time(timeframe.period, usa_time, "America/New_York")
+
+day_change = ta.change(time("D"))
+asia_change = is_asia and not is_asia[1]
+euro_change = is_euro and not is_euro[1]
+usa_change = is_usa and not is_usa[1]
+
+f_chartcolor() =>
+    chart_r = color.r(chart.bg_color)
+    chart_g = color.g(chart.bg_color)
+    chart_b = color.b(chart.bg_color)
+
+    lumina = math.sqrt(
+     0.299 * (chart_r * chart_r) +
+     0.587 * (chart_g * chart_g) +
+     0.114 * (chart_b * chart_b)
+     )
+
+    is_dark = lumina < 127.5 ? true : false
+var bool dark_mode = f_chartcolor()
+
+
+
+f_color_adjust(input_color, factor, dark_mode) =>
+    color_r = color.r(input_color)
+    color_g = color.g(input_color)
+    color_b = color.b(input_color)
+
+    var int new_r = 0
+    var int new_g = 0
+    var int new_b = 0
+
+    if dark_mode
+        new_r := int(math.max(0, color_r * (1 - factor)))
+        new_g := int(math.max(0, color_g * (1 - factor)))
+        new_b := int(math.max(0, color_b * (1 - factor)))
+    else
+        new_r := int(color_r + (255 - color_r) * factor)
+        new_g := int(color_g + (255 - color_g) * factor)
+        new_b := int(color_b + (255 - color_b) * factor)
+
+    new_color = color.rgb(new_r, new_g, new_b)
+
+
+
+
+// SESSION HIGH-LOW
+color_session_bg = input.bool(true, title = 'Color Session Background', group = 'H/L Settings', inline = '1')
+show_asia = input.bool(true, title = 'Show Asia', group = 'H/L Settings', inline = '3')
+show_euro = input.bool(true, title = 'Show Euro', group = 'H/L Settings', inline = '4')
+show_usa = input.bool(true, title = 'Show USA', group = 'H/L Settings', inline = '5')
+
+f_calc_display_hl(show_lines, is_session, change, linecolor) =>
+    var int start_bn = 0
+    var float high_value = 0.00
+    var float low_value = 0.00
+    var float vol_value = 0
+
+    if is_session and show_lines
+
+        start_bn := change ? time : start_bn[1]    
+        high_value := change ? high : is_session and high > high_value[1] ? high : high_value[1]
+        low_value := change ? low : is_session and low < low_value[1] ? low : low_value[1]
+        vol_value := change ? volume : is_session ? vol_value[1] + volume : vol_value[1]
+
+        high_line = line.new(start_bn, high_value, time, high_value, xloc = xloc.bar_time,
+         extend = extend.none, color = linecolor, style = line.style_solid, width = 3)
+        low_line = line.new(start_bn, low_value, time, low_value, xloc = xloc.bar_time,
+         extend = extend.none, color = linecolor, style = line.style_solid, width = 3)
+
+        line_fill = linefill.new(high_line, low_line, color = color_session_bg ? color.new(linecolor,90) : na)
+        
+        if not change
+            line.delete(high_line[1])
+            line.delete(low_line[1])
+
+    [high_value, low_value, vol_value]
+
+[asia_h, asia_l, asia_vol]    = f_calc_display_hl(show_asia, is_asia, asia_change, asia_color)
+[euro_h, euro_l, euro_vol]    = f_calc_display_hl(show_euro, is_euro, euro_change, euro_color)
+[usa_h, usa_l, usa_vol]       = f_calc_display_hl(show_usa, is_usa, usa_change, usa_color)
+
+
+
+// SESSION ORB
+orb_timelength  =   input.string('30 minutes', title = 'Session Opening Range',
+ options = ['5 minutes', '15 minutes', '30 minutes', '60 minutes'],
+ group = 'Opening Range Settings', inline = '0')
+
+color_or_bg = input.bool(true, title = 'Color Opening Range Background', group = 'Opening Range Settings', inline = '1')
+show_or_tp = input.bool(false, title = 'Show Opening Range Targets', group = 'Opening Range Settings', inline = '2')
+ext1 = input.float(0.5, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '3')
+ext2 = input.float(1.0, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '3')
+ext3 = input.float(1.5, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '3')
+show_asia_or = input.bool(true, title = 'Show Asia', group = 'Opening Range Settings', inline = '4')
+show_euro_or = input.bool(true, title = 'Show Euro', group = 'Opening Range Settings', inline = '5')
+show_usa_or = input.bool(true, title = 'Show USA', group = 'Opening Range Settings', inline = '6')
+
+    
+f_timesince_switch(change) =>
+    var int bars_since = 0
+    bars_since := change ? 1 : bars_since[1] + 1
+    time_since = timeframe.multiplier * bars_since
+    add_time = orb_timelength == '5 minutes' ? 5
+     : orb_timelength == '15 minutes' ? 15
+     : orb_timelength == '30 minutes' ? 30
+     : orb_timelength == '60 minutes' ? 60
+     : 30
+    if (timeframe.multiplier > add_time)
+        runtime.error('Opening range time cannot be less than the chart timeframe.')
+    past_or = time_since > add_time
+    past_or
+
+
+f_calc_display_or(show_lines, is_or, is_sess, change, linecolor) =>
+    var int start_bn = 0
+    var float high_value = 0.00
+    var float low_value = 0.00
+
+    var or_size = 0.0
+    var or_high_ext1 = 0.0
+    var or_high_ext2 = 0.0
+    var or_high_ext3 = 0.0
+    var or_low_ext1 = 0.0
+    var or_low_ext2 = 0.0
+    var or_low_ext3 = 0.0
+
+    var line orh_line = na
+    var line orl_line = na
+
+    var line orh_ext1 = na
+    var line orh_ext2 = na
+    var line orh_ext3 = na
+    var line orl_ext1 = na
+    var line orl_ext2 = na
+    var line orl_ext3 = na
+
+    if show_lines
+        start_bn := change ? time : start_bn[1]    
+        high_value := change ? high : is_or and high > high_value[1] ? high : high_value[1]
+        low_value := change ? low : is_or and low < low_value[1] ? low : low_value[1]
+
+        if show_or_tp
+            or_size := high_value - low_value
+            or_high_ext1 := high_value + (or_size * ext1)
+            or_high_ext2 := high_value + (or_size * ext2)
+            or_high_ext3 := high_value + (or_size * ext3)
+            or_low_ext1 := low_value - (or_size * ext1)
+            or_low_ext2 := low_value - (or_size * ext2)
+            or_low_ext3 := low_value - (or_size * ext3)
+
+        if is_or and not is_or[1]
+            orh_line := line.new(start_bn, high_value, time, high_value, xloc = xloc.bar_time,
+             extend = extend.none, color = linecolor, style = line.style_dashed, width = 1 )
+            orl_line := line.new(start_bn, low_value, time, low_value, xloc = xloc.bar_time,
+             extend = extend.none, color = linecolor, style = line.style_dashed, width = 1 )
+
+
+            if show_or_tp
+                orh_ext1 := line.new(start_bn, or_high_ext1, time, or_high_ext1, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+                orh_ext2 := line.new(start_bn, or_high_ext2, time, or_high_ext2, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+                orh_ext3 := line.new(start_bn, or_high_ext3, time, or_high_ext3, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+
+                orl_ext1 := line.new(start_bn, or_low_ext1, time, or_low_ext1, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+                orl_ext2 := line.new(start_bn, or_low_ext2, time, or_low_ext2, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+                orl_ext3 := line.new(start_bn, or_low_ext3, time, or_low_ext3, xloc = xloc.bar_time,
+                 extend = extend.none, color = color.new(linecolor,40), style = line.style_dotted, width = 1)
+
+        else if is_or
+            line.set_xy1(orh_line, start_bn, high_value)
+            line.set_xy1(orl_line, start_bn, low_value)
+            line.set_xy2(orh_line, time, high_value)
+            line.set_xy2(orl_line, time, low_value)
+
+            line.set_xy1(orh_ext1, start_bn, or_high_ext1)
+            line.set_xy2(orh_ext1, time, or_high_ext1)
+            line.set_xy1(orh_ext2, start_bn, or_high_ext2)
+            line.set_xy2(orh_ext2, time, or_high_ext2)
+            line.set_xy1(orh_ext3, start_bn, or_high_ext3)
+            line.set_xy2(orh_ext3, time, or_high_ext3)
+        
+            line.set_xy1(orl_ext1, start_bn, or_low_ext1)
+            line.set_xy2(orl_ext1, time, or_low_ext1)
+            line.set_xy1(orl_ext2, start_bn, or_low_ext2)
+            line.set_xy2(orl_ext2, time, or_low_ext2)
+            line.set_xy1(orl_ext3, start_bn, or_low_ext3)
+            line.set_xy2(orl_ext3, time, or_low_ext3)
+
+
+        else if is_sess
+            line.set_x2(orh_line, time)
+            line.set_x2(orl_line, time)     
+
+            line.set_x2(orh_ext1, time)
+            line.set_x2(orh_ext2, time)
+            line.set_x2(orh_ext3, time)
+            
+            line.set_x2(orl_ext1, time)
+            line.set_x2(orl_ext2, time)
+            line.set_x2(orl_ext3, time)
+
+        line_fill = linefill.new(orh_line, orl_line, color = color_or_bg ? color.new(chart.fg_color,80) : na)
+
+    [high_value, low_value,
+     or_high_ext1, or_high_ext2, or_high_ext3,
+     or_low_ext1, or_low_ext2, or_low_ext3]
+
+asia_or = f_timesince_switch(asia_change) and is_asia
+euro_or = f_timesince_switch(euro_change) and is_euro
+usa_or = f_timesince_switch(usa_change) and is_usa
+
+
+[asia_orh, asia_orl,
+ asia_orh_ext1, asia_orh_ext2, asia_orh_ext3,
+ asia_orl_ext1, asia_orl_ext2, asia_orl_ext3]
+ = f_calc_display_or(show_asia_or, not asia_or and is_asia, is_asia, is_asia and not is_asia[1], asia_color)
+
+[euro_orh, euro_orl,
+ euro_orh_ext1, euro_orh_ext2, euro_orh_ext3,
+ euro_orl_ext1, euro_orl_ext2, euro_orl_ext3]
+  = f_calc_display_or(show_euro_or, not euro_or and is_euro, is_euro, is_euro and not is_euro[1], euro_color)
+
+[usa_orh, usa_orl,
+ usa_orh_ext1, usa_orh_ext2, usa_orh_ext3,
+ usa_orl_ext1, usa_orl_ext2, usa_orl_ext3]
+  = f_calc_display_or(show_usa_or, not usa_or and is_usa, is_usa, is_usa and not is_usa[1], usa_color)
+
+
+f_or_stats(display, is_session, is_or_session,
+ orh, orh1, orh2, orh3,
+ orl, orl1, orl2, orl3) =>
+
+    var int day_count = 0 
+    var int or_breakout_count = 0
+    var int or_breakdown_count = 0
+
+    var int or_breakout_ext1_count = 0
+    var int or_breakout_ext2_count = 0
+    var int or_breakout_ext3_count = 0
+
+    var int or_breakdown_ext1_count = 0
+    var int or_breakdown_ext2_count = 0
+    var int or_breakdown_ext3_count = 0
+
+    var int or_breakout_breakdown_count = 0
+
+
+    var bool or_breakout_cond = false
+    var bool or_breakdown_cond = false
+
+    var bool or_breakout_ext1_cond = false
+    var bool or_breakout_ext2_cond = false
+    var bool or_breakout_ext3_cond = false
+
+    var bool or_breakdown_ext1_cond = false
+    var bool or_breakdown_ext2_cond = false
+    var bool or_breakdown_ext3_cond = false
+
+    var bool or_breakout_breakdown_cond = false
+
+    var float or_sum_size = 0.00
+
+
+    if display
+    // reset vars
+        day_count := is_or_session and not is_or_session[1] ? nz(day_count[1],0) + 1 : day_count[1]
+        if day_count != day_count[1]
+            or_breakout_cond := false
+            or_breakdown_cond := false
+            or_breakout_ext1_cond := false
+            or_breakout_ext2_cond := false
+            or_breakout_ext3_cond := false
+            or_breakdown_ext1_cond := false
+            or_breakdown_ext2_cond := false
+            or_breakdown_ext3_cond := false
+            or_breakout_breakdown_cond := false
+
+        // can look for conditions
+        if is_session and not is_or_session
+            // update conditions
+            or_sum_size := is_or_session[1] ? nz(or_sum_size[1],0) + (orh[1]-orl[1]) : or_sum_size[1]
+            or_breakout_cond := or_breakout_cond[1] == false and close > orh ? true : or_breakout_cond[1]
+            or_breakdown_cond := or_breakdown_cond[1] == false and close < orl ? true : or_breakdown_cond[1]
+
+            or_breakout_ext1_cond := or_breakout_ext1_cond[1] == false and high > orh1 ? true : or_breakout_ext1_cond[1]
+            or_breakout_ext2_cond := or_breakout_ext2_cond[1] == false and high > orh2 ? true : or_breakout_ext2_cond[1]
+            or_breakout_ext3_cond := or_breakout_ext3_cond[1] == false and high > orh3 ? true : or_breakout_ext3_cond[1]
+            
+            or_breakdown_ext1_cond := or_breakdown_ext1_cond[1] == false and low < orl1 ? true : or_breakdown_ext1_cond[1]
+            or_breakdown_ext2_cond := or_breakdown_ext2_cond[1] == false and low < orl2 ? true : or_breakdown_ext2_cond[1]
+            or_breakdown_ext3_cond := or_breakdown_ext3_cond[1] == false and low < orl3 ? true : or_breakdown_ext3_cond[1]
+
+            or_breakout_breakdown_cond := or_breakout_breakdown_cond[1] == false 
+             and (or_breakout_cond == true and or_breakdown_cond == true) ? true : or_breakout_breakdown_cond
+
+            // update counts
+            or_breakout_count := or_breakout_cond and not or_breakout_cond[1] ? or_breakout_count[1] + 1 : or_breakout_count[1]
+            or_breakdown_count := or_breakdown_cond and not or_breakdown_cond[1] ? or_breakdown_count[1] + 1 : or_breakdown_count[1]
+
+            or_breakout_ext1_count := or_breakout_ext1_cond and not or_breakout_ext1_cond[1] ? or_breakout_ext1_count[1] + 1 : or_breakout_ext1_count[1]
+            or_breakout_ext2_count := or_breakout_ext2_cond and not or_breakout_ext2_cond[1] ? or_breakout_ext2_count[1] + 1 : or_breakout_ext2_count[1]
+            or_breakout_ext3_count := or_breakout_ext3_cond and not or_breakout_ext3_cond[1] ? or_breakout_ext3_count[1] + 1 : or_breakout_ext3_count[1]
+            
+            or_breakdown_ext1_count := or_breakdown_ext1_cond and not or_breakdown_ext1_cond[1] ? or_breakdown_ext1_count[1] + 1 : or_breakdown_ext1_count[1]
+            or_breakdown_ext2_count := or_breakdown_ext2_cond and not or_breakdown_ext2_cond[1] ? or_breakdown_ext2_count[1] + 1 : or_breakdown_ext2_count[1]
+            or_breakdown_ext3_count := or_breakdown_ext3_cond and not or_breakdown_ext3_cond[1] ? or_breakdown_ext3_count[1] + 1 : or_breakdown_ext3_count[1]
+
+            or_breakout_breakdown_count := or_breakout_breakdown_cond and not or_breakout_breakdown_cond[1] ?
+             or_breakout_breakdown_count[1] + 1 
+             : or_breakout_breakdown_count[1]
+
+    [day_count, or_breakout_breakdown_count,
+     or_breakout_count, or_breakout_ext1_count, or_breakout_ext2_count, or_breakout_ext3_count,
+     or_breakdown_count, or_breakdown_ext1_count, or_breakdown_ext2_count, or_breakdown_ext3_count,
+     or_sum_size
+     ]
+
+
+
+// SESSION STATS
+var int num_asia_sess = 0
+var float sum_asia_ranges = 0.00
+var float sum_asia_or_ranges = 0.00
+var float sum_asia_volume = 0
+
+var int num_euro_sess = 0
+var float sum_euro_ranges = 0.00
+var float sum_euro_or_ranges = 0.00
+var float sum_euro_volume = 0
+
+var int num_usa_sess = 0
+var float sum_usa_ranges = 0.00
+var float sum_usa_or_ranges = 0.00
+var float sum_usa_volume = 0
+
+var int num_total_days = 0
+var float sum_days_ranges = 0.00
+
+
+
+num_asia_sess := asia_change ? nz(num_asia_sess[1],0) + 1 : num_asia_sess[1]
+sum_asia_ranges := asia_change ? nz(sum_asia_ranges[1],0) + (asia_h[1] - asia_l[1]) : sum_asia_ranges[1]
+sum_asia_or_ranges := asia_change ? nz(sum_asia_or_ranges[1],0) + (asia_orh[1] - asia_orl[1]) : sum_asia_or_ranges[1]
+sum_asia_volume := asia_change ? nz(sum_asia_volume[1], 0 ) + asia_vol[1] : sum_asia_volume[1]
+
+num_euro_sess := euro_change ? nz(num_euro_sess[1],0) + 1 : num_euro_sess[1]
+sum_euro_ranges := euro_change ? nz(sum_euro_ranges[1],0) + (euro_h[1] - euro_l[1]) : sum_euro_ranges[1]
+sum_euro_or_ranges := euro_change ? nz(sum_euro_or_ranges[1],0) + (euro_orh[1] - euro_orl[1]) : sum_euro_or_ranges[1]
+sum_euro_volume := euro_change ? nz(sum_euro_volume[1], 0) + euro_vol[1] : sum_euro_volume[1]
+
+num_usa_sess := usa_change ? nz(num_usa_sess[1],0) + 1 : num_usa_sess[1]
+sum_usa_ranges := usa_change ? nz(sum_usa_ranges[1],0) + (usa_h[1] - usa_l[1]) : sum_usa_ranges[1]
+sum_usa_or_ranges := usa_change ? nz(sum_usa_or_ranges[1],0) + (usa_orh[1] - usa_orl[1]) : sum_usa_or_ranges[1]
+sum_usa_volume := usa_change ? nz(sum_usa_volume[1], 0) + usa_vol[1] : sum_usa_volume[1]
+
+num_total_days := day_change ? nz(num_total_days[1],0) + 1 : num_total_days[1]
+sum_days_ranges := day_change ? sum_days_ranges[1] + math.max(asia_h[1], euro_h[1], usa_h[1]) - math.min(asia_l[1], euro_l[1], usa_l[1]) 
+ : sum_days_ranges[1]
+
+
+// [asia_count, asia_or_breakout_breakdown_count,
+//  asia_or_breakout_count, asia_or_breakout_ext1_count, asia_or_breakout_ext2_count, asia_or_breakout_ext3_count,
+//  asia_or_breakdown_count, asia_or_breakdown_ext1_count, asia_or_breakdown_ext2_count, asia_or_breakdown_ext3_count,
+//  asia_or_sum_size
+//  ] = 
+//  f_or_stats(show_stats, is_asia, asia_or,
+//  asia_orh, asia_orh_ext1, asia_orh_ext2, asia_orh_ext3,
+//  asia_orl, asia_orl_ext1, asia_orl_ext2, asia_orl_ext3)
+
+// [euro_count, euro_or_breakout_breakdown_count,
+//  euro_or_breakout_count, euro_or_breakout_ext1_count, euro_or_breakout_ext2_count, euro_or_breakout_ext3_count,
+//  euro_or_breakdown_count, euro_or_breakdown_ext1_count, euro_or_breakdown_ext2_count, euro_or_breakdown_ext3_count,
+//  euro_or_sum_size
+//  ] = 
+//  f_or_stats(show_stats, is_euro, euro_or,
+//  euro_orh, euro_orh_ext1, euro_orh_ext2, euro_orh_ext3,
+//  euro_orl, euro_orl_ext1, euro_orl_ext2, euro_orl_ext3)
+
+// [usa_count, usa_or_breakout_breakdown_count,
+//  usa_or_breakout_count, usa_or_breakout_ext1_count, usa_or_breakout_ext2_count, usa_or_breakout_ext3_count,
+//  usa_or_breakdown_count, usa_or_breakdown_ext1_count, usa_or_breakdown_ext2_count, usa_or_breakdown_ext3_count,
+//  usa_or_sum_size
+//  ] = 
+//  f_or_stats(show_stats, is_usa, usa_or,
+//  usa_orh, usa_orh_ext1, usa_orh_ext2, usa_orh_ext3,
+//  usa_orl, usa_orl_ext1, usa_orl_ext2, usa_orl_ext3)
+
+
+
+
+// VWAP
+vwap_function(src, isNewPeriod, stDevMult_1, stDevMult_2) =>
+	var float sumSrcVol = na
+	var float sumVol = na
+    var float sumSrcSrcVol = na
+    
+	sumSrcVol := isNewPeriod ? src * volume : src * volume + sumSrcVol[1]
+	sumVol := isNewPeriod ? volume : volume + sumVol[1]
+	sumSrcSrcVol := isNewPeriod ? volume * math.pow(src, 2) : volume * math.pow(src, 2) + sumSrcSrcVol[1]
+	_vwap = sumSrcVol / sumVol
+	
+	variance = sumSrcSrcVol / sumVol - math.pow(_vwap, 2)
+	variance := variance < 0 ? 0 : variance
+	stDev = math.sqrt(variance)
+
+	lowerBand = _vwap - stDev * stDevMult_1
+	upperBand = _vwap + stDev * stDevMult_1
+	
+	lowerBand2 = _vwap - stDev * stDevMult_2
+	upperBand2 = _vwap + stDev * stDevMult_2
+
+	[_vwap, lowerBand, upperBand, lowerBand2, upperBand2]
+	
+show_full_day_vwap = input.bool(false, title = 'Show Day  |', group = 'VWAP Settings', inline = '1')
+show_full_day_bands = input.bool(false, title = 'Bands', group = 'VWAP Settings', inline = '1')
+
+show_asia_vwap = input.bool(true, title = 'Show Asia  |', group = 'VWAP Settings', inline = '2')
+show_asia_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '2')
+show_extended_asia = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '2')
+asia_extension_cond = (show_extended_asia or not show_extended_asia and is_asia)
+
+show_euro_vwap = input.bool(true, title = 'Show Euro |', group = 'VWAP Settings', inline = '3')
+show_euro_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '3')
+show_extended_euro = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '3')
+euro_extension_cond = (show_extended_euro or not show_extended_euro and is_euro)
+
+show_usa_vwap = input.bool(true, title = 'Show USA  |', group = 'VWAP Settings', inline = '4')
+show_usa_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '4')
+show_extended_usa = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '4')
+usa_extension_cond = (show_extended_usa or not show_extended_usa and is_usa)
+
+std_dev1 = input.float(2.5, title = 'Deviations', group = 'VWAP Settings', inline = '99')
+std_dev2 = input.float(3.0, title = '', group = 'VWAP Settings', inline = '99')
+
+[_vwap, _lb, _ub, _lb2, _ub2] = vwap_function(hlc3, day_change, std_dev1, std_dev2)
+[asia_vwap, asia_lb, asia_ub, asia_lb2, asia_ub2] = vwap_function(hlc3, asia_change, std_dev1, std_dev2)
+[euro_vwap, euro_lb, euro_ub, euro_lb2, euro_ub2] = vwap_function(hlc3, euro_change, std_dev1, std_dev2)
+[usa_vwap, usa_lb, usa_ub, usa_lb2, usa_ub2] = vwap_function(hlc3, usa_change, std_dev1, std_dev2)
+
+_vwap_plot = plot(show_full_day_vwap ? _vwap : na, title = 'Full Day VWAP', color = day_change ? color.new(default_color,100) : default_color, editable = false)
+_ub_plot = plot(show_full_day_vwap and show_full_day_bands ? _ub : na, title = 'Full Day UB', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_ub2_plot = plot(show_full_day_vwap and show_full_day_bands ? _ub2 : na, title = 'Full Day UB2', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_lb_plot = plot(show_full_day_vwap and show_full_day_bands  ? _lb : na, title = 'Full Day LB', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_lb2_plot = plot(show_full_day_vwap and show_full_day_bands  ? _lb2 : na, title = 'Full Day LB2', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+fill(_ub_plot, _ub2_plot, color = day_change ? color.new(default_color,100) : color.new(default_color,80), editable = false)
+fill(_lb_plot, _lb2_plot, color = day_change ? color.new(default_color,100) : color.new(default_color,80), editable = false)
+
+asia_vwap_plot = plot(show_asia_vwap and asia_extension_cond ? asia_vwap : na, title = 'Asia VWAP', color = asia_change ? color.new(asia_color,100) : asia_color, editable = false)
+asia_ub_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_ub : na, title = 'Asia UB', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_ub2_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_ub2 : na, title = 'Asia UB2', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_lb_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_lb : na, title = 'Asia LB', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_lb2_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_lb2 : na, title = 'Asia LB2', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+fill(asia_ub_plot, asia_ub2_plot, color = asia_change ? color.new(asia_color,100) : color.new(asia_color,80), editable = false)
+fill(asia_lb_plot, asia_lb2_plot, color = asia_change ? color.new(asia_color,100) : color.new(asia_color,80), editable = false)
+
+euro_vwap_plot = plot(show_euro_vwap and euro_extension_cond ? euro_vwap : na, title = 'Euro VWAP', color = euro_change ? color.new(euro_color,100) : euro_color, editable = false)
+euro_ub_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_ub : na, title = 'Euro UB', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_ub2_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_ub2 : na, title = 'Euro UB2', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_lb_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_lb : na, title = 'Euro LB', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_lb2_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_lb2 : na, title = 'Euro LB2', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+fill(euro_ub_plot, euro_ub2_plot, color = euro_change ? color.new(euro_color,100) : color.new(euro_color,80), editable = false)
+fill(euro_lb_plot, euro_lb2_plot, color = euro_change ? color.new(euro_color,100) : color.new(euro_color,80), editable = false)
+
+usa_vwap_plot = plot(show_usa_vwap and usa_extension_cond ? usa_vwap : na, title = 'USA VWAP', color = usa_change ? color.new(usa_color,100) : usa_color, editable = false)
+usa_ub_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_ub : na, title = 'USA UB', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_ub2_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_ub2 : na, title = 'USA UB2', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_lb_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_lb : na, title = 'USA LB', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_lb2_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_lb2 : na, title = 'USA LB2', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+fill(usa_ub_plot, usa_ub2_plot, color = usa_change ? color.new(usa_color,100) : color.new(usa_color,80), editable = false)
+fill(usa_lb_plot, usa_lb2_plot, color = usa_change ? color.new(usa_color,100) : color.new(usa_color,80), editable = false)
+
+
+// SESSION STATS
+var table_position = position == 'Right Top' ? position.top_right 
+ : position == 'Right Middle' ? position.middle_right 
+ : position == 'Right Bottom' ? position.bottom_right 
+ : position == 'Center Bottom' ? position.bottom_center 
+ : position == 'Center Top' ? position.top_center
+ : position == 'Left Bottom' ? position.bottom_left 
+ : position == 'Left Middle' ? position.middle_left
+ : position.middle_right
+var table_size = dashboard_type == 'Mobile' or dashboard_type == 'Desktop' ? size.small : size.tiny 
+var color table_color = chart.bg_color
+var color table_text = chart.fg_color
+var color bull_text = dark_mode ? color.new(#05cd0e,0) : color.new(#1b5e20,0)
+var color bear_text = dark_mode ? color.new(#ff4c5b, 0) : color.new(#801922,0)
+var table t = table.new(table_position, 5, 20, 
+ frame_color=color.new(table_text, 85), frame_width=1,
+ border_color=color.new(table_text,92), border_width=0)
+
+var color table_header_css = f_color_adjust(table_color, 0.6, dark_mode)
+var color table_asia_css = f_color_adjust(asia_color, 0.70, dark_mode)
+var color table_euro_css = f_color_adjust(euro_color, 0.70, dark_mode)
+var color table_usa_css = f_color_adjust(usa_color, 0.70, dark_mode)
+
+f_or_define(is_sess, is_or, orh, orl, vwap) =>
+
+    var string sess_type_text = na
+    var float or_mid = 0.00
+
+    or_mid := (orh+orl) / 2
+
+    if is_sess
+        if is_or
+            sess_type_text := ' '
+        else
+            sess_type_text := close > orh and close > vwap ? "Bullish+"
+             : close > or_mid and close > vwap ? "Bullish"
+             : close < orl and close < vwap ? "Bearish+"
+             : close < or_mid and close < vwap ? "Bearish"
+             : "Neutral"
+    else
+        sess_type_text := sess_type_text[1]
+
+    sess_type_text
+
+
+asia_sess_type_text = f_or_define(is_asia, not asia_or, asia_orh, asia_orl, asia_vwap)
+euro_sess_type_text = f_or_define(is_euro, not euro_or, euro_orh, euro_orl, euro_vwap)
+usa_sess_type_text = f_or_define(is_usa, not usa_or, usa_orh, usa_orl, usa_vwap)
+
+
+if barstate.islast and show_stats
+    current_session_color = is_asia ? asia_color
+     : is_euro ? euro_color
+     : is_usa ? usa_color
+     : na
+
+    current_session_text= is_asia ? 'Asia'
+     : is_euro ? 'Euro'
+     : is_usa ? 'USA'
+     : na
+    table.clear(t, 0,0,4,19)
+
+    if dashboard_type == 'Desktop' or dashboard_type == 'Desktop Small'
+        table.cell(t, 0, 0, text = 'Current Session - ' + current_session_text,
+         text_size = table_size, text_color = table_text, bgcolor = table_header_css)
+        table.merge_cells(t,0,0,2,0)
+
+        table.cell(t, 0, 1, text = "Today's Values",
+         text_size = table_size, text_color = color.new(table_text,30), bgcolor = table_header_css)
+        table.merge_cells(t,0,1,1,1)
+
+        table.cell(t, 2, 1, text = "Avg Values",
+         text_size = table_size, text_color = color.new(table_text,30), bgcolor = table_header_css)
+        table.merge_cells(t,2,1,2,1)
+
+        if is_asia or not only_show_current_session_stats
+            table.cell(t, 0, 2, text = '𝘼𝙨𝙞𝙖 𝙎𝙩𝙖𝙩𝙨 - ' + str.tostring(asia_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_asia_css)
+            table.merge_cells(t,0,2,2,2)
+
+            table.cell(t, 0, 3, text = 'H/L Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_asia_css)
+            table.cell(t, 1, 3, str.tostring(math.round_to_mintick(asia_h - asia_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 3, str.tostring(math.round_to_mintick(sum_asia_ranges/num_asia_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+            table.cell(t, 0, 4, text = 'OR Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_asia_css)
+            table.cell(t, 1, 4, str.tostring(math.round_to_mintick(asia_orh-asia_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 4, str.tostring(math.round_to_mintick(sum_asia_or_ranges/num_asia_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+            table.cell(t, 0, 5, text = 'Volume',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_asia_css)
+            table.cell(t, 1, 5, str.tostring(asia_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 5, str.tostring(sum_asia_volume/num_asia_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+
+
+        if is_euro or not only_show_current_session_stats
+            table.cell(t, 0, 6, text = '𝙀𝙪𝙧𝙤 𝙎𝙩𝙖𝙩𝙨 - ' + str.tostring(euro_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_euro_css)
+            table.merge_cells(t,0,6,2,6)
+
+            table.cell(t, 0, 7, text = 'H/L Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_euro_css)
+            table.cell(t, 1, 7, str.tostring(math.round_to_mintick(euro_h - euro_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+            table.cell(t, 2, 7, str.tostring(math.round_to_mintick(sum_euro_ranges/num_euro_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+
+            table.cell(t, 0, 8, text = 'OR Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_euro_css)
+            table.cell(t, 1, 8, str.tostring(math.round_to_mintick(euro_orh-euro_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+            table.cell(t, 2, 8, str.tostring(math.round_to_mintick(sum_euro_or_ranges/num_euro_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+
+            table.cell(t, 0, 9, text = 'Volume',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_euro_css)
+            table.cell(t, 1, 9, str.tostring(euro_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_euro_css)
+            table.cell(t, 2, 9, str.tostring(sum_euro_volume/num_euro_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_euro_css)
+
+
+        if is_usa or not only_show_current_session_stats
+            table.cell(t, 0,10, text = '𝙐𝙎𝘼 𝙎𝙩𝙖𝙩𝙨 - ' + str.tostring(usa_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_usa_css)
+            table.merge_cells(t,0,10,2,10)
+
+            table.cell(t, 0, 11, text = 'H/L Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_usa_css)
+            table.cell(t, 1, 11, str.tostring(math.round_to_mintick(usa_h - usa_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+            table.cell(t, 2, 11, str.tostring(math.round_to_mintick(sum_usa_ranges/num_usa_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+
+            table.cell(t, 0, 12, text = 'OR Range',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_usa_css)
+            table.cell(t, 1, 12, str.tostring(math.round_to_mintick(usa_orh-usa_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+            table.cell(t, 2, 12, str.tostring(math.round_to_mintick(sum_usa_or_ranges/num_usa_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+
+            table.cell(t, 0, 13, text = 'Volume',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_usa_css)
+            table.cell(t, 1, 13, str.tostring(usa_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_usa_css)
+            table.cell(t, 2, 13, str.tostring(sum_usa_volume/num_usa_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_usa_css)
+
+    if dashboard_type == 'Mobile' or dashboard_type == 'Mobile Small'
+        table.cell(t, 0, 0, text = current_session_text + ' Session',
+         text_size = table_size, text_color = table_text, bgcolor = table_color)
+        table.merge_cells(t,0,0,2,0)
+
+        table.cell(t, 0, 1, text = " ",
+         text_size = table_size, text_color = color.new(table_text,30), bgcolor = table_header_css)
+        table.cell(t, 1, 1, text = "Now",
+         text_size = table_size, text_color = color.new(table_text,30), bgcolor = table_header_css)
+        // table.merge_cells(t,0,1,1,1)
+
+        table.cell(t, 2, 1, text = "Avg",
+         text_size = table_size, text_color = color.new(table_text,30), bgcolor = table_header_css)
+        table.merge_cells(t,2,1,2,1)
+
+        if is_asia or not only_show_current_session_stats
+            table.cell(t, 0, 2, text = '𝘼𝙨𝙞𝙖 - ' + str.tostring(asia_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_asia_css)
+            table.merge_cells(t,0,2,2,2)
+
+            table.cell(t, 0, 3, text = 'H/L ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_asia_css)
+            table.cell(t, 1, 3, str.tostring(math.round_to_mintick(asia_h - asia_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 3, str.tostring(math.round_to_mintick(sum_asia_ranges/num_asia_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+            table.cell(t, 0, 4, text = 'OR ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_asia_css)
+            table.cell(t, 1, 4, str.tostring(math.round_to_mintick(asia_orh-asia_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 4, str.tostring(math.round_to_mintick(sum_asia_or_ranges/num_asia_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+            table.cell(t, 0, 5, text = 'Vol ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_asia_css)
+            table.cell(t, 1, 5, str.tostring(asia_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+            table.cell(t, 2, 5, str.tostring(sum_asia_volume/num_asia_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_asia_css)
+
+
+
+        if is_euro or not only_show_current_session_stats
+            table.cell(t, 0, 6, text = '𝙀𝙪𝙧𝙤 - ' + str.tostring(euro_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_euro_css)
+            table.merge_cells(t,0,6,2,6)
+
+            table.cell(t, 0, 7, text = 'H/L ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_euro_css)
+            table.cell(t, 1, 7, str.tostring(math.round_to_mintick(euro_h - euro_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+            table.cell(t, 2, 7, str.tostring(math.round_to_mintick(sum_euro_ranges/num_euro_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+
+            table.cell(t, 0, 8, text = 'OR ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_euro_css)
+            table.cell(t, 1, 8, str.tostring(math.round_to_mintick(euro_orh-euro_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+            table.cell(t, 2, 8, str.tostring(math.round_to_mintick(sum_euro_or_ranges/num_euro_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_euro_css)
+
+            table.cell(t, 0, 9, text = 'Vol',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_euro_css)
+            table.cell(t, 1, 9, str.tostring(euro_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_euro_css)
+            table.cell(t, 2, 9, str.tostring(sum_euro_volume/num_euro_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_euro_css)
+
+
+        if is_usa or not only_show_current_session_stats
+            table.cell(t, 0,10, text = '𝙐𝙎𝘼 - ' + str.tostring(usa_sess_type_text),
+             text_size = table_size, text_color = table_text, bgcolor = table_usa_css)
+            table.merge_cells(t,0,10,2,10)
+
+            table.cell(t, 0, 11, text = 'H/L ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left,  bgcolor = table_usa_css)
+            table.cell(t, 1, 11, str.tostring(math.round_to_mintick(usa_h - usa_l)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+            table.cell(t, 2, 11, str.tostring(math.round_to_mintick(sum_usa_ranges/num_usa_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+
+            table.cell(t, 0, 12, text = 'OR ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_usa_css)
+            table.cell(t, 1, 12, str.tostring(math.round_to_mintick(usa_orh-usa_orl)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+            table.cell(t, 2, 12, str.tostring(math.round_to_mintick(sum_usa_or_ranges/num_usa_sess)),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center,  bgcolor = table_usa_css)
+
+            table.cell(t, 0, 13, text = 'Vol ',
+             text_size = table_size, text_color = table_text, text_halign = text.align_left, bgcolor = table_usa_css)
+            table.cell(t, 1, 13, str.tostring(usa_vol, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_usa_css)
+            table.cell(t, 2, 13, str.tostring(sum_usa_volume/num_usa_sess, format.volume),
+             text_size = table_size, text_color = table_text, text_halign = text.align_center, bgcolor = table_usa_css)
+
+

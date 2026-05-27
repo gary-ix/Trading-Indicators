@@ -1,0 +1,16 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("My script", overlay = true)
+
+
+ma_value1 = ta.ema(close, 9)
+ma_value2 = ta.ema(close, 20)
+
+value_3 = ma_value1 + ma_value2
+
+
+plot(ma_value1)
+plot(ma_value2)
+plot(value_3, color = color.orange)

@@ -1,0 +1,490 @@
+// © SimpleCryptoLife
+//@version=5
+indicator(title='[SCL] True Market Structure', shorttitle='[SCL] True Market Structure', overlay=true, linktoseries=true, max_labels_count=100, max_lines_count=100, max_bars_back=500)
+
+// ================= INPUTS =================
+
+// Short label text is just HH, LL, etc. Full text includes market bias, derived from the Highs, Lows, and Breaks. Off hides Local Highs and Lows (but not Breaks or BTD/STR).
+string inputLabelDisplayMode = input.string(defval='Full Text', title='Display Local Highs & Lows', options=['Short Text', 'Full Text', 'Off'])
+// As you're getting used to the indicator you probably want to see all labels, and when you're comfortable with it, perhaps only the last two.
+bool inputKeepOnlyLastLabel = input(defval=false, title='Keep Only Most Recent High & Low Label')
+string currentStateLabelDisplayMode = input.string(defval='Full Text', title='Display Current Market Bias Label', options=['Short Text', 'Full Text', 'Off'])  // Show whether we're bullish, bearish or ranging
+int inputCurrentStateLabelOffset = input.int(defval=3, minval=0, maxval=50, title='▻▻▻ How Many Bars Ahead to Draw Label')  // Space it out as you like
+bool inputMarketBiasBackgroundFill = input(defval=true, title='Colour Background According to Market Bias')  // Colour the background according to current market bias
+// Show when market structure breaks from Bearish or Ranging to Bullish, or from Bullish or Ranging to Bearish.
+string inputShowBreakMode = input.string(defval='Reversals Only', title='Show Breaks in Market Structure', options=['Reversals Only', 'All', 'Off'])
+// Draw a line to show where price has to close for market structure to break bullish/bearish
+bool inputShowBreakLines = input(defval=true, title='Show Close Needed to Break Market Structure')
+// Show the price as well as a line
+bool inputShowBreakPrice = input(defval=true, title='▻▻▻ Display Price For The Break')
+// Highlights when a Higher Low is confirmed after a Higher High, or a Lower High after a Lower Low
+bool inputShowEntries = input(defval=true, title='Show Buy The Dip, Sell The Rally')
+// When you get a range of inside candles, you can wait a long time for a true confirmation. This setting stops waiting for a break on close and just confirms the fractal after n bars.
+bool inputForceConfirmation = input(defval=true, title='Force Confirmation of Highs & Lows After N Bars')
+int inputForceBars = input.int(minval=1, maxval=999, defval=20, title='▻▻▻ Number of Bars')
+
+
+// === Variables derived solely from inputs
+bool useShortLabelText = inputLabelDisplayMode == 'Short Text'
+bool showLocalFractals = inputLabelDisplayMode != 'Off'
+bool showReversalsOnly = inputShowBreakMode == 'Reversals Only'
+bool showAllBreaks = inputShowBreakMode == 'All'
+bool showCurrentStateLabel = currentStateLabelDisplayMode != 'Off'
+
+// ================= CALCULATIONS =================
+
+// Cards on the table
+var float potentialHighLine = 0.0  // The Potential High Line keeps track of what a candle has to be higher than in order to be a new Potential (unconfirmed) High
+var float potentialLowLine = 0.0  // The Potential Low Line keeps track of what a candle has to be lower than in order to be a new Potential (unconfirmed) Low
+var string highTrailMode = 'down'  // The trailing mode for the Potential High line. I'd've liked to use some more "real" triggers rather than invent this abstraction, but it seemed the cleanest way in the end.
+var string lowTrailMode = 'up'  // The trailing mode for the Potential Low line
+var bool isPotentialHigh = false  // A one-off state for every bar that is a Potential High (PH)
+var bool isPotentialLow = false  // A one-off state for every bar that is a Potential Low (PL)
+var float lowToTake = low  // A close lower than this confirms a Local High
+var float highToTake = high  // A close higher than this confirms a Local Low
+var bool isConfirmHigh = false  // A one-off state if this bar confirms a Local High
+var bool isSuppressedHigh = false  // A one-off state if this bar would have been a Local High except that we need a Local Low first
+var bool isHigh = false  // A one-off state if this bar is a Confirmed or Suppressed Local High
+var bool isConfirmLow = false  // A one-off state if this bar confirms a Local Low
+var bool isSuppressedLow = false  // A one-off state if this bar would have been a Local Low except that we need a Local High first
+var bool isLow = false  // A one-off state if this bar is a Confirmed or Suppressed Local Low
+var int barIndexPH = na  // The persistent bar_index of the most recent Potential High
+var int barIndexLocalHigh = na  // The persistent bar_index of the most recent Local High
+var int barIndexPL = na  // The persistent bar_index of the most recent Potential Low
+var int barIndexLocalLow = na  // The persistent bar_index of the most recent Local Low
+var bool lookingForHigh = true  // We only look for highs after lows
+var bool lookingForLow = true  // We only look for lows after highs. In the beginning we look for both.
+var float highLine = high  // The persistent value of the most recent confirmed Local High
+var float lowLine = low  // The persistent value of the most recent confirmed Local Low
+var bool isHH = false  // Is this Local High a Higher High?
+var bool isLH = false  // Is it a Lower High?
+var bool isLL = false  // Is this Local Low a Lower Low?
+var bool isHL = false  // Is it a Higher Low?
+var string bullBearCondition = 'Ranging'  // Start off with a neutral market bias
+var string lastReversal = na  // Keep track of whether the most recent reversal in market structure was bullish or bearish
+var bool isBullishBreak = false  // One-off states for bullish/bearish breaks in market structure (both reversals and continuations)
+var bool isBearishBreak = false
+var bool isBullishReversal = na  // One-off states for bullish/bearish reversals in market structure
+var bool isBearishReversal = na
+var bool overrideLow = false  // These are states; they stay true for the whole time we have an unconfirmed High/Low until we confirm it
+var bool overrideHigh = false
+var int overrideLowTimer = 0  // The counter for the number of bars since the Potential High/Low
+var int overrideHighTimer = 0
+var bool forceConfirmLow = false  // The events for force-confirming Highs/Lows
+var bool forceConfirmHigh = false
+var bool isBTDEvent = false  // One-off event for a Buy The Dip signal
+var bool isSTREvent = false  // One-off event for a Sell The Rally signal
+var bool isBTDState = false  // A state used to suppress later BTD signals
+var bool isSTRState = false  // A state used to suppress later STR signals
+var bool drawBullBreakLine = na  // Controls whether we draw the bull break lines
+var bool drawBearBreakLine = na  // Controls whether we draw the bear break lines
+var line bullLine = na  // Define a null bull break line up front so we can modify it inside an if statement later
+var line bearLine = na  // Define a null bear break line up front so we can modify it inside an if statement later
+
+
+// Let's put the funk in functions
+functionUpdatePHLine(_line, _trailMode) =>
+    // This function updates the Potential High line
+    float _outputline = _trailMode == 'down' ? high : _trailMode == 'up' and high > _line ? high : _line  // When we're trailing down, reset the PH line to each candle high. When we trail up, persist if the high drops.
+    _outputline
+potentialHighLine := functionUpdatePHLine(potentialHighLine, highTrailMode)
+
+functionUpdatePLLine(_line, _trailMode) =>
+    // This function updates the Potential Low line
+    float _outputline = _trailMode == 'up' ? low : _trailMode == 'down' and low < _line ? low : _line  // When we're trailing up, reset the PL line to each candle low. When we trail down, persist if the low rises.
+    _outputline
+potentialLowLine := functionUpdatePLLine(potentialLowLine, lowTrailMode)
+
+functionPrintPH(_line_1, _isCL, _barIndexPH, _barIndexPL, _trailMode) =>
+    // This function prints a Potential (unconfirmed) High
+    bool _isPH1 = high > _line_1  // A high that goes higher than the potentialHighLine is a Potential High.
+    // When we confirm a Low, make this candle a Potential High if it's higher than the previous one and if the most recent PH was further back than the Low we just confirmed.
+    // This fixes the case where we were confirming Local Highs that were earlier in time than the Low they were supposed to follow.
+    bool _isPH2 = _isCL and high > high[1] and _barIndexPH < _barIndexPL
+    bool _isPH = _isPH1 or _isPH2  // Let's keep the conditions separate for clarity.
+    string _internalTrailMode = _isPH ? 'up' : _trailMode  // When we print a PH, potentialHighLine switches to trail up.
+    int _internalBarIndexPH = _isPH ? bar_index : _barIndexPH  // Update the bar_index to be the index of this bar (persists).
+    [_isPH, _internalTrailMode, _internalBarIndexPH]
+// This naming convention prepending r_ for returned value is only used once per variable, for getting the output from a function. It helps prevent accidentally using the wrong value from somewhere else.
+[r_isPotentialHigh, r_highTrailMode, r_barIndexPH] = functionPrintPH(potentialHighLine[1], isConfirmLow, barIndexPH, barIndexPL, highTrailMode)  // Call the function to print a PH if appropriate
+isPotentialHigh := r_isPotentialHigh  // Some shenanigans to get the values out
+highTrailMode := r_highTrailMode
+barIndexPH := r_barIndexPH
+
+functionPrintPL(_line_1, _isCH, _barIndexPH, _barIndexPL, _trailMode) =>
+    // This function prints a Potential (unconfirmed) Low
+    bool _isPL1 = low < _line_1  // A low that goes lower than the potentialLowLine is a Potential Low.
+    bool _isPL2 = _isCH and low < low[1] and _barIndexPL < _barIndexPH  // Fix that pesky edge case.
+    bool _isPL = _isPL1 or _isPL2
+    string _internalTrailMode = _isPL ? 'down' : _trailMode  // When we print a PL, potentialLowLine switches to trail down.
+    int _internalBarIndexPL = _isPL ? bar_index : _barIndexPL  // Update the bar_index to be the index of this bar (persists).
+    [_isPL, _internalTrailMode, _internalBarIndexPL]
+[r_isPotentialLow, r_lowTrailMode, r_barIndexPL] = functionPrintPL(potentialLowLine[1], isConfirmHigh, barIndexPH, barIndexPL, lowTrailMode)
+isPotentialLow := r_isPotentialLow
+lowTrailMode := r_lowTrailMode
+barIndexPL := r_barIndexPL
+
+functionUpdateLowToTake(_self, _isPH, _isHigh) =>
+    // This function updates the line that confirms a Local High, after we have calculated the Potential Highs and Lows
+    _output = _isPH ? low : _isHigh ? na : _self  // Reset lowToTake line: to the low of a PH bar, to na if we printed any kind of High this bar, or persist.
+    _output
+lowToTake := functionUpdateLowToTake(lowToTake, isPotentialHigh, isHigh)
+
+functionUpdateHighToTake(_self, _isPL, _isLow) =>
+    // This function updates the line that confirms a Local Low, after we have calculated the Potential Highs and Lows
+    _output = _isPL ? high : _isLow ? na : _self  // Reset highToTake line: to the high of a PL bar, to na if we printed any kind of Low this bar, or persist.
+    _output
+highToTake := functionUpdateHighToTake(highToTake, isPotentialLow, isLow)
+
+functionConfirmHigh(_lowToTake, _isPH, _barIndexPH, _barIndexLocalHigh, _lookingForHigh) =>
+    // This function changes a Potential High to a Local (Confirmed) High or Suppressed High
+    bool _isHigh = (close < _lowToTake or open < _lowToTake) and not _isPH  // Print a High if we closed (or gapped open!) below the lowToTake and this bar is not itself a renewed PH
+    bool _isConfirmHigh = _isHigh and _lookingForHigh  // Confirm a Local High if the last confirmed fractal wasn't also a Local High
+    bool _isSuppressedHigh = _isHigh and not _lookingForHigh  // If the last confirmed fractal *was* a Local High, print a Suppressed High instead (Confirmed and Suppressed are exclusive)
+    // Confirm the most recent Potential High as the Local High (Note: we cannot confirm an Interim High. It should have been either upgraded or discarded.)
+    _internalBarIndexLocalHigh = _isConfirmHigh ? _barIndexPH : _barIndexLocalHigh  // Update the bar index for the Local High to be the index of the most recent Potential High
+    [_isHigh, _isConfirmHigh, _isSuppressedHigh, _internalBarIndexLocalHigh]
+[r_isHigh, r_isConfirmHigh, r1_isSuppressedHigh, r_barIndexLocalHigh] = functionConfirmHigh(lowToTake, isPotentialHigh, barIndexPH, barIndexLocalHigh, lookingForHigh)
+isHigh := r_isHigh  // I declare Shenanigans
+isConfirmHigh := r_isConfirmHigh
+isSuppressedHigh := r1_isSuppressedHigh
+barIndexLocalHigh := r_barIndexLocalHigh
+
+functionConfirmLow(_highToTake, _isPL, _barIndexPL, _barIndexLocalLow, _lookingForLow) =>
+    // This function changes a Potential Low to a Local (Confirmed) Low or Suppressed Low
+    bool _isLow = (close > _highToTake or open > _highToTake) and not _isPL  // Print a Low if we closed above the highToTake and this bar isn't itself a renewed PL
+    bool _isConfirmLow = _isLow and _lookingForLow  // Confirm a Local Low if this low follows a confirmed High
+    bool _isSuppressedLow = _isLow and not _lookingForLow  // Suppress if last confirmed fractal was also a Low
+    // Confirm the most recent Potential Low as the Local Low (Note: we cannot confirm an Interim Low. It should have been either upgraded or discarded.)
+    _internalBarIndexLocalLow = _isConfirmLow ? _barIndexPL : _barIndexLocalLow  // Update the bar index for the Local Low to be the index of the most recent Potential Low
+    [_isLow, _isConfirmLow, _isSuppressedLow, _internalBarIndexLocalLow]
+[r_isLow, r_isConfirmLow, r_isSuppressedLow, r_barIndexLocalLow] = functionConfirmLow(highToTake, isPotentialLow, barIndexPL, barIndexLocalLow, lookingForLow)
+isLow := r_isLow
+isConfirmLow := r_isConfirmLow
+isSuppressedLow := r_isSuppressedLow
+barIndexLocalLow := r_barIndexLocalLow
+
+
+// === Force confirmation of High/Low after n bars
+// Keeping the forced confirmation separate from the main confirming function for modularity. It's more code but we can turn the whole thing on or off in one line.
+
+functionForceHL(_overrideLow, _overrideHigh, _isCL, _isCH, _isPL, _isPH, _isSL, _isSH, _isLow, _isHigh, _overrideLowTimer, _overrideHighTimer, _inputForceBars, _barIndexPL, _barIndexPH, _barIndexLocalLow, _barIndexLocalHigh, _lookingForLow, _lookingForHigh) =>
+    // This function confirms a High/Low after n bars, and makes the same updates as the main confirm function. If we confirmed already the old-fashioned way then this will be skipped.
+    _iOverrideLow = _isCL ? false : _isPL ? true : _overrideLow  // The order in which we evaluate conditions matters here: isConfirmLow is a switch and a filter in one.
+    _iOverrideHigh = _isCH ? false : _isPH ? true : _overrideHigh  // The order in which we evaluate conditions matters here: isConfirmHigh is a switch and a filter in one.
+    _iOverrideLowTimer = _isPL ? 0 : _iOverrideLow ? _overrideLowTimer + 1 : 0  // Increment the counter each bar. Reset on every new PL. Reset when we lose the override state.
+    _iOverrideHighTimer = _isPH ? 0 : _iOverrideHigh ? _overrideHighTimer + 1 : 0  // Copying mutable variables is a workaround to use them inside functions
+    _forceConfirmLow = _iOverrideLowTimer == _inputForceBars ? true : false  // Force confirmation if we've had n bars
+    _forceConfirmHigh = _iOverrideHighTimer == _inputForceBars ? true : false
+    _iIsCL = _forceConfirmLow and _lookingForLow ? true : _isCL  // Confirm the low if it's in season
+    _iIsCH = _forceConfirmHigh and _lookingForHigh ? true : _isCH  // Confirm the low if it's in season
+    _iIsSL = _forceConfirmLow and not _lookingForLow ? true : _isSL  // Suppress the low if it's not in season
+    _iIsSH = _forceConfirmHigh and not _lookingForHigh ? true : _isSH  // Suppress the low if it's not in season
+    _iIsLow = _iIsCL or _iIsSL ? true : _isLow  // A bit of retro-fitting
+    _iIsHigh = _iIsCH or _iIsSH ? true : _isHigh  // A bit of retro-fitting
+    _internalBarIndexLocalLow = _forceConfirmLow ? _barIndexPL : _barIndexLocalLow  // Update the bar index for the Local Low to be the index of the most recent Potential Low
+    _internalBarIndexLocalHigh = _forceConfirmHigh ? _barIndexPH : _barIndexLocalHigh  // Update the bar index for the Local High to be the index of the most recent Potential High
+    [_iOverrideLow, _iOverrideHigh, _iOverrideLowTimer, _iOverrideHighTimer, _forceConfirmLow, _forceConfirmHigh, _internalBarIndexLocalLow, _internalBarIndexLocalHigh, _iIsCL, _iIsCH, _iIsSL, _iIsSH, _iIsLow, _iIsHigh]
+
+[r_overrideLow, r_overrideHigh, r_overrideLowTimer, r_overrideHighTimer, r_forceConfirmLow, r_forceConfirmHigh, r_barIndexLocalLowForce, r_barIndexLocalHighForce, r2_isConfirmLow, r2_isConfirmHigh, r2_isSuppressedLow, r2_isSuppressedHigh, r2_isLow, r2_isHigh] = functionForceHL(overrideLow, overrideHigh, isConfirmLow, isConfirmHigh, isPotentialLow, isPotentialHigh, isSuppressedLow, isSuppressedHigh, isLow, isHigh, overrideLowTimer, overrideHighTimer, inputForceBars, barIndexPL, barIndexPH, barIndexLocalLow, barIndexLocalHigh, lookingForLow, lookingForHigh)
+// Assign the outputs returned from the function to their namesake mutable variables, only if the user has turned this option on
+if inputForceConfirmation
+    overrideLow := r_overrideLow
+    overrideHigh := r_overrideHigh
+    overrideLowTimer := r_overrideLowTimer
+    overrideHighTimer := r_overrideHighTimer
+    forceConfirmLow := r_forceConfirmLow
+    forceConfirmHigh := r_forceConfirmHigh
+    barIndexLocalLow := r_barIndexLocalLowForce
+    barIndexLocalHigh := r_barIndexLocalHighForce
+    isConfirmLow := r2_isConfirmLow
+    isConfirmHigh := r2_isConfirmHigh
+    isSuppressedLow := r2_isSuppressedLow
+    isSuppressedHigh := r2_isSuppressedHigh
+    isLow := r2_isLow
+    isHigh := r2_isHigh
+    isHigh
+
+
+// Here we need to call the functions to print Potential Highs and Potential Lows again. By this point, we have all the confirmations, suppressions, and forced confirmations in.
+// By calling them again after we update confirmations, we activate a different line in the functions to fix an edge case.
+// We call them again in exactly the same way, but use r2_ instead of r_ so the returned variables don't clash. It also neatly lets us know that this is the 2nd time we're calling the same functions.
+[r2_isPotentialHigh, r2_highTrailMode, r2_barIndexPH] = functionPrintPH(potentialHighLine[1], isConfirmLow, barIndexPH, barIndexPL, highTrailMode)
+isPotentialHigh := r2_isPotentialHigh
+highTrailMode := r2_highTrailMode
+barIndexPH := r2_barIndexPH
+[r2_isPotentialLow, r2_lowTrailMode, r2_barIndexPL] = functionPrintPL(potentialLowLine[1], isConfirmHigh, barIndexPH, barIndexPL, lowTrailMode)
+isPotentialLow := r2_isPotentialLow
+lowTrailMode := r2_lowTrailMode
+barIndexPL := r_barIndexPL
+
+
+// Reset the high-low mode after we have both High and Low confirmations in. We only care about confirmed fractals for these lines.
+lookingForHigh := isConfirmHigh ? false : isConfirmLow ? true : lookingForHigh
+lookingForLow := isConfirmLow ? false : isConfirmHigh ? true : lookingForLow
+
+
+functionUpdatePHLineOnHigh(_PHline, _trailMode, _isHigh, _isLow, _barIndexPH, _barIndexPL) =>
+    // This function updates the Potential High line after we have the confirmations in
+    bool _reset1 = _isHigh  // Reset if this bar confirms a High
+    bool _reset2 = _isLow and barIndexPH < barIndexPL  // Reset if the most recent candidate High is before the Low we just confirmed or Suppressed
+    bool _reset = _reset1 or _reset2  // Consolidate the conditions. Doing it the long way round for clarity.
+    float _iPHLine = _reset ? high : _PHline  // Reset potentialHighLine to the high of the current candle if one or more of the conditions has been met
+    string _iTrailMode = _isHigh ? 'down' : _trailMode  // Set highTrailMode == down ONLY on a high
+    [_iPHLine, _iTrailMode]
+[r_potentialHighLine, r_highTrailModeUpdate2] = functionUpdatePHLineOnHigh(potentialHighLine, highTrailMode, isHigh, isLow, barIndexPH, barIndexPL)
+potentialHighLine := r_potentialHighLine
+highTrailMode := r_highTrailModeUpdate2
+
+functionUpdatePLLineOnLow(_PLline, _trailMode, _isHigh, _isLow, _barIndexPH, _barIndexPL) =>
+    // This function updates the Potential Low line after we have the confirmations in
+    bool _reset1 = _isLow  // Reset if this bar confirms a Low
+    bool _reset2 = _isHigh and barIndexPL < barIndexPH  // Reset if the most recent candidate Low is before the High we just confirmed or Suppressed
+    bool _reset = _reset1 or _reset2  // Consolidate the conditions
+    _iPLLine = _reset ? low : _PLline  // Reset potentialLowLine to the low of the confirming candle if one or more of the conditions has been met
+    _iTrailMode = _isLow ? 'up' : _trailMode  // Set lowTrailMode == up ONLY on low
+    [_iPLLine, _iTrailMode]
+[r_potentialLowLine, r_lowTrailModeUpdate2] = functionUpdatePLLineOnLow(potentialLowLine, lowTrailMode, isHigh, isLow, barIndexPH, barIndexPL)
+potentialLowLine := r_potentialLowLine
+lowTrailMode := r_lowTrailModeUpdate2
+
+
+// === Measure whether the Highs and Lows are higher or lower ===
+
+highLine := isConfirmHigh ? high[bar_index - barIndexLocalHigh] : highLine  // Update the value of the most recent Local High
+lowLine := isConfirmLow ? low[bar_index - barIndexLocalLow] : lowLine  // Update the value of the most recent Local High
+
+isHH := isConfirmHigh and highLine > highLine[1]  // Higher or Lower Highs are only true for the confirming bar
+isLH := isConfirmHigh and highLine <= highLine[1]
+isLL := isConfirmLow and lowLine < lowLine[1]  // If they're equal, call it lower (have to pick a side here)
+isHL := isConfirmLow and lowLine >= lowLine[1]
+
+
+// === Check for Bullish/Bearish breaks in market structure ===
+
+// No matter what bias we are in, a Bullish break is always bullish, and vice-versa.
+// We DO change (or confirm) the bias based on a break, because even if it reverses, it will just confirm the break and go on to form an opposite H/L.
+// All breaks are unconfirmed HH/LLs (although not all HHs/LLs are breaks). We know the bias will be confirmed, we just don't know on which candle or at what price.
+// A common edge case is where a HH/LL is formed by a wick only. This changes (for the sake of argument) market bias but we don't count it as a break because it wasn't on close.
+// In this case, the next close that exceeds that new HH/LL will be the break.
+
+functionIsBreak(_highLine, _lowLine, _lastReversal) =>
+    // Is this candle a bullish or bearish break in market structure?
+    _isBullishBreak = close > _highLine and not(close[1] > _highLine[1])  // Is it the first close above the most recent High?
+    _isBearishBreak = close < _lowLine and not(close[1] < _lowLine[1])  // Or below the most recent Low?
+    // Is it a trend-changing break (the first of its name)? Reversals are ALSO breaks, i.e. these variables are not mutually exclusive.
+    _isBullishReversal = _lastReversal == 'Bullish' ? false : _isBullishBreak  // Only show the first Break of this type (resets on the first opposing Break)
+    _isBearishReversal = _lastReversal == 'Bearish' ? false : _isBearishBreak
+    [_isBullishBreak, _isBearishBreak, _isBullishReversal, _isBearishReversal]
+[r_isBullishBreak, r_isBearishBreak, r_isBullishReversal, r_isBearishReversal] = functionIsBreak(highLine, lowLine, lastReversal)
+isBullishBreak := r_isBullishBreak
+isBearishBreak := r_isBearishBreak
+isBullishReversal := r_isBullishReversal
+isBearishReversal := r_isBearishReversal
+
+lastReversal := isBullishReversal ? 'Bullish' : isBearishReversal ? 'Bearish' : lastReversal  // Update the bullish/bearish break state if we had one, otherwise persist
+
+
+// === Set market bias ===
+
+functionSetBullBear(_bullBearCondition, _isLL, _isHL, _isHH, _isLH, _isBullishBreak, _isBearishBreak) =>
+    // This function sets the market bias based on my interpretation of the significance of Highs, Lows, and Breaks appearing in different states.
+    string _rangeChange = _isBullishBreak ? 'Bullish' : _isBearishBreak ? 'Bearish' : _isLL ? 'Bearish' : _isHL ? 'Ranging' : _isHH ? 'Bullish' : _isLH ? 'Ranging' : na
+    string _bearChange = _isBullishBreak ? 'Bullish' : _isBearishBreak ? 'Bearish' : _isLL ? 'Bearish' : _isHL ? 'Ranging' : _isHH ? 'Bullish' : _isLH ? 'Bearish' : na
+    string _bullChange = _isBullishBreak ? 'Bullish' : _isBearishBreak ? 'Bearish' : _isLL ? 'Bearish' : _isHL ? 'Bullish' : _isHH ? 'Bullish' : _isLH ? 'Ranging' : na
+    string _outputBullBearCondition = _bullBearCondition == 'Ranging' ? _rangeChange : _bullBearCondition == 'Bearish' ? _bearChange : _bullBearCondition == 'Bullish' ? _bullChange : na
+    _outputBullBearCondition
+
+bullBearCondition := isConfirmHigh or isConfirmLow or isBullishBreak or isBearishBreak ? functionSetBullBear(bullBearCondition, isLL, isHL, isHH, isLH, isBullishBreak, isBearishBreak) : bullBearCondition
+
+
+// == Calculate Buy The Dip, Sell The Rally signals ===
+
+isBTDEvent := isHL and bullBearCondition == 'Bullish'
+isBTD = isBTDEvent and not isBTDState  // A one-off trigger for printing the first signal only. We evaluate this before the next line to avoid using the previous bar for the state.
+isBTDState := isBTDEvent ? true : bullBearCondition == 'Bearish' ? false : isBTDState  // Turn the state on when we get the event. Turn it off on a bearish state.
+isSTREvent := isLH and bullBearCondition == 'Bearish'
+isSTR = isSTREvent and not isSTRState
+isSTRState := isSTREvent ? true : bullBearCondition == 'Bullish' ? false : isSTRState
+
+
+// === Set up Low and High labels ===
+
+functionHLLabelText(_isHH, _isLH, _isLL, _isHL, _short, _bias) =>
+    // This function sets the label text based on whether it's a HH etc, and sets long or short text
+    string _highText1 = _isHH and _short ? 'HH' : _isHH and not _short ? 'Higher High' : _isLH and _short ? 'LH' : _isLH and not _short ? 'Lower High' : na
+    string _highText2 = not _short ? '\n(' + _bias + ')' : na  // \n is a newline
+    string _highText = _highText1 + _highText2
+    string _lowText1 = _isLL and _short ? 'LL' : _isLL and not _short ? 'Lower Low' : _isHL and _short ? 'HL' : _isHL and not _short ? 'Higher Low' : na
+    string _lowText2 = not _short ? '\n(' + _bias + ')' : na
+    string _lowText = _lowText1 + _lowText2
+    string _out = _isHH or _isLH ? _highText : _isLL or _isHL ? _lowText : na
+    _out
+
+textHLLabel = functionHLLabelText(isHH, isLH, isLL, isHL, useShortLabelText, bullBearCondition)
+
+marketBiasColour = bullBearCondition == 'Ranging' ? color.gray : bullBearCondition == 'Bearish' ? color.maroon : bullBearCondition == 'Bullish' ? color.teal : color.yellow
+
+
+// === Calculate Break lines ===
+// Only the most recent versions of each of these two lines are plotted. They show where price needs to close in order to change market bias to bullish or bearish.
+// If we are already bearish, there's no bear break line. If we're already bullish, there's no bull break line. When ranging, both are drawn.
+//      [If I ever decide to put in lines to show the close needed to flip to ranging: A bullish-to-ranging line would be from the Low of the most candidate High candle
+//      ONLY IF the High of the candidate high were LOWER than the High of the last confirmed Higher High, otherwise na. And vice-versa for bearish-to-ranging.]
+
+drawBullBreakLine := inputShowBreakLines and bullBearCondition != 'Bullish' ? true : false  // Draw a bull break line in Bearish and Ranging market biases
+drawBearBreakLine := inputShowBreakLines and bullBearCondition != 'Bearish' ? true : false  // Draw a bear break line in Bullish and Ranging market biases
+
+
+if drawBullBreakLine  // Draw a new line every bar
+    bullLine := line.new(barIndexLocalHigh, highLine, bar_index, highLine, extend=extend.none, color=color.green, style=line.style_dotted, width=1)
+    bullLine
+line.delete(bullLine[1])  // Immediately delete the previous line so we only ever have the latest one, or none
+
+if drawBearBreakLine
+    bearLine := line.new(barIndexLocalLow, lowLine, bar_index, lowLine, extend=extend.none, color=color.red, style=line.style_dotted, width=1)
+    bearLine
+line.delete(bearLine[1])
+
+var label breakLabel = na  // This label shows the price needed for a bullish or bearish break. We define the text and colours differently for bullish and bearish.
+timeblock1 = time - time[1]  // This is the only way to draw a label in the future. Moved here from later in the script.
+futureTime = time + timeblock1 * inputCurrentStateLabelOffset
+string breakLabelTextBias = drawBullBreakLine ? 'bullish' : drawBearBreakLine ? 'bearish' : na  // This string is substituted within the whole label text in the next line
+// Thanks to @dalescher for the fix to the following line
+string breakLabelText = 'Price for ' + breakLabelTextBias + ' break: ' + str.tostring(drawBullBreakLine ? highLine : lowLine)  // To get the price to display you must convert it from a float to a string
+color breakLabelColour = drawBullBreakLine ? color.green : drawBearBreakLine ? color.red : na  // Label colour is the same as the line colour
+float breakLabelPrice = drawBullBreakLine ? highLine : drawBearBreakLine ? lowLine : na  // The price is in a different variable for bullish and bearish lines
+if inputShowBreakPrice and (drawBullBreakLine or drawBearBreakLine)
+    breakLabel := label.new(futureTime, breakLabelPrice, breakLabelText, color=breakLabelColour, textcolor=color.white, style=label.style_label_left, yloc=yloc.price, xloc=xloc.bar_time)
+    breakLabel
+label.delete(breakLabel[1])  // Keep only the most recent label
+
+
+// ================= PLOTS =================
+
+// === Print highs and Lows ===
+// We have to use labels here because we need to control how far back each label is printed independently. If you use plotshape you can only plot every plotshape back by the same amount.
+var label localHighLabel = na  // Define the label name up front
+var bool localHighLabelTrigger = na  // Define the trigger as one variable so it's neater to pass to the delete function later
+localHighLabelTrigger := isConfirmHigh and showLocalFractals
+if localHighLabelTrigger
+    localHighLabel := label.new(barIndexLocalHigh, high, textHLLabel, color=marketBiasColour, textcolor=color.white, style=label.style_label_down, yloc=yloc.abovebar)
+    localHighLabel
+else
+    localHighLabel := na  // Setting the label to na if not printed is needed for the delete function to work
+    localHighLabel
+
+var label localLowLabel = na
+var bool localLowLabelTrigger = na
+localLowLabelTrigger := isConfirmLow and showLocalFractals
+if localLowLabelTrigger
+    localLowLabel := label.new(barIndexLocalLow, low, textHLLabel, color=marketBiasColour, textcolor=color.white, style=label.style_label_up, yloc=yloc.belowbar)
+    localLowLabel
+else
+    localLowLabel := na
+    localLowLabel
+
+
+// === Delete high and low labels ===
+// If we're using a minimalist style, we want to keep only the most recent high and most recent low.
+
+functionDeletePreviousLabel(_labelName, _labelPrintTrigger, _barIndexThisLabel1, _barIndexPreviousPrintedLabel, _barIndexPreviousPrintedLabel1) =>
+    // This function deletes the previous printed label, thus keeping only the most recently printed label visible.
+    //      It only deletes the previous label on close, so for the duration of the current bar you can have two labels of the same type.
+    //      If it deleted the previous label when a new label was printed intra-candle, it wouldn't (AFAIK) be able to reinstate it if the label was unprinted. So I think this behaviour is for the best.
+    // Deleting a label[n] simply deletes the label n bars back, whether it was na or not. To delete the second-to-last label, you need to calculate the bar index of that label.
+    // _labelName is the name of the label. This function works only if the label is named and if the label is set to na each time it is not printed.
+    // _labelPrintTrigger is the condition that, if it is true, prints the named label.
+    _barIndexThisLabel = _labelPrintTrigger ? bar_index : _barIndexThisLabel1
+    _iBarIndexPreviousPrintedLabel = _labelPrintTrigger ? _barIndexThisLabel1 : _barIndexPreviousPrintedLabel1
+    label.delete(_labelName[bar_index - _barIndexPreviousPrintedLabel])
+    [_barIndexThisLabel, _iBarIndexPreviousPrintedLabel]
+
+// First iteration deletes the previous high label (localHighLabel)
+var int barIndexThisHighLabel = na  // The bar_index of the most recently printed label. We have to maintain these variables outside of the function.
+var int barIndexPreviousPrintedHighLabel = na  // The bar_index of the second most recently printed label
+
+if inputKeepOnlyLastLabel
+    [r_barIndexThisHighLabel, r_barIndexPreviousPrintedHighLabel] = functionDeletePreviousLabel(localHighLabel, localHighLabelTrigger, barIndexThisHighLabel[1], barIndexPreviousPrintedHighLabel, barIndexPreviousPrintedHighLabel[1])
+    barIndexThisHighLabel := r_barIndexThisHighLabel
+    barIndexPreviousPrintedHighLabel := r_barIndexPreviousPrintedHighLabel
+    barIndexPreviousPrintedHighLabel
+
+// Second iteration deletes the previous low label (localLowLabel)
+var int barIndexThisLowLabel = na
+var int barIndexPreviousPrintedLowLabel = na
+if inputKeepOnlyLastLabel
+    [r_barIndexThisLowLabel, r_barIndexPreviousPrintedLowLabel] = functionDeletePreviousLabel(localLowLabel, localLowLabelTrigger, barIndexThisLowLabel[1], barIndexPreviousPrintedLowLabel, barIndexPreviousPrintedLowLabel[1])
+    barIndexThisLowLabel := r_barIndexThisLowLabel
+    barIndexPreviousPrintedLowLabel := r_barIndexPreviousPrintedLowLabel
+    barIndexPreviousPrintedLowLabel
+
+
+// === Bullish, Bearish breaks ===
+
+bool isBullishBreakPlot = showReversalsOnly and isBullishReversal or showAllBreaks and isBullishBreak  // Show the break type chosen by the user
+bool isBearishBreakPlot = showReversalsOnly and isBearishReversal or showAllBreaks and isBearishBreak
+
+// We can't alter the text on a plotshape. We have to have two separate plotshapes for short and normal label text.
+float isBullishBreakPlotLongText = isBullishBreakPlot and not useShortLabelText ? low : na
+float isBullishBreakPlotShortText = isBullishBreakPlot and useShortLabelText ? low : na
+float isBearishBreakPlotLongText = isBearishBreakPlot and not useShortLabelText ? high : na
+float isBearishBreakPlotShortText = isBearishBreakPlot and useShortLabelText ? high : na
+
+var color white20 = color.new(color.white, 20)  // Updated because transp will be deprecated
+
+plotshape(isBullishBreakPlotLongText, title='Bullish break in market structure (Full Text)', style=shape.labelup, text='Bullish\nBreak', textcolor=white20, location=location.absolute, color=color.new(color.green, 0), size=size.small)
+plotshape(isBullishBreakPlotShortText, title='Bullish break in market structure (Shortened)', style=shape.labelup, text='Bull', textcolor=white20, location=location.absolute, color=color.new(color.green, 0), size=size.small)
+plotshape(isBearishBreakPlotLongText, title='Bearish break in market structure (Full Text)', style=shape.labeldown, text='Bearish\nBreak', textcolor=white20, location=location.absolute, color=color.new(color.red, 0), size=size.small)
+plotshape(isBearishBreakPlotShortText, title='Bearish break in market structure (Shortened)', style=shape.labeldown, text='Bear', textcolor=white20, location=location.absolute, color=color.new(color.red, 0), size=size.small)
+
+
+// === Buy The Dip, Sell The Rally ===
+
+isBTDPlotLongText = isBTD and inputShowEntries and not useShortLabelText ? low : na
+isBTDPlotShortText = isBTD and inputShowEntries and useShortLabelText ? low : na
+isSTRPlotLongText = isSTR and inputShowEntries and not useShortLabelText ? high : na
+isSTRPlotShortText = isSTR and inputShowEntries and useShortLabelText ? high : na
+
+var color green20 = color.new(color.green, 20)
+var color red20 = color.new(color.red, 20)
+
+plotshape(isBTDPlotLongText, title='Buy The Dip (Full Text)', style=shape.labelup, text='Buy The\nDip', textcolor=color.white, location=location.absolute, color=green20, size=size.normal)
+plotshape(isBTDPlotShortText, title='Buy The Dip (Shortened)', style=shape.labelup, text='BTD', textcolor=color.white, location=location.absolute, color=green20, size=size.normal)
+plotshape(isSTRPlotLongText, title='Sell The Rally (Full Text)', style=shape.labeldown, text='Sell The\nRally', textcolor=color.white, location=location.absolute, color=red20, size=size.normal)
+plotshape(isSTRPlotShortText, title='Sell The Rally (Shortened)', style=shape.labeldown, text='STR', textcolor=color.white, location=location.absolute, color=red20, size=size.normal)
+
+
+// === Label for the current state ===
+
+string stateLabelText = currentStateLabelDisplayMode == 'Short Text' ? bullBearCondition : currentStateLabelDisplayMode == 'Full Text' ? 'Market structure\nis currently ' + bullBearCondition : na  // Set the label text according to the display mode
+
+var label currentStateLabel = na  // We need to define the label in the global scope (not the local scope of the if statement) so that the delete command recognises it later
+// timeblock1 = (time - time[1]), futureTime = time + (timeblock1 * inputCurrentStateLabelOffset) // This is the only way to draw a label in the future
+if showCurrentStateLabel
+    currentStateLabel := label.new(futureTime, ohlc4, stateLabelText, color=marketBiasColour, textcolor=color.white, style=label.style_label_left, yloc=yloc.price, xloc=xloc.bar_time)
+    currentStateLabel
+label.delete(currentStateLabel[1])  // Keep only the most recent label
+
+
+// === Background fill for the current state ===
+
+color backgroundColour = inputMarketBiasBackgroundFill ? marketBiasColour : na  // Luckily we already defined the colour
+color backgroundColour70 = color.new(backgroundColour, 70)
+bgcolor(backgroundColour70)  // Actually do the fill. Remember it will usually be delayed until the Local High/Low is confirmed.
+
+// ================= ALERTS =================
+
+alertcondition(isLL, title='.Lower Low', message='A Lower Low has been confirmed. \n\n[Set Once Per Bar Close to avoid false alarms.]')
+alertcondition(isHL, title='.Higher Low', message='A Higher Low has been confirmed. \n\n[Set Once Per Bar Close to avoid false alarms.]')
+alertcondition(isHH, title='.Higher High', message='A Higher High has been confirmed. \n\n[Set Once Per Bar Close to avoid false alarms.]')
+alertcondition(isLH, title='.Lower High', message='A Lower High has been confirmed. \n\n[Set Once Per Bar Close to avoid false alarms.]')
+
+alertcondition(isBTD, title='.Buy The Dip', message='A Higher Low has been confirmed after a Higher High. Caveat Emptor.')
+alertcondition(isSTR, title='.Sell The Rally', message='A Lower High has been confirmed after a Lower Low. Caveat Venditor.')
+
+alertcondition(isBullishBreak, title='.Bullish Break', message='A Bullish Break in market structure has occurred.\n\n[For intra-candle warnings, which may not be confirmed on close, set Options : Once Per Bar.]')
+alertcondition(isBearishBreak, title='.Bearish Break', message='A Bearish Break in market structure has occurred.\n\n[For intra-candle warnings, which may not be confirmed on close, set Options : Once Per Bar.]')
+
+
+

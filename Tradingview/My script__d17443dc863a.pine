@@ -1,0 +1,8 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("My script")
+var int trade_count = 0
+trade_count := true ? nz(trade_count[1],0) + 1 : trade_count[1]
+label.new(bar_index, close, text=str.tostring(nz(trade_count, trade_count[1])))

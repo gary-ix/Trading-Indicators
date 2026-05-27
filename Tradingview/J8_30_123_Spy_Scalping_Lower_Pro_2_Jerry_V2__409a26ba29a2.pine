@@ -1,0 +1,447 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("J8_30_123_Spy_Scalping_Lower_Pro_2_Jerry_V2", overlay=false)
+
+// function to calculate supertrend side
+f_mtf_st(st_mult, atr_length, st_type) =>
+
+    float mtf_atr = switch st_type
+        "MA" => ta.sma(ta.tr(false), atr_length)
+        "WMA" => ta.wma(ta.tr(false), atr_length)
+        "VWMA" => ta.vwma(ta.tr(false), atr_length)
+        "EMA" => ta.ema(ta.tr(false), atr_length)
+        "HMA" => ta.hma(ta.tr(false), atr_length)
+
+    mtf_up = hl2 + (st_mult * mtf_atr)
+    mtf_down = hl2 + (-st_mult * mtf_atr)
+    
+    var float mtf_st = na
+    mtf_st := close < mtf_st[1] ? mtf_up : mtf_down
+
+    var int mtf_st_side = na
+    mtf_st_side := close > mtf_st ? 1 : close < mtf_st ? -1 : mtf_st_side[1]
+
+    mtf_st_side
+
+
+
+// ma function
+getMA(src, len, type) =>
+    ma_value = type == 'MA' ? ta.sma(src, len) : type == 'WMA' ? ta.wma(src, len) : type == 'VWMA' ? ta.vwma(src, len) : type == 'EMA' ? ta.ema(src, len) : type == 'HMA' ? ta.hma(src, len) : ta.sma(src, len)
+    ma_value
+
+
+
+// inputs
+input_price = input.source(close, title = 'Price', group = 'Settings', inline = '1')
+paint_bars = input.bool(true, title = 'Paint Bars', group = 'Settings', inline = '3', 
+     tooltip = 'Yes to PAINT the trend candlesticks.  Default YES')
+use_alerts = input.bool(true, title = 'Use Alerts', group = 'Settings', inline = '4', 
+     tooltip = 'Default NO. Turns on alert for Bear and Bull Spreads.')
+hide_dashboard = input.bool(false, title = 'Hide Dashboard', group = 'Settings', inline = '6', 
+     tooltip = 'Default NO')
+use_which_spread_labels = input.bool(true, title = 'Use Which Spread Labels', group = 'Settings', inline = '7', 
+     tooltip = 'Turns main scalper labels on or off. Default YES')
+
+
+// color inputs
+up_color = input.color(color.green, title = 'Up⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '1')
+dn_color = input.color(color.red, title = '⠀⠀⠀⠀⠀⠀Down⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '1')
+label_color = input.color(#ffffff, title = 'Label⠀⠀⠀⠀', group = 'Color Settings', inline = '2')
+transition_color = input.color(color.yellow, title = '⠀⠀⠀⠀⠀⠀Transition⠀⠀⠀', group = 'Color Settings', inline = '2')
+
+maxxed_color = input.color(color.new(#32C8FF, 0),  title = 'Maxxed⠀⠀⠀', group = 'Color Settings', inline = '3')
+rising_color = input.color(color.new(#00FF00, 0),  title = '⠀⠀⠀⠀⠀⠀Rising⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '3')
+bear_color = input.color(color.new(#E10000,0),  title = 'Bear⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '4')
+pretrend_color = input.color(color.new(#C87DFF,0),  title = '⠀⠀⠀⠀⠀⠀Pretrend⠀⠀⠀', group = 'Color Settings', inline = '4')
+
+ob_color = input.color(color.new(#ABABE1,0),  title = 'OB⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '5')
+os_color = input.color(color.new(#DCDC80,0),  title = '⠀⠀⠀⠀⠀⠀OS⠀⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '5')
+
+
+// iron condor settings
+delta_target_low = input.float(0.15, title = 'Delta Target Low', group = 'Iron Condor Settings', 
+     tooltip = 'Recommended Delta for Spread you are SELLING. Goal is Risk about $70 to make $30. Default = .15')
+
+delta_target_high = input.float(0.25, title = 'Delta Target High', group = 'Iron Condor Settings', 
+     tooltip = 'Recommended Delta for Spread you are SELLING. Goal is Risk about $70 to make $30. Default = .25')
+
+spreads_credit_target = input.float(0.20, title = 'Spread Credit Target', group = 'Iron Condor Settings', 
+     tooltip = 'Normally .20 - .25. Goal Risk $70 to Make $30. This will vary based on VIX volatility so adjust it as needed based on the current market')
+
+spreads_size = input.float(10.00, title = 'Spread Size', group = 'Iron Condor Settings', 
+     tooltip = 'How big of a spread do you want? Default=10. If entering later (> 12:00 PM) consider 8')
+     
+wings = input.float(1.00, title = 'Wings', group = 'Iron Condor Settings',
+      tooltip = 'How big is each wing? Default 1 (Small wings = smaller profits with higher probability) >>NORMALLY .1-.3 DELTA<<')
+
+IC_Buy_Put2   = math.round(close, 0) - (spreads_size / 2) 
+IC_Sell_Puts2 = math.round(close, 0) - (spreads_size / 2 - wings)
+IC_Sell_Call2 = math.round(close, 0) + (spreads_size / 2 - wings)
+IC_Buy_Call2 = math.round(close, 0) + (spreads_size / 2)
+Width = spreads_size - (2 * (wings))
+
+
+
+// criteria 1 supertrend
+chart_st_mult = input.float(1.0, title = 'Mult', group = 'Chart Supertrend', inline = '1',
+     tooltip = 'Default = 1.0')
+
+chart_st_atr_length = input.int(4, title = 'ATR Length', group = 'Chart Supertrend', inline = '2',
+     tooltip = 'Default = 4')
+
+chart_st_avgtype = input.string(title='AvgType ST', defval='HMA', options=['MA', 'WMA', 'VWMA', 'EMA', 'HMA'],
+     group = 'Chart Supertrend', inline = '3', tooltip = 'Default = HULL')
+
+chart_st_side = request.security(syminfo.tickerid, "", f_mtf_st(chart_st_mult, chart_st_atr_length, chart_st_avgtype))
+
+barcolor(not paint_bars ? na : chart_st_side == 1 ? up_color : chart_st_side == -1 ? dn_color : color.gray)
+
+
+
+// limit count
+show_arrows = input.bool(false, title = 'Show Arrows', group = 'Settings', inline = '4', tooltip = 'Shows most recent cross over when price crosses the trend.')
+limit_arrow_count = input.int(2, title = '' ,group = 'Settings', inline = '4', minval = 0)
+var arr_arrows = array.new_label(limit_arrow_count, na) 
+
+show_arrowbubble = input.bool(false, title = 'Show Bubbles', group = 'Settings', inline = '5', tooltip = 'Default NO.')
+var arr_arrowsbubble = array.new_label(limit_arrow_count, na) 
+
+if show_arrows
+    if ta.crossover(chart_st_side, 0)
+        array.unshift(arr_arrows, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.belowbar, color = up_color, style = label.style_triangleup, size = size.small))
+        last = array.pop(arr_arrows)
+        label.delete(last)
+    if ta.crossunder(chart_st_side, 0)
+        array.unshift(arr_arrows, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.abovebar, color = dn_color, style = label.style_triangledown, size = size.small))
+        last = array.pop(arr_arrows)
+        label.delete(last)
+
+if show_arrowbubble
+    if ta.crossover(chart_st_side, 0)
+        array.unshift(arr_arrowsbubble, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.belowbar, color = up_color, style = label.style_label_up, size = size.small, text = str.tostring(high[1])))
+        last = array.pop(arr_arrowsbubble)
+        label.delete(last)
+    if ta.crossunder(chart_st_side, 0)
+        array.unshift(arr_arrowsbubble, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.abovebar, color = dn_color, style = label.style_label_down, size = size.small,text = str.tostring(low[1])))
+        last = array.pop(arr_arrowsbubble)
+        label.delete(last)
+
+
+
+// mtf supertrend 
+mtf1_st_mult = 1.0
+mtf1_st_atr_length = 4
+mtf1_st_avgtype = 'HMA'
+mtf1_st_timeframe = '30'
+
+mtf2_st_mult = 1.0
+mtf2_st_atr_length = 4
+mtf2_st_avgtype = 'HMA'
+mtf2_st_timeframe = '60'
+
+mtf1_st_side = request.security(syminfo.tickerid, mtf1_st_timeframe, f_mtf_st(mtf1_st_mult, mtf1_st_atr_length, mtf1_st_avgtype)[1],
+ lookahead = barmerge.lookahead_on)
+mtf2_st_side = request.security(syminfo.tickerid, mtf2_st_timeframe, f_mtf_st(mtf2_st_mult, mtf2_st_atr_length, mtf2_st_avgtype)[1],
+ lookahead = barmerge.lookahead_on)
+
+
+
+// criteria 2 ema trend direction
+ema_length1 = input.int(13, title = 'EMA Length 1', group = 'EMA Trend Settings', inline = '1', tooltip = 'Default 13 scalping. Can try 10 for scalping')
+ema_length2 = input.int(50, title = 'EMA Length 2', group = 'EMA Trend Settings', inline = '2', tooltip = 'Default 50 scalping. Long Term 50, 100, 200. Short Term = 2, 5, 8, 20')
+ema_length3 = input.int(75, title = 'EMA Length 3', group = 'EMA Trend Settings', inline = '3', tooltip = 'Default 75 scalping. Try 100 for fewer signals')
+avgtype_EMA = input.string(title ='Avg Type', defval='EMA', options=['MA', 'WMA', 'VWMA', 'EMA', 'HMA'], group = 'EMA Trend Settings', inline = '4')
+
+ma1 = getMA(input_price, ema_length1, avgtype_EMA)
+ma2 = getMA(input_price, ema_length2, avgtype_EMA)
+ma3 = getMA(input_price, ema_length3, avgtype_EMA)
+
+plot(ma1, title = 'MA 1', color = color.aqua, display = display.none)
+plot(ma2, title = 'MA 2', color = color.red, display = display.none)
+plot(ma3, title = 'MA 3', color = color.fuchsia, display = display.none)
+
+
+
+// ema condition statement
+// #----- Bullish Criteria
+ECondition1 = ma1 > ma2 and ma1 > ma3 ? 1 : 0
+Econdition2 = ma2 > ma3 ? 1 : 0
+Econdition3 = ma1 > ma1[1] and ma1[1] > ma1[2] ? 1 : 0
+Econdition4 = ma2 > ma2[1] ? 1 : 0
+Econdition5 = ma3 > ma3[1] ? 1 : 0
+ECondition6 = close > ma1 ? 1 : 0
+
+// #----- Bearish Criteria
+ECondition10 = ma1 < ma2 and ma1 < ma3 ? 1 : 0
+Econdition11 = ma2 < ma3 ? 1 : 0
+Econdition12 = ma1 < ma1[1] and ma1[1] < ma1[2] ? 1 : 0
+Econdition13 = ma2 < ma2[1] ? 1 : 0
+Econdition14 = ma3 < ma3[1] ? 1 : 0
+ECondition15 = close < ma1 ? 1 : 0
+
+// #----- For Bullish & Bearish labels only = This is to LOOK FOR BULLISH OR BEARiSH 
+bullish_label =  ma1 > ma2 and ma2 > ma3 and ma1 > ma3
+bearish_label =  ma1 < ma2 and ma2 < ma3 and ma1 < ma3
+
+// #----- Criteria 2.1 12/27 change ma1 > ma[1] for fastest EMA. (Best One To Use)
+EMA_Bullish =  ma1 > ma2 and ma1 > ma3 and ma1 > ma1[1] 
+EMA_Bearish =  ma1 < ma2 and ma1 < ma3 and ma1 < ma1[1] 
+
+
+
+// criteria 3 rsi
+show_RSI_label = input.bool(false, title = 'Show RSI Label', group = 'RSI Settings', inline = '1', tooltip = 'Default No')
+rsi_ob = input.int(70, title = 'RSI OB', group = 'RSI Settings', inline = '2', tooltip = 'Default 70. Consider entering spreads between  ? OB and OS range.')
+rsi_os = input.int(35, title = 'RSI OS', group = 'RSI Settings', inline = '2', tooltip = 'Default 70. Consider entering spreads between  ? OB and OS range.')
+rsi_length = input.int(12, title = 'RSI Length', group = 'RSI Settings', inline = '2', tooltip = 'Default 12. Consdier 14 for testing')
+
+rsi_value = ta.rsi(input_price, rsi_length)
+rsi_plot = plot(rsi_value, title = 'RSI', 
+ color = rsi_value > rsi_ob ? maxxed_color : rsi_value < rsi_os ? pretrend_color : rsi_value > rsi_value[1] ? rising_color : bear_color,
+ display = display.all, linewidth = 2)
+ob_plot = plot(rsi_ob, title = 'Overbought', display = display.all, color = ob_color)
+os_plot = plot(rsi_os, title = 'Oversold', display = display.all, color = os_color)
+mid = plot(50.00, title = 'Mid', color = color.gray)
+
+fill(rsi_plot, ob_plot, color = rsi_value >= rsi_ob ? color.new(maxxed_color,50) : na)
+fill(rsi_plot, os_plot, color = rsi_value <= rsi_os ? color.new(pretrend_color,50) : na)
+
+plotshape(ta.crossover(rsi_value, rsi_os) ? rsi_os : na, title = 'Up Arrow', color = color.green,
+  style = shape.triangleup, location = location.absolute, size = size.small)
+plotshape(ta.crossunder(rsi_value, rsi_ob) ? rsi_ob : na, title = 'Down Arrow', color = color.red,
+  style = shape.triangledown, location = location.absolute, size = size.small)
+
+rsi_condition = rsi_value > rsi_ob ? 1 : rsi_value < rsi_os ? 2 : rsi_value > rsi_value[1] ? 3 : 4
+
+RSI_Maxxed = rsi_condition == 1
+RSI_Pretrend = rsi_condition == 2
+RSI_Bullish = rsi_condition == 3
+RSI_Bearish = rsi_condition == 4
+
+rsi_label = RSI_Maxxed ? "*3RSI Max Bull"
+ : RSI_Pretrend ? "*3RSI RSI Max Bear"
+ : RSI_Bullish and rsi_value >= 50 ? "*3RSI Bull " + str.tostring(math.round(rsi_value,1))
+ : RSI_Bullish and rsi_value < 50 ? "*3RSI ↑ " + str.tostring(math.round(rsi_value,1))
+ : RSI_Bearish and rsi_value < 49.99 ? "*3RSI Bear " + str.tostring(math.round(rsi_value,1))
+ : RSI_Bearish and rsi_value >= 50 ? "*3RSI ↓ " + str.tostring(math.round(rsi_value,1))
+ : "???"
+
+rsi_label_color = RSI_Maxxed ? color.new(#3be78c, 0)
+ : RSI_Pretrend ? color.new(#e48080, 0)
+ : RSI_Bullish and rsi_value >= 50 ? rising_color
+ : RSI_Bullish and rsi_value < 50 ? bear_color
+ : RSI_Bearish and rsi_value < 49.99 ? bear_color
+ : RSI_Bearish and rsi_value >= 50 ? rising_color
+ : color.gray
+
+
+
+// ZLSMA Exit
+length_Z_exit = input.int(50, title = 'Z Exit Length', group = 'ZLSMA Settings', inline = '1')
+length2_Z_exit = input.int(5, title = 'Z Exit Length 2', group = 'ZLSMA Settings', inline = '2')
+
+lsma = ta.linreg(close, length_Z_exit,0)
+lsma2 = ta.linreg(lsma, length_Z_exit,0)
+b = lsma - lsma2
+z_2 = lsma + b
+trig2 = ta.ema(z_2, length2_Z_exit)
+
+ZLSMA_Bearish = z_2 < trig2
+ZLSMA_Bullish = z_2 > trig2
+
+
+// criteria 4 macd dots 
+bb_length = input.int(10, title = 'BB Length', group = 'MACD Dots', inline = '1', tooltip = 'Default 10')
+bb_dev = input.float(1.0, title = 'BB Deviation', group = 'MACD Dots', inline = '2', tooltip = 'Default 1')
+macd_fast = input.int(12, title = 'MACD Fast', group = 'MACD Dots', inline = '3', tooltip = 'Default 12')
+macd_slow = input.int(26, title = 'MACD Slow', group = 'MACD Dots', inline = '4', tooltip = 'Default 26')
+macd_length = input.int(5, title = 'MACD Length', group = 'MACD Dots', inline = '5', tooltip = 'Default 5')
+show_macd_dot = input.bool(false, title = 'Show MACD Dot', group = 'MACD Dots', inline = '6', tooltip = 'Default NO')
+IC_MACDDotValue = input.float(0.25, title = 'IC MACD Dot Value', group = 'MACD Dots', inline = '7', 
+     tooltip = 'MACD dots must be between this value and the - value. Default .25')
+IC_MACDDotEXITValue = input.float(0.50, title = 'IC MACD Dot Value', group = 'MACD Dots', inline = '8',
+     tooltip = 'Consider exiting iron condor if above this value.')
+use_ic_alerts = input.bool(false, title = 'Iron Condor Alerts', group = 'MACD Dots', inline = '9')
+
+[MACD_Line, signalLine, histLine] = ta.macd(close, macd_fast, macd_slow, macd_length)
+[BB_middle, BB_Upper, BB_Lower] = ta.bb(MACD_Line, bb_length, bb_dev)
+
+
+plot(MACD_Line, title = 'MACD Dots', display = display.none, 
+     color = MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line < 0 ? color.yellow 
+     : MACD_Line > MACD_Line[1] and MACD_Line > 0 ? color.green 
+     : MACD_Line < MACD_Line[1] and MACD_Line > BB_Upper ? color.new(#097209,0) 
+     : MACD_Line < MACD_Line[1] and MACD_Line < BB_Lower ? color.red 
+     : MACD_Line > MACD_Line[1] and MACD_Line < BB_Lower ? color.new(#8a0a0a,0) 
+     : color.gray)
+plot(MACD_Line, title = 'MACD Line', display = display.none)
+
+plot(BB_middle, title = 'BB Middle', display = display.none)
+plot(BB_Upper, title = 'BB Upper', display = display.none)
+plot(BB_Upper, title = 'BB Lower', display = display.none)
+
+
+// #----- Jerry MACD Dot Color: 1 = yellow, 2 = green, 3 = dark green, 4 = red, 5 = dark red, 6 = gray
+MACD_Dot_Color = MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line < 0  ? 1 
+     : MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line > 0  ? 2
+     : MACD_Line < MACD_Line[1] and MACD_Line > BB_Upper  ? 3
+     : MACD_Line < MACD_Line[1] and MACD_Line < BB_Lower  ? 4 
+     : MACD_Line > MACD_Line[1] and MACD_Line < BB_Lower  ? 5 
+     : 6
+
+
+// #----- MACD Dot Color used for determining momentum
+MACD_dot_not_red = MACD_Dot_Color != 4 and MACD_Dot_Color != 5
+// #MACD_dot_not_green = macd_Dot_Color != 2 and macd_Dot_Color != 3 and macd_Dot_Color != 1  #and yellow
+MACD_dot_not_green = MACD_Dot_Color > 3
+
+MACDDot0 = MACD_Line > -IC_MACDDotValue and MACD_Line < IC_MACDDotValue
+MACDDot1 = MACDDot0[1]
+MACDDot2 = MACDDot0[2]
+MACDDot3 = MACDDot0[3]
+MACDDot4 = MACDDot0[4]
+
+// / #----- Criteria 4 Iron Condor Condition. APPLIES ONLY TO SPY Ticker
+Spy_IC = syminfo.ticker(syminfo.tickerid)  == "SPY" ? true : false
+
+IronCondor = Spy_IC and MACDDot0 and MACDDot1 and MACDDot2 and MACDDot3 and MACDDot4
+Exit_Iron_Condor = Spy_IC and ta.crossover(MACD_Line,IC_MACDDotEXITValue)
+ic_label = Exit_Iron_Condor ? "Exit IC"
+     : na 
+ic_label_color = IronCondor ? color.white 
+     : Exit_Iron_Condor ? color.red
+     : color.gray
+
+if use_ic_alerts and barstate.islast
+    if IronCondor
+        alert('Iron Condor Entry', alert.freq_once_per_bar_close)
+    if Exit_Iron_Condor
+        alert('Exit Iron Condor', alert.freq_once_per_bar_close)
+
+
+
+
+// criteria 5 1minute
+min1_st_mult = 1.0
+min1_st_atr_length = 4
+min1_st_avgtype = 'HMA'
+min1_st_timeframe = '1'
+min1_st_array = request.security_lower_tf(syminfo.tickerid, min1_st_timeframe, f_mtf_st(min1_st_mult, min1_st_atr_length, min1_st_avgtype))
+
+var float min1_st_side = na
+min1_st_side := array.size(min1_st_array) > 0 ? array.last(min1_st_array) : 0
+// bgcolor(min1_st_side == 1 ? color.new(color.green,50) : min1_st_side == -1 ? color.new(color.red,80) : na)
+// label.new(bar_index, high, str.tostring(min1_st_array))
+
+
+
+// define spreads and condor 
+Bull_Put_Spread = EMA_Bullish and chart_st_side == 1 and rsi_value >= 50 and MACD_dot_not_red and mtf1_st_side == 1 and min1_st_side == 1
+Bear_Call_Spread = EMA_Bearish and chart_st_side == -1 and rsi_value <= 50 and MACD_dot_not_green and mtf1_st_side == -1 and min1_st_side == -1
+
+look_for_iron_condor = input.bool(true, title = 'Look For Iron Condor', group = 'Settings', inline = '10')
+
+iron_condor_label = Spy_IC and IronCondor and look_for_iron_condor ? 
+ ("IC $" 
+ + str.tostring(spreads_size) + " Spread $" 
+ + str.tostring(Width)  + " Wide $" 
+ + str.tostring(wings)  + " Wings"+ " | B" 
+ + str.tostring(IC_Buy_Call2)  + "c S" 
+ + str.tostring(IC_Sell_Call2)  + "c | S" 
+ + str.tostring(IC_Sell_Puts2)  + "p B" 
+ + str.tostring(IC_Buy_Put2)  + "p | Max_P CLOSE $" 
+ + str.tostring(IC_Sell_Puts2) + "-$" 
+ + str.tostring(IC_Sell_Call2) 
+ + " | Delta " + str.tostring(delta_target_low) + str.tostring(-delta_target_high)
+ + " | Credit " + str.tostring(spreads_credit_target))
+ : Bull_Put_Spread ? 
+ ("Bull Put Credit SPREAD: Sell -" + str.tostring(delta_target_low) 
+ + " to -" + str.tostring(delta_target_high) + " delta PUT & Buy PUT $1 lower | " 
+ + str.tostring(spreads_credit_target) + " Credit")
+ : Bear_Call_Spread ?
+ ("Bear Call Credit SPREAD: Sell " + str.tostring(delta_target_low) 
+ + " to -" + str.tostring(delta_target_high) + " delta CALL & Buy CALL $1 higher | " 
+ + str.tostring(spreads_credit_target) + " Credit")
+ : "No Clear Signal"
+
+iron_condor_color = Spy_IC and IronCondor ? color.gray 
+     : Bull_Put_Spread ? color.rgb(136, 255, 140)  
+     : Bear_Call_Spread ? color.orange
+     : color.aqua
+
+
+
+// look for bull / bear entry
+mtf1_label_text = mtf1_st_side == 1 ? '30 Look Bull Entry'
+ : mtf1_st_side == -1  ? '30 Look Bear Entry' 
+ : na
+mtf1_label_color =  color.white
+
+
+if use_alerts and barstate.islast
+    if Bear_Call_Spread 
+        alert("SELL: Bear CALL Credit Spread", alert.freq_once_per_bar_close)
+    if Bull_Put_Spread 
+        alert("SELL: Bull PUT Credit Spread", alert.freq_once_per_bar_close)
+
+// DASHBOARD
+LabelSize = input.string(defval="small", options=["small", "medium", "large"], group = "Dashboard Settings", title = "Label Size", inline = '1')
+label_size = LabelSize == "small" ? size.small : LabelSize == "medium" ? size.normal : LabelSize == "large" ? size.large : size.small
+dashboard_text_color = input.color(color.new(#000000, 0 ), "Text Color", group = "Dashboard Settings", inline = '2')
+var table d = table.new(position.bottom_right, 20, 5, border_width = 1, frame_color = #000000)
+
+if (barstate.islast)
+    if not hide_dashboard
+        table.cell(d, 0, 0, text = "30-123:", width = 0, bgcolor = label_color,
+         text_size = label_size, text_color = dashboard_text_color)
+        table.cell(d, 1, 0, text = mtf1_st_timeframe, width = 0, 
+         bgcolor = mtf1_st_side == 1 ? up_color : mtf1_st_side == -1 ? dn_color : transition_color,
+         text_size = label_size, text_color = dashboard_text_color)
+        table.cell(d, 2, 0, text = mtf2_st_timeframe, width = 0, 
+         bgcolor = mtf2_st_side == 1 ? up_color : mtf2_st_side == -1 ? dn_color : transition_color,
+         text_size = label_size, text_color = dashboard_text_color)
+        table.cell(d, 3, 0, text = "*1", width = 0, 
+         bgcolor = chart_st_side == 1 ? up_color : chart_st_side == -1 ? dn_color : transition_color,
+         text_size = label_size, text_color = dashboard_text_color)
+        table.cell(d, 5, 0, text = rsi_label, width = 0, 
+         bgcolor = rsi_label_color,
+         text_size = label_size, text_color = dashboard_text_color)
+
+
+    if show_macd_dot
+        table.cell(d, 8, 0, text = "MACD Dot = " + str.tostring(math.round(MACD_Line,3)), width = 0, 
+         bgcolor = color.white,
+         text_size = label_size, text_color = dashboard_text_color)
+
+
+    if use_which_spread_labels
+        table.cell(d, 10, 0, text = iron_condor_label, width = 0, 
+         bgcolor = iron_condor_color,
+         text_size = label_size, text_color = dashboard_text_color)
+
+    table.cell(d, 4, 0, text = "*2MA", width = 0, 
+     bgcolor = EMA_Bullish ? up_color : EMA_Bearish ? dn_color : transition_color,
+     text_size = label_size, text_color = dashboard_text_color)
+    table.cell(d, 6, 0, text = "4Z", width = 0, 
+     bgcolor = ZLSMA_Bullish ? up_color : ZLSMA_Bearish ? dn_color : transition_color,
+     text_size = label_size, text_color = dashboard_text_color)
+    table.cell(d, 7, 0, text = "1min", width = 0, 
+     bgcolor = min1_st_side == 1 ? up_color : min1_st_side == -1 ? dn_color : color.gray,
+     text_size = label_size, text_color = dashboard_text_color)
+    table.cell(d, 9, 0, text = ic_label, width = 0, 
+     bgcolor = ic_label_color,
+     text_size = label_size, text_color = dashboard_text_color)
+    table.cell(d, 11, 0, text = mtf1_label_text, width = 0, 
+     bgcolor = mtf1_label_color,
+     text_size = label_size, text_color = dashboard_text_color)
+
+
+
+    
+
+
+
+

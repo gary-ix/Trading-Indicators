@@ -1,0 +1,374 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+// verison 67 was last
+
+//@version=5
+indicator("TWO MA Extended Lines", overlay = true, max_boxes_count = 500)
+
+
+// two ma settings
+signal_type = input.string("True Trend", title = 'Trading Mode', options = ['True Trend', 'COMING SOON', 'COMING SOON '],
+ group = 'Settings', inline = '1')
+
+twoma_filter = true
+twoma_length1 = 10
+two_matype1 = 'SMA'
+twoma_length2 = 50
+two_matype2 =  'SMA'
+
+two_ma_mindistance = 1.00
+two_ma_signaldistance = 1.00
+
+
+// toggles
+showing_trendcandles = input.string('Show & Use', title = 'Trend Candles', 
+ options = ['Show & Use', 'Use'], group = 'Settings', inline = '2',
+ tooltip = "If enabled, the colors of the candles will correspond with the trend based on price action.
+ Set this to “Use and Show” + enabling the Sentiment line for a more accurate trend detection system")
+
+sd_length = input.int(100, minval = 3, title = " ", group = 'Settings', inline = '2')
+
+show_zones = input.bool(true, title = 'Buy/Sell Zones',
+ group = 'Settings', inline = '3')
+
+show_sentiment = input.bool(true, title = 'Sentiment Line', group = 'Settings', inline = '4',
+ tooltip = "TThe Sentiment line displays trader's sentiment based on our custom method of analyzing market movements.
+ We inverted the colors for you so it's easier to detect when the sentiment trend is truly bullish or bearish")
+
+// flip_sentiment = input.bool(true, title = 'Flip Colors', group = 'Settings', inline = '5',
+//  tooltip = "Enabling this will swap the green with the red colors so they’re opposite. 
+//  This setting only works on the sentiment line, and this will only work if you have the “Trend Candles” setting set to None")
+flip_sentiment = true
+
+_one_signal = input.bool(false, title = 'One Signal Per Day', group = 'Settings', inline = '6')
+
+show_indecesion_candles = input.bool(true, title = 'Indecision Candles',  group = 'Settings', inline = '7',
+ tooltip = "The Yellow candles you see on the chart when the Trend Candles setting is set to “Use and Show” help 
+ you identify in realtime when the market is consolidating and about to make some kind of breakout in the near future. 
+ If you only want to see Indecision candles on the chart, you must set the “Trend Candles” setting to either “None” or “Use”")
+
+
+// time toggles
+trade_monday    = input.bool(true, "Trade Mondays", group = 'Time Settings', inline = '1')
+trade_tuesday   = input.bool(true, "Trade Tuesdays", group = 'Time Settings', inline = '2')
+trade_wednesday = input.bool(true, "Trade Wednesdays", group = 'Time Settings', inline = '3')
+trade_thursday  = input.bool(true, "Trade Thursdays", group = 'Time Settings', inline = '4')
+trade_friday    = input.bool(true, "Trade Fridays", group = 'Time Settings', inline = '5')
+trade_saturday  = input.bool(true, "Trade Saturdays", group = 'Time Settings', inline = '6')
+trade_sunday    = input.bool(true, "Trade Sundays", group = 'Time Settings', inline = '7')
+
+
+// non adjustable settings 
+supply_color = color.new(#c30616,70)
+demand_color = color.new(#05cd0e,70)
+sd_width = 3.00
+_allow_overlap = false
+_old_boxes = 'Delete'
+
+
+
+
+
+
+
+
+
+
+//  calculations
+float two_mavalue1 = switch two_matype1
+    "EMA" => ta.ema(close, twoma_length1)
+    "SMA" => ta.sma(close, twoma_length1)
+    "RMA" => ta.rma(close, twoma_length1)
+    "HMA" => ta.hma(close, twoma_length1)
+    => ta.sma(close, twoma_length1)
+
+float two_mavalue2 = switch two_matype2
+    "EMA" => ta.ema(close, twoma_length2)
+    "SMA" => ta.sma(close, twoma_length2)
+    "RMA" => ta.rma(close, twoma_length2)
+    "HMA" => ta.hma(close, twoma_length2)
+    => ta.sma(close, twoma_length2)
+
+// ptwoma1 = plot(twoma_filter ? two_mavalue1 : na, title = 'TWO MA Filter 1',
+//  color = color.new(color.silver,90), display = display.none, editable = false)
+// ptwoma2 = plot(twoma_filter ? two_mavalue2 : na, title = 'TWO MA Filter 2',
+//  color = color.new(color.silver,90), display = display.none, editable = false)
+
+atr_value = ta.atr(500)
+twoma_atrcond = math.abs(two_mavalue1 - two_mavalue2) / atr_value * 100 >= two_ma_mindistance
+
+var int twoma_nextside = 0
+var float twoma_stopentryprice = 0.00
+
+twoma_nextside := close <= math.min(two_mavalue1, two_mavalue2) ? 1
+ : close >= math.max(two_mavalue1, two_mavalue2) ? -1 : twoma_nextside[1]
+
+twoma_stopentryprice := twoma_nextside == 1 ? math.min(two_mavalue1,two_mavalue2) + (math.abs(two_mavalue1 - two_mavalue2) * (two_ma_signaldistance/100))
+ : twoma_nextside == -1 ? math.max(two_mavalue1,two_mavalue2) - (math.abs(two_mavalue1 - two_mavalue2) * (two_ma_signaldistance/100))
+ : na
+
+
+
+//  define vars
+var bool long_entry = false
+var bool short_entry = false
+
+var int trade_side = na
+
+long_conditions = twoma_nextside == 1 and twoma_atrcond
+short_conditions = twoma_nextside == -1 and twoma_atrcond
+
+high_cross = ta.crossover(high, twoma_stopentryprice[1])
+low_cross = ta.crossunder(low, twoma_stopentryprice[1])
+
+long_entry := long_conditions[1] and high_cross
+short_entry :=  short_conditions[1] and low_cross
+
+
+sentiment_side = flip_sentiment ? 
+ (twoma_nextside == 1 ? -1
+ : twoma_nextside == -1 ? 1
+ : 0)
+ :
+ (twoma_nextside == 1 ? 1
+ : twoma_nextside == -1 ? -1
+ : 0) 
+
+
+
+// bgcolor(color.new(sentiment_color, 85))
+current_day = dayofweek(time)
+is_tradeable_day = (trade_monday and current_day == dayofweek.monday)
+ or (trade_tuesday and current_day == dayofweek.tuesday)
+ or (trade_wednesday and current_day == dayofweek.wednesday)
+ or (trade_thursday and current_day == dayofweek.thursday)
+ or (trade_friday and current_day == dayofweek.friday)
+ or (trade_saturday and current_day == dayofweek.saturday)
+ or (trade_sunday and current_day == dayofweek.sunday)
+
+f_get_swing_values(sd_length) =>
+    
+    sh = ta.pivothigh(high, sd_length, sd_length)
+    sl = ta.pivotlow(low, sd_length, sd_length)
+
+    csh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), high[sd_length], 0)
+    csl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), low[sd_length], 0)
+
+    psh = ta.valuewhen(ta.pivothigh(high, sd_length, sd_length), high[sd_length], 1)
+    psl = ta.valuewhen(ta.pivotlow(low, sd_length, sd_length), low[sd_length], 1)
+
+    hh = sh >= psh
+    lh = sh < psh
+    ll = sl <= psl
+    hl = sl > psl
+
+    var int trend = na
+    trend := ((hh and high >= psh) or close > csh) ? 1 : ((ll and low <= psl) or close < csl) ? -1 : lh or hl ? 0 : trend[1]
+
+    var int last_signal = na
+    last_signal := hh ? 2 : lh ? -1 : ll ? -2 : hl ? 1 : last_signal[1]
+
+    [sh, sl, psh, psl, csh, csl, hh, lh, ll, hl, trend, last_signal]
+
+[sh, sl, psh, psl, csh, csl, hh, lh, ll, hl, trend, last_signal] =
+ f_get_swing_values(sd_length)
+
+
+
+var color sentiment_trend = na
+var color sentiment_final = na
+
+trend_color = trend == 1 ? color.lime
+ : trend == -1 ? color.rgb(255, 0, 0)
+ : color.yellow
+
+sentiment_color = sentiment_side == 1 ? color.lime
+ : sentiment_side == -1 ? color.rgb(255,0,0)
+ : na
+
+dopen = request.security(syminfo.tickerid, 'D', open, lookahead = barmerge.lookahead_on)  
+pdc = request.security(syminfo.tickerid, 'D', close[1], lookahead = barmerge.lookahead_on)
+
+sentiment_trend := showing_trendcandles == 'None' ? sentiment_color
+ : trend == 1 and sentiment_side == 1 ? color.lime
+ : trend == -1 and sentiment_side == -1 ? color.rgb(255, 0, 0) 
+ : sentiment_trend[1]
+
+sentiment_final := not _one_signal ? sentiment_trend 
+ : dopen != dopen[1] ? sentiment_trend 
+ : sentiment_final[1]
+
+// plot(dopen, title="Daily Open", style=plot.style_circles, color= is_tradeable_day ? sentiment_final : na, linewidth=1,
+//  display = display.none, editable = false)
+// plot(pdc, title="Prior Daily Close",style=plot.style_circles, color= is_tradeable_day ? sentiment_final : na, linewidth=1,
+//  display = display.none, editable = false)
+
+plot(twoma_stopentryprice, color = is_tradeable_day ? sentiment_final : na,
+ style = plot.style_stepline_diamond, offset = 1, title = 'Sentiment Line', editable = true,
+ display = show_sentiment ? display.all : display.none)
+
+barcolor(show_indecesion_candles and trend== 0 ? trend_color : showing_trendcandles == 'Show & Use' ? trend_color : na,
+ editable = false)
+// bgcolor(color.new(sentiment_trend,80))
+
+
+// draw interest zones
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+
+
+f_check_overlapping(new_poi, box_array, atr) =>
+    atr_threshold = atr * 2
+    okay_to_draw = true
+
+    for i = 0 to array.size(box_array) - 1
+        top = box.get_top(array.get(box_array, i))
+        bottom = box.get_bottom(array.get(box_array, i))
+        poi = (top + bottom) / 2
+
+        upper_boundary = poi + atr_threshold
+        lower_boundary = poi - atr_threshold
+
+        if new_poi >= lower_boundary and new_poi <= upper_boundary
+            okay_to_draw := false
+            break
+        else 
+            okay_to_draw := true
+    okay_to_draw
+
+
+f_supply_demand(box_array, box_type, atr, box_left, level, str_text) =>
+    atr_buffer = atr * (sd_width / 10)
+    box_right = time
+
+    var float box_top = 0.00
+    var float box_bottom = 0.00
+    var float poi = 0.00
+    var bool new_supply_or_demand = false
+
+    if box_type == 1
+        box_top := level
+        box_bottom := box_top - atr_buffer
+        poi := (box_top + box_bottom) / 2
+    else if box_type == -1
+        box_bottom := level
+        box_top := box_bottom + atr_buffer
+        poi := (box_top + box_bottom) / 2
+
+    okay_to_draw = _allow_overlap ? true : f_check_overlapping(poi, box_array, atr) 
+    if okay_to_draw
+        new_supply_or_demand := true
+
+        //delete oldest box, and then create a new box and add it to the array
+        if box_type == 1 
+            box.delete( array.get(box_array, array.size(box_array) - 1) )
+            f_array_add_pop(box_array, box.new( left = box_left, top = box_top, right = box_right, bottom = box_bottom,
+             border_color = supply_color, border_width = 0, bgcolor = supply_color, extend = extend.right,
+             text =str_text, text_halign = text.align_right, text_valign = text.align_center, 
+             text_color = color.white, text_size = size.small, xloc = xloc.bar_time, border_style = line.style_solid))
+        
+        else if box_type == -1
+            box.delete( array.get(box_array, array.size(box_array) - 1) )
+            f_array_add_pop(box_array, box.new( left = box_left, top = box_top, right = box_right, bottom = box_bottom,
+             border_color = demand_color , border_width = 0, bgcolor = demand_color , extend = extend.right,
+             text =str_text, text_halign = text.align_right, text_valign = text.align_center, 
+             text_color = color.white, text_size = size.small, xloc = xloc.bar_time, border_style = line.style_solid))
+
+
+f_manage_zones(box_array, bos_array, zone_type) =>
+    var broken_count = 0
+    for i = 0 to array.size(box_array) - 1
+        level_to_break = zone_type == 1 ? box.get_top(array.get(box_array,i)) : box.get_bottom(array.get(box_array,i))
+        if (zone_type == 1  and low >= level_to_break) or (zone_type == -1  and high <= level_to_break)
+            broken_count += 1
+            if _old_boxes == 'Delete'
+                box.delete(array.get(box_array, i))
+
+            else if _old_boxes == 'Stop Drawing'
+                box.delete( array.get(bos_array, array.size(bos_array) - 1) )
+                copied_box = box.copy(array.get(box_array, i))
+                f_array_add_pop(bos_array, copied_box)
+                box.set_right(array.get(bos_array, 0), time)
+                box.set_extend(array.get(bos_array, 0), extend.none)
+                box.set_border_color(array.get(bos_array, 0), zone_type == 1 ? color.new(supply_color,85) : color.new(demand_color,85))
+                box.set_bgcolor(array.get(bos_array, 0), zone_type == 1 ? color.new(supply_color,85) : color.new(demand_color,85))
+                box.delete(array.get(box_array, i))
+        broken_count
+        
+
+
+
+
+var current_supply_box = array.new_box(100, na)
+var current_demand_box = array.new_box(100, na)
+
+var broken_supply = array.new_box(100, na)
+var broken_demand = array.new_box(100, na)
+
+var int supply_broke_count = na
+var int demand_broke_count = na
+
+// draw new zones
+if show_zones
+    if short_entry
+        f_supply_demand(current_supply_box, 1, atr_value, time, twoma_stopentryprice[1], "")
+    if long_entry
+        f_supply_demand(current_demand_box, -1, atr_value, time, twoma_stopentryprice[1], "")
+
+
+// manage supply/demands
+supply_broke_count := f_manage_zones(current_supply_box, broken_supply, 1)
+demand_broke_count := f_manage_zones(current_demand_box, broken_demand, -1)
+
+
+// alerts
+var bool Sentiment_Bullish = na
+var bool Sentiment_Bearish = na
+var bool Indecision_Candle_Start = na
+var bool Indecision_Candle_End = na
+var bool Buy_Zone_Opened = na
+var bool Sell_Zone_Opened = na
+var bool Buy_Zone_Broken = na
+var bool Sell_Zone_Broken = na
+var bool Bullish_Trend_Candles_Start = na
+var bool Bearish_Trend_Candles_Start = na
+var bool Bullish_Trend_Candles_End = na
+var bool Bearish_Trend_Candles_End = na
+
+Sentiment_Bullish := sentiment_side == 1 and sentiment_side[1] != 1
+Sentiment_Bearish := sentiment_side == -1 and sentiment_side[1] != -1
+
+Indecision_Candle_Start := trend == 0 and trend[1] != 0
+Indecision_Candle_End := trend != 0 and trend[1] == 0
+
+Buy_Zone_Opened := long_entry
+Sell_Zone_Opened := short_entry
+
+Buy_Zone_Broken := demand_broke_count >= 1
+Sell_Zone_Broken := supply_broke_count >= 1
+
+Bullish_Trend_Candles_Start := trend == 1 and trend[1] != 1
+Bearish_Trend_Candles_Start := trend == -1 and trend[1] != -1
+
+Bullish_Trend_Candles_End := trend != 1 and trend[1] == 1
+Bearish_Trend_Candles_End := trend != -1 and trend[1] == -1
+
+
+alertcondition(Sentiment_Bullish, "Sentiment Bullish", "Sentiment Bullish")
+alertcondition(Sentiment_Bearish, "Sentiment Bearish", "Sentiment Bearish")
+
+alertcondition(Indecision_Candle_Start, "Indecision Candle Start", "Indecision Candle Start")
+alertcondition(Indecision_Candle_End, "Indecision Candle End", "Indecision Candle End")
+
+alertcondition(Buy_Zone_Opened, "Buy Zone Opened", "Buy Zone Opened")
+alertcondition(Sell_Zone_Opened, "Sell Zone Opened", "Sell Zone Opened")
+
+alertcondition(Buy_Zone_Broken, "Buy Zone Broken", "Buy Zone Broken")
+alertcondition(Sell_Zone_Broken, "Sell Zone Broken", "Sell Zone Broken")
+
+alertcondition(Bullish_Trend_Candles_Start, "Bullish Trend Start", "Bullish Trend Start")
+alertcondition(Bullish_Trend_Candles_End, "Bullish Trend End", "Bullish Trend End")
+
+alertcondition(Bearish_Trend_Candles_Start, "Bearish Trend Start", "Bearish Trend Start")
+alertcondition(Bearish_Trend_Candles_End, "Bearish Trend End", "Bearish Trend End")

@@ -1,0 +1,15 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("My script")
+
+
+
+
+// sma calculate just to display on chart
+sma1_value = ta.sma(close, 30)
+sma2_value = ta.sma(close, 50)
+sma1plot = plot(sma1_value, title = 'SMA 1', color = color.yellow)
+sma2plot = plot(sma2_value, title = 'SMA 2', color = color.aqua)
+fill(sma1plot, sma2plot, color = sma1_value > sma2_value ? color.new(color.teal, 80) : color.new(color.red, 80))

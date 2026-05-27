@@ -1,0 +1,76 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Testing LTF, HTF", overlay = true)
+
+tf1         = input.timeframe('1', title = '', group = 'Timeframe Settings', inline = '1')
+tf1_bars    = input.int(4)
+
+
+
+f_array_pop_push(array, value_to_add) =>
+    if array.size(array) > 0
+        array.shift(array)
+    array.push(array, value_to_add)
+
+
+f_array_ltf(array, array_add, max_array_size) =>
+    var joined_array = array.new_float(max_array_size, na)
+    joined_array := array.concat(array,array_add)
+
+    array_size = array.size(joined_array)
+    number_to_delete = math.max(0, array_size-max_array_size)
+
+    if number_to_delete != 0
+        for i = 0 to number_to_delete-1
+            array.shift(joined_array)
+        
+    joined_array
+
+
+
+f_ltf_values(arr_o, arr_h, arr_l, arr_c, tf, max_array_size) =>
+    adjusted_timeframe = timeframe.in_seconds(tf) >= timeframe.in_seconds() ? '' : tf
+    [o,h,l,c] = request.security_lower_tf(syminfo.tickerid, adjusted_timeframe, [open, high, low, close])
+    f_array_ltf(arr_o, o, max_array_size)
+    f_array_ltf(arr_h, h, max_array_size)
+    f_array_ltf(arr_l, l, max_array_size)
+    f_array_ltf(arr_c, c, max_array_size)
+
+
+
+f_htf_values(arr_o, arr_h, arr_l, arr_c, tf) =>
+    [o,h,l,c] = request.security(syminfo.tickerid, tf, [open, high, low, close])
+    f_array_pop_push(arr_o, o)
+    f_array_pop_push(arr_h, h)
+    f_array_pop_push(arr_l, l)
+    f_array_pop_push(arr_c, c)
+
+
+
+var tf1_o       = array.new_float(tf1_bars, na)
+var tf1_h       = array.new_float(tf1_bars, na)
+var tf1_l       = array.new_float(tf1_bars, na)
+var tf1_c       = array.new_float(tf1_bars, na)
+
+
+var string label = ''
+if timeframe.in_seconds() > timeframe.in_seconds(tf1)
+    f_ltf_values(tf1_o, tf1_h, tf1_l, tf1_c, tf1, tf1_bars)
+    label := 'LTF'
+else
+    f_htf_values(tf1_o, tf1_h, tf1_l, tf1_c, tf1)
+    label := 'HTF'
+bgcolor(timeframe.in_seconds() <= timeframe.in_seconds(tf1) ? color.new(color.green, 80) : na)
+
+// test = request.security_lower_tf(syminfo.tickerid, tf1, close)
+if barstate.islast
+    // label.new(bar_index+5, 444.25, color = color.white,
+    //  text = str.tostring(test)
+    //  )
+    label.new(bar_index+5, 444.10, color = color.white,
+     text = str.tostring(tf1_c)
+     )
+
+    label.new(bar_index+5, close, text = label)

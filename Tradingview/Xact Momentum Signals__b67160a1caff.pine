@@ -1,0 +1,240 @@
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=5
+indicator('Xact Momentum Signals', overlay=true)
+
+//--INSTRUCTIONS--//
+instructions_tooltip = "Instructions go here"
+
+instructions = input.bool(title='Show Instructions', defval=false, inline='1', tooltip = instructions_tooltip)
+var table instruction_label = table.new(position.middle_center, 1, 1,
+ frame_color=color.new(#000000, 0), frame_width=0, 
+ border_color=color.new(#000000,100), border_width=0)
+if barstate.islast and instructions
+    table.cell(instruction_label, 0, 0, text=instructions_tooltip, width=0, 
+     bgcolor=color.black, text_color=color.white, text_size=size.normal, text_halign=text.align_left)
+//--INSTRUCTIONS--//
+
+
+//GLOBAL
+show_signals = input.string('Buy, Sell, Exit', title = 'Show Signals', options = ['Buy, Sell, Exit', 'Buy, Sell', 'None'], inline = '1', group = 'Signal Settings')
+entry_adj = input.int(title='Signal Adjuster', defval=5, minval=1, maxval=10, step=1, inline='2', group='Signal Settings', tooltip = "Recommended Settings: \nScalping: 1-3 \nIntra-day: 3-5 \nSwing: 6+")
+target_adj = input.float(title='Target Adjuster', defval=3.0, minval=1, maxval=10, step=0.25, inline='5', group='Signal Settings', tooltip = "Recommended Settings: \nScalping: 1-3 \nIntra-day: 4-7 \nSwing: 7-10")
+stop_adj = input.float(title='Stop Adjuster', defval=3.0, minval=1, maxval=10, step=0.25, inline='6', group='Signal Settings', tooltip = "Recommended Settings: \nScalping: 1-3 \nIntra-day: 4-7 \nSwing: 7-10")
+
+buy_color = input.color(#05cd0e, title='Buy Color', inline='7', group='Signal Settings')
+sell_color = input.color(#c30616, title='Sell Color', inline='7', group='Signal Settings')
+neutral_color = input.color(color.yellow, title='Neutral Color', inline='7', group='Signal Settings')
+color_candles = input.string('Gradient', title = 'Color Candles', options = ['Gradient', 'Two-Colors', 'None'], inline = '8', group = 'Signal Settings')
+
+showing_lines = input.string(defval = "No Lines", title='Entry, Target, Stop Lines', options =["Current Signal Only", "All Signals (Backtesting)", "No Lines"], inline='9', group='Signal Settings')
+entry_color = input.color(title='Entry', defval=color.new(color.blue, 0), inline='10', group='Signal Settings')
+tgts_color = input.color(title='Targets', defval=color.new(#abf3ae, 0), inline='10', group='Signal Settings')
+stop_color = input.color(title='Stop', defval=color.new(#feadcf, 0), inline='10', group='Signal Settings')
+tgthit_color = input.color(title='Tgt Hit Label', defval=color.new(#ffffff, 0), inline='10', group='Signal Settings')
+
+show_tgts_labels = input.bool(title='Target Hit Labels', defval=false, inline='11', group='Signal Settings')
+show_signal_lines = showing_lines != "No Lines" ? true : false
+show_backtesting = showing_lines == "All Signals (Backtesting)" ? true : false
+//GLOBAL END
+
+//LOGIC FOR STRATEGY
+super_trend_factor = (entry_adj+2)
+super_trend_atr = math.round(entry_adj * 1.5,0)
+
+[supertrend, direction] = ta.supertrend(super_trend_factor, int(super_trend_atr))
+st_trend = direction < 0 ? 1 : -1
+
+// bodyMiddle = plot((open + close) / 2, display=display.none)
+// upTrend = plot(direction < 0 ? supertrend : na, "Up Trend", color = color.green, style=plot.style_linebr)
+// downTrend = plot(direction < 0? na : supertrend, "Down Trend", color = color.red, style=plot.style_linebr)
+// fill(bodyMiddle, upTrend, color.new(color.green, 90), fillgaps=false)
+// fill(bodyMiddle, downTrend, color.new(color.red, 90), fillgaps=false)
+
+tf_function() =>
+    tf = ' '
+    if timeframe.isintraday
+        if timeframe.multiplier < 240
+            tf := '240'
+        if timeframe.multiplier < 60
+            tf := '60'
+        if timeframe.multiplier < 15
+            tf := '15'
+        else
+            tf := 'D'
+    else if timeframe.isdaily
+        tf := 'W'
+    else if timeframe.isweekly
+        tf := 'M'
+    else 
+        tf := timeframe.period
+        
+tf = tf_function()
+
+ma_13 = request.security(syminfo.tickerid, tf, ta.ema(close, 13))
+ma_48 = request.security(syminfo.tickerid, tf, ta.ema(close, 48))
+
+// ma13 = plot(ma_13, color = color.blue)
+// ma48 = plot(ma_48, color = color.white, linewidth = 5)
+ma_trend = ma_13 >= ma_48 ? 1 : -1
+
+distance_from_ma = math.abs(close - ma_48)
+low_from_ma = math.abs(low - ma_48)
+high_from_ma = math.abs(high - ma_48)
+
+bull_color = color.from_gradient(high_from_ma, ta.lowest(high_from_ma, 48), ta.highest(high_from_ma, 48), neutral_color, buy_color)
+bear_color = color.from_gradient(low_from_ma, ta.lowest(low_from_ma, 48), ta.highest(low_from_ma, 48), neutral_color, sell_color)
+
+var candle_trend = 0
+candle_trend := close < math.min(ma_13,ma_48) ? -1 : close > math.max(ma_13, ma_48) ? 1 : ma_trend == 1 ? 1 : ma_trend == -1 ? -1 : candle_trend[1]
+
+var candle_color = #000000
+if color_candles == 'Gradient'
+    if candle_trend == 1
+        candle_color := bull_color
+    else
+        candle_color := bear_color
+if color_candles == 'Two-Colors'
+    if ma_trend == 1
+        candle_color := buy_color
+    else
+        candle_color := sell_color  
+ok_to_color_candles = color_candles != 'None' ? true : false
+// plotcandle(ok_to_color_candles ? open : na, ok_to_color_candles ? high : na, ok_to_color_candles ? low : na, ok_to_color_candles ? close : na, color = color.new(candle_color,50), wickcolor = color.new(candle_color,0), bordercolor = color.new(candle_color,0) )
+// bgcolor(color.new(candle_color,80))
+//STRATEGY LOGIC END
+
+
+//ENTRIES
+long_cond = ma_trend == 1 and st_trend == 1
+short_cond = ma_trend == -1 and st_trend == -1
+
+long_entry = long_cond and not long_cond[1] and barstate.isconfirmed
+short_entry = short_cond and not short_cond[1] and barstate.isconfirmed
+
+long_exit = long_cond[1] and not long_cond and barstate.isconfirmed
+short_exit = short_cond[1] and not short_cond and barstate.isconfirmed
+
+var position = 0
+position := long_entry? 1 : short_entry? -1 : long_exit or short_exit ? 0 : position[1]
+
+//PLOTTING SIGNAL CODE
+var show_buy_sell = false
+var show_exits = false
+
+if show_signals == 'Buy, Sell, Exit'
+    show_buy_sell := true
+    show_exits := true
+if show_signals == 'Buy, Sell'
+    show_buy_sell := true
+    show_exits := false
+if show_signals == 'None'
+    show_buy_sell := false
+    show_exits := false
+    
+//MAIN
+plotshape(show_buy_sell and long_entry and position[1] != 1 ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "BUY", textcolor=color.white, location= location.absolute, color=color.new(buy_color, 30), size=size.tiny)
+plotshape(show_buy_sell and short_entry and position[1] != -1 ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='SELL', textcolor=color.white, location=location.absolute, color=color.new(sell_color, 30), size=size.tiny)
+
+//EXITS
+plotshape(show_exits and long_exit  ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='Exit', textcolor=color.white, location=location.absolute, color=color.new(#434651, 60), size=size.tiny)
+plotshape(show_exits and short_exit ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "Exit", textcolor=color.white, location= location.absolute, color=color.new(#434651, 60), size=size.tiny)
+
+
+//PLOT ENTRY LINES
+entry = 0.00
+stop = 0.00
+risk_baseline = 0.00
+tgt1 = 0.00
+tgt2 = 0.00
+tgt3 = 0.00
+hit_tgt1 = 0
+hit_tgt2 = 0
+hit_tgt3 = 0
+entry_bn = 0
+trend_atr = ta.atr(entry_adj) / 2
+
+
+if long_cond == true
+    if long_entry
+        entry := close
+        stop := entry - stop_adj * trend_atr
+        risk_baseline := entry - (entry - target_adj * trend_atr)
+        tgt1 := entry + risk_baseline
+        tgt2 := entry + risk_baseline * 2
+        tgt3 := entry + risk_baseline * 3
+        hit_tgt1 := -1
+        hit_tgt2 := -1
+        hit_tgt3 := -1
+        entry_bn := bar_index
+        entry_bn
+    else
+        entry := entry[1]
+        stop := stop[1]
+        risk_baseline := risk_baseline[1]
+        tgt1 := tgt1[1]
+        tgt2 := tgt2[1]
+        tgt3 := tgt3[1]
+        hit_tgt1 := hit_tgt1[1] == -1 and high > tgt1 ? 1 : hit_tgt1[1]
+        hit_tgt2 := hit_tgt2[1] == -1 and high > tgt2 ? 1 : hit_tgt2[1]
+        hit_tgt3 := hit_tgt3[1] == -1 and high > tgt3 ? 1 : hit_tgt3[1]
+        entry_bn := entry_bn[1]
+        entry_bn
+
+if short_cond == true
+    if short_entry
+        entry := close
+        stop := entry + stop_adj * trend_atr
+        risk_baseline :=(entry + target_adj * trend_atr) - entry
+        tgt1 := entry - risk_baseline
+        tgt2 := entry - risk_baseline * 2
+        tgt3 := entry - risk_baseline * 3
+        hit_tgt1 := -1
+        hit_tgt2 := -1
+        hit_tgt3 := -1
+        entry_bn := bar_index
+        entry_bn
+    else
+        entry := entry[1]
+        stop := stop[1]
+        risk_baseline := risk_baseline[1]
+        tgt1 := tgt1[1]
+        tgt2 := tgt2[1]
+        tgt3 := tgt3[1]
+        hit_tgt1 := hit_tgt1[1] == -1 and low < tgt1 ? 1 : hit_tgt1[1]
+        hit_tgt2 := hit_tgt2[1] == -1 and low < tgt2 ? 1 : hit_tgt2[1]
+        hit_tgt3 := hit_tgt3[1] == -1 and low < tgt3 ? 1 : hit_tgt3[1]
+        entry_bn := entry_bn[1]
+        entry_bn
+
+ok_to_plot_long_targets = show_buy_sell and position == 1 and show_tgts_labels and not (long_entry or short_exit)
+plotchar(ok_to_plot_long_targets and hit_tgt1 == 1 and hit_tgt1[1] != 1 and not(hit_tgt2 == 1 or hit_tgt3 == 1), editable=false, char='1', color=tgthit_color, location=location.abovebar, size=size.tiny)
+plotchar(ok_to_plot_long_targets and hit_tgt2 == 1 and hit_tgt2[1] != 1 and not(hit_tgt3 == 1), editable=false, char='2', color=tgthit_color, location=location.abovebar, size=size.tiny)
+plotchar(ok_to_plot_long_targets and hit_tgt3 == 1 and hit_tgt3[1] != 1, editable=false, char='3', color=tgthit_color, location=location.abovebar, size=size.tiny)
+
+oktoplotshorttgts = show_buy_sell and position == -1 and show_tgts_labels and not (short_entry or long_exit)
+plotchar(oktoplotshorttgts and hit_tgt1 == 1 and hit_tgt1[1] != 1 and not(hit_tgt2 == 1 or hit_tgt3 == 1), editable=false, char='1', color=tgthit_color, location=location.belowbar, size=size.tiny)
+plotchar(oktoplotshorttgts and hit_tgt2 == 1 and hit_tgt2[1] != 1 and not(hit_tgt3 == 1), editable=false, char='2', color=tgthit_color, location=location.belowbar, size=size.tiny)
+plotchar(oktoplotshorttgts and hit_tgt3 == 1 and hit_tgt3[1] != 1, editable=false, char='3', color=tgthit_color, location=location.belowbar, size=size.tiny)
+
+//Prev Signal Lines
+plot(show_backtesting ? entry : na, style=plot.style_line, color=entry != entry[1] ? color.new(#000000,100) : entry_color, editable=false)
+plot(show_backtesting ? stop : na, style=plot.style_line, color=entry != entry[1] ? color.new(#000000,100) : stop_color, editable=false)
+plot(show_backtesting ? tgt1 : na, style=plot.style_line, color=entry != entry[1] ? color.new(#000000,100) : tgts_color, editable=false)
+plot(show_backtesting ? tgt2 : na, style=plot.style_line, color=entry != entry[1] ? color.new(#000000,100) : tgts_color, editable=false)
+plot(show_backtesting ? tgt3 : na, style=plot.style_line, color=entry != entry[1] ? color.new(#000000,100) : tgts_color, editable=false)
+
+if show_signal_lines and entry_bn != 0 
+    entry_line = line.new(x1=entry_bn, x2=bar_index, y1=entry, y2=entry, xloc=xloc.bar_index, width=1, color=entry_color, extend=extend.right, style=line.style_solid)
+    line.delete(entry_line[1])
+    stop_line = line.new(x1=entry_bn, x2=bar_index, y1=stop, y2=stop, xloc=xloc.bar_index, width=1, color=stop_color, extend=extend.right, style=line.style_solid)
+    line.delete(stop_line[1])
+
+    tgt1_line = line.new(x1=entry_bn, x2=bar_index, y1=tgt1, y2=tgt1, xloc=xloc.bar_index, width=1, color=tgts_color, extend=extend.right, style=line.style_solid)
+    line.delete(tgt1_line[1])
+
+    tgt2_line = line.new(x1=entry_bn, x2=bar_index, y1=tgt2, y2=tgt2, xloc=xloc.bar_index, width=1, color=tgts_color, extend=extend.right, style=line.style_solid)
+    line.delete(tgt2_line[1])
+
+    tgt3_line = line.new(x1=entry_bn, x2=bar_index, y1=tgt3, y2=tgt3, xloc=xloc.bar_index, width=1, color=tgts_color, extend=extend.right, style=line.style_solid)
+    line.delete(tgt3_line[1])

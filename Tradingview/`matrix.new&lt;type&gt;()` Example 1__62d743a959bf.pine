@@ -1,0 +1,5 @@
+//@version=5
+indicator("`matrix.new<type>()` Example 1", overlay = true)
+
+var label1 = label.new(bar_index, high, text="Hello, world!", style=label.style_none)
+// label.set_tooltip(label1, 'testing123')

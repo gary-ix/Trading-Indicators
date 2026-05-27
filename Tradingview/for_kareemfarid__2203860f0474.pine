@@ -1,0 +1,77 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+strategy("for_kareemfarid", overlay = true)
+
+higher_tf = input.timeframe("D", title = 'Higher Timeframe', group = 'Timeframe Settings')
+
+
+
+
+//long conditions
+long_condition_1 = input.string(defval = 'Bullish on HTF', options = ['Bullish on HTF', 'Bullish on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF', 'Lower Low on HTF', 'Lower Low on Chart TF']
+     , title = 'Long Condition 1', group = 'Long Conditions', inline = '1')
+long_and_or_1 = input.string(defval = 'AND', title =' ', options = ['AND', 'OR'], group = 'Long Conditions', inline = '1')
+
+long_condition_2 = input.string(defval = 'Bullish on HTF', options = ['Bullish on HTF', 'Bullish on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF', 'Lower Low on HTF', 'Lower Low on Chart TF']
+     , title = 'Long Condition 2', group = 'Long Conditions', inline = '2')
+
+long_exit = input.string(defval = 'Reversal on HTF', options = ['Reversal on HTF', 'Reversal on Chart TF', 'Higher High on HTF', 'Higher High on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF']
+     , title = 'Long Exit Condition', group = 'Long Conditions', inline = '3')
+
+
+//short conditions
+short_condition_1 = input.string(defval = 'Bullish on HTF', options = ['Bullish on HTF', 'Bullish on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF', 'Lower Low on HTF', 'Lower Low on Chart TF']
+     , title = 'Short Condition 1', group = 'Short Conditions', inline = '1')
+short_and_or_1 = input.string(defval = 'AND', title =' ', options = ['AND', 'OR'], group = 'Short Conditions', inline = '1')
+
+short_condition_2 = input.string(defval = 'Bullish on HTF', options = ['Bullish on HTF', 'Bullish on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF', 'Lower Low on HTF', 'Lower Low on Chart TF']
+     , title = 'Short Condition 2', group = 'Short Conditions', inline = '2')
+
+short_exit = input.string(defval = 'Reversal on HTF', options = ['Reversal on HTF', 'Reversal on Chart TF', 'Higher High on HTF', 'Higher High on Chart TF', 'Higher Low on HTF', 'Higher Low on Chart TF']
+     , title = 'Short Exit Condition', group = 'Short Conditions', inline = '3')
+
+
+//tps and sls
+tp_pct = input.float(2.00, title = 'TP %', group = 'TP / SL', inline = '1')
+sl_pct = input.float(1.00, title = 'SL %', group = 'TP / SL', inline = '1')
+
+
+
+
+
+
+
+
+//DASHBOARD
+LabelSize = input.string(defval="Medium", options=["Small", "Medium", "Large"], group = "Dashboard Settings", title = "Dashboard Size", inline = '1')
+dashboard_text_color = color.new(#000000, 0)
+bull_color = input.color(color.new(#04fc04,0), "Bull Color", group = "Dashboard Settings", inline = '2')
+bear_color = input.color(color.new(#fc0404,0), "Bear Color", group = "Dashboard Settings", inline = '2')
+neutral_color = input.color(color.new(#b2b5be,0), "Neutral Color 1", group = "Dashboard Settings", inline = '3')
+neutral_color2 = input.color(color.new(#8b8f9e,0), "Neutral Color 2", group = "Dashboard Settings", inline = '3')
+label_size = LabelSize == "Small" ? size.small : LabelSize == "Medium" ? size.normal : LabelSize == "Large" ? size.large : size.small
+var table t = table.new(position.bottom_right, 2, 11, border_width = 2, frame_width = 2, frame_color = #000000)
+
+if (barstate.islastconfirmedhistory or barstate.islast)
+
+    table.cell(t, 0, 0, text = "KaFa Market Structure", width = 0, bgcolor = color.new(#2962ff,0), text_size = label_size, text_color = dashboard_text_color)
+    table.merge_cells(t,0,0,1,0)
+    
+    //column1
+    table.cell(t, 0, 3, text = "Net Profit: ", width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 4, text = "Total Days: ", width = 0, bgcolor = neutral_color2, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 5, text = "Daily %", width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 6, text = "Max DD %: ", width = 0, bgcolor = neutral_color2, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 7, text = "Profit Factor: ", width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 8, text = "Avg. Bars in Trade: ", width = 0, bgcolor = neutral_color2, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 9, text = "Win %: ", width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(t, 0, 10, text = "Required Capital: ", width = 0, bgcolor = neutral_color2, text_size = label_size, text_color = dashboard_text_color)
+
+
+
+
+
+
+

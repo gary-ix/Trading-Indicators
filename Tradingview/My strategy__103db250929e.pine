@@ -1,0 +1,21 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+strategy("My strategy", overlay=false, margin_long=100, margin_short=100)
+
+
+sma1 = request.security_lower_tf(syminfo.tickerid, '3', close)
+
+
+plot(array.sum(sma1)/5)
+
+
+
+// longCondition = ta.crossover(sma1, sma2)
+// if (longCondition)
+//     strategy.entry("My Long Entry Id", strategy.long)
+
+// shortCondition = ta.crossunder(sma1,sma2)
+// if (shortCondition)
+//     strategy.entry("My Short Entry Id", strategy.short)

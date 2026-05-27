@@ -1,0 +1,108 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Vision", overlay = true)
+
+ma(source, length, type) =>
+    switch type
+        "SMA" => ta.sma(source, length)
+        "Bollinger Bands" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+
+// signal settings
+bars_between = input.int(5, title = 'Indicators Must Align in This Many Bars', group = 'Signal Settings')
+// stoch_overbought = input.int(80, title = 'Stoch Overbought', group = 'Signal Settings')
+// stoch_oversold = input.int(20, title = 'Stoch Oversold', group = 'Signal Settings')
+rsi_buylevel = input.int(55, title = 'RSI Upper Level', group = 'Signal Settings')
+rsi_selllevel = input.int(45, title = 'RSI Lower Level', group = 'Signal Settings')
+
+
+
+// stoch 
+// buy = k and d are oversold
+// sell = k and d are overbought
+// periodK = input.int(14, title="%K Length", minval=1, group = 'Stochastic Settings')
+// smoothK = input.int(1, title="%K Smoothing", minval=1, group = 'Stochastic Settings')
+// periodD = input.int(3, title="%D Smoothing", minval=1, group = 'Stochastic Settings')
+// k = ta.sma(ta.stoch(close, high, low, periodK), smoothK)
+// d = ta.sma(k, periodD)
+
+
+
+// rsi
+// buy = rsi above 50
+// sell = rsi below 50
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+
+up = ta.rma(math.max(ta.change(rsiSourceInput), 0), rsiLengthInput)
+down = ta.rma(-math.min(ta.change(rsiSourceInput), 0), rsiLengthInput)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+
+
+
+// macd
+// buy = macd crosses above signal
+// sell = macd crosses below signal
+fast_length = input(title="Fast Length", defval=12, group="MACD Settings")
+slow_length = input(title="Slow Length", defval=26, group="MACD Settings")
+src = input(title="Source", defval=close, group="MACD Settings")
+signal_length = input.int(title="Signal Smoothing",  minval = 1, maxval = 50, defval = 9, group="MACD Settings")
+sma_source = input.string(title="Oscillator MA Type",  defval="EMA", options=["SMA", "EMA"], group="MACD Settings")
+sma_signal = input.string(title="Signal Line MA Type", defval="EMA", options=["SMA", "EMA"], group="MACD Settings")
+
+fast_ma = sma_source == "SMA" ? ta.sma(src, fast_length) : ta.ema(src, fast_length)
+slow_ma = sma_source == "SMA" ? ta.sma(src, slow_length) : ta.ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = sma_signal == "SMA" ? ta.sma(macd, signal_length) : ta.ema(macd, signal_length)
+
+
+
+
+// create signals
+// var bool stoch_ob = na
+// var bool stoch_os = na
+// var int bars_since_ob = na
+// var int bars_since_os = na
+// stoch_ob := k >= stoch_overbought and d >= stoch_overbought
+// stoch_os := k <= stoch_oversold and d <= stoch_oversold
+// bars_since_ob := stoch_ob ? 1 : bars_since_ob + 1
+// bars_since_os := stoch_os ? 1 : bars_since_os + 1
+
+
+// var bool rsi_buy = na
+// var bool rsi_sell = na
+// var int bars_since_rsibuy = na
+// var int bars_since_rsisell = na
+// rsi_buy := rsi >= rsi_buylevel 
+// rsi_sell := rsi <= rsi_selllevel
+// bars_since_rsibuy := rsi_buy ? 1 : bars_since_rsibuy + 1
+// bars_since_rsisell := rsi_sell ? 1 : bars_since_rsisell + 1
+
+
+var bool macd_buy = na
+var bool macd_sell = na
+macd_buy := ta.crossover(macd, signal)
+macd_sell := ta.crossunder(macd, signal)
+
+
+
+buy_signal = 
+ (rsi <= rsi_buylevel and rsi >= rsi_selllevel)
+ and macd_buy
+sell_signal = 
+ (rsi <= rsi_buylevel and rsi >= rsi_selllevel)
+ and macd_sell
+
+
+plotshape(buy_signal, style=shape.labelup, editable=false, text= "BUY", textcolor=color.white, location= location.belowbar, color=color.new(color.teal, 30), size=size.tiny)
+plotshape(sell_signal, style=shape.labeldown, editable=false, text='SELL', textcolor=color.white, location=location.abovebar, color=color.new(color.red, 30), size=size.tiny)
+
+
+
+alertcondition(buy_signal, 'Buy Signal', 'Buy Signal')
+alertcondition(sell_signal, 'Sell Signal', 'Sell Signal')

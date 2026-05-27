@@ -1,0 +1,27 @@
+//@version=5
+indicator(title = "Smoothed Heiken Ashi Candles", overlay=true)
+
+// CHART Heikin-ashi
+len=input.int(10, title = "Length 1", group = 'Chart HA Settings')
+o=ta.ema(open,len)
+c=ta.ema(close,len)
+h=ta.ema(high,len)
+l=ta.ema(low,len)
+
+var float haopen = 0.00
+haclose = (o+h+l+c)/4
+haopen := na(haopen[1]) ? (o + c)/2 : (haopen[1] + haclose[1]) / 2
+hahigh = math.max(h, math.max(haopen,haclose))
+halow = math.min(l, math.min(haopen,haclose))
+
+len2=input(10,  title = "Length 2", group = 'Chart HA Settings')
+o2=ta.ema(haopen, len2)
+c2=ta.ema(haclose, len2)
+h2=ta.ema(hahigh, len2)
+l2=ta.ema(halow, len2)
+
+col= o2>c2 ? color.red : color.green
+chartha_bull = c2 >= o2
+chartha_bear = c2 < o2
+plotcandle(o2, h2, l2, c2, title="heikin smoothed", color=col)
+// CHART Heikin-ashi

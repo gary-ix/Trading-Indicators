@@ -1,0 +1,11 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Volume Rewrite", format=format.volume, overlay=false)
+value = volume
+plot(value, style = plot.style_columns)
+
+
+plot(12950)
+bgcolor(volume > 1000 ? color.yellow : na)

@@ -1,0 +1,29 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © k32848
+
+//@version=5
+indicator('Moon Phases Source Code', overlay=true)
+
+new = timestamp('2021-01-13:05:00')  //input(title="New Moon Reference Date", type=input.time, defval=timestamp("2021-01-13:05:00"))
+n = bar_index
+cycle = 2551442876.8992
+day = 8.64e+7
+diff = (new + time + day * 2) % cycle / cycle
+newmoon = ta.crossover(diff, .5)
+fullmoon = diff[0] < diff[1]
+
+var phase = 0
+if newmoon
+    phase := -1
+    phase
+if fullmoon
+    phase := 1
+    phase
+
+bgcolor(phase > 0 ? color.new(#2962ff, 90) : na)
+bgcolor(phase < 0 ? color.new(#fff9c4, 90) : na)
+
+plotshape(fullmoon, 'Full Moon', shape.circle, location.top, color.new(color.white, 20), size=size.normal)
+plotshape(newmoon, 'New Moon', shape.circle, location.bottom, color.new(color.gray, 20), size=size.normal)
+
+

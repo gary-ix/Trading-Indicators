@@ -1,0 +1,181 @@
+//@version=5
+strategy(title='Hercules Srategy', overlay=true, default_qty_value=100, initial_capital=100000, default_qty_type=strategy.percent_of_equity, pyramiding=1)
+
+// trade settings
+inverse_settings = input.bool(false, title = 'Inverse Signals', group = 'Trade Settings', inline = '1')
+min_ticks = input.int(500, title='Lightning⠀⠀⠀⠀⠀⠀ ⠀⠀⠀⠀⠀⠀⠀⠀ ⠀⠀', tooltip='On Tradingview for FOREX 1 Pip = 10 Ticks', group = 'Trade Settings', inline = '2')
+tradeType = input.string('BOTH', title='What trades should be taken ?⠀ ⠀', options=['LONG', 'SHORT', 'BOTH'], group = 'Trade Settings', inline = '3')
+trading_session = input.session("0900-1600", title = 'Trading Session', group = 'Trade Settings', inline = '4')
+
+
+// filter settings
+use_prev_candle = input(false, title='Previous Candle Filter⠀⠀⠀⠀', group = 'Filter Settings', inline = '2')
+prev_tf = input.timeframe('', title=' ', group = 'Filter Settings', inline = '2')
+
+use_ma = input.bool(title='MA Filter', defval=false, group='Filter Settings', inline = '3')
+ma_type = input.string(title=' ', defval='SMA', options=['SMA', 'EMA', 'SMMA (RMA)', 'WMA', 'VWMA'],  group='Filter Settings', inline = '3')
+ma_source = input.source(title=' ', defval=close, group='Filter Settings', inline = '3')
+ma_length = input.int(defval=50, title=' ', minval=1,  group='Filter Settings', inline = '3')
+
+prev_day_range = input.string('Outside', title = 'Prior Days Range⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', options = ['Outside', 'Inside', 'None'], group = 'Filter Settings', inline = '4')
+
+use_day_open = input.bool(false, title = 'Daily Open Filter⠀⠀⠀ ⠀⠀⠀⠀', group = 'Filter Settings', inline = '5')
+day_open = input.session("0930-0931", title = ' ', group = 'Filter Settings', inline = '5')
+continuous = input(false, title='Continuous Mode', group = 'Filter Settings', inline = '6')
+
+
+// risk management settings
+use_rr_tp = input.bool(true, title = 'R:R Auto-Calculation', group = 'Risk Management', inline = '1')
+rr_tp = input.float(2.0, title='', minval=0.0, group = 'Risk Management', inline = '1')
+
+use_tp = input.bool(false, title = 'Alt Target⠀⠀ ⠀⠀⠀⠀⠀', group = 'Risk Management', inline = '2')
+tp_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '2')
+tp_type = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '2')
+
+use_sl = input.bool(false, title = 'Alt Stop Loss⠀ ⠀⠀⠀⠀', group = 'Risk Management', inline = '3')
+sl_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '3')
+sl_type = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '3')
+
+if use_rr_tp and (use_tp or use_sl)
+    runtime.error("You cannot use Auto-Calculating R:R with Alt Target or Alt Stop Loss")
+
+
+
+// timeframe
+is_trade_sess = time(timeframe.period, str.format('{0}:1234567', trading_session), 'America/New_York')
+
+
+// lighting signals
+green = close > open
+red = close < open
+dif = math.abs(close - open)
+move_up = green and dif >= min_ticks * syminfo.mintick
+move_dn = red and dif >= min_ticks * syminfo.mintick
+
+
+// prev candle calculate
+prev_candle_src = request.security(syminfo.tickerid, prev_tf, green[1] ? true : false, lookahead = barmerge.lookahead_on)
+prev_candle_long = use_prev_candle ? (prev_candle_src == true) : true
+prev_candle_short = use_prev_candle ? (prev_candle_src == false) : true
+
+
+// ma filter
+ma(source, length, type) =>
+    type == 'SMA' ? ta.sma(source, length) : type == 'EMA' ? ta.ema(source, length) : type == 'SMMA (RMA)' ? ta.rma(source, length) : type == 'WMA' ? ta.wma(source, length) : type == 'VWMA' ? ta.vwma(source, length) : na
+ma = ma(ma_source, ma_length, ma_type)
+plot(use_ma ? ma : na, color=color.yellow, title='Filter MA')
+
+ma_long = use_ma ? close > ma : true
+ma_short = use_ma ? close < ma : true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+long_conditions = is_trade_sess and move_up and prev_candle_long and ma_long and tradeType != "SHORT"
+short_conditions = is_trade_sess and move_dn and prev_candle_short and ma_short and tradeType != "LONG"
+// bgcolor(long_conditions ? color.new(color.green, 90) : short_conditions ? color.new(color.red, 90) : na)
+
+// Position Management Tools
+trade_side = 0.0
+trade_side := long_conditions ? 1 : short_conditions ? -1 : trade_side[1]
+
+long_entry = long_conditions and (trade_side[1] != 1 or na(trade_side[1])) and tradeType != 'SHORT'
+short_entry = short_conditions and (trade_side[1] != -1 or na(trade_side[1])) and tradeType != 'LONG'
+
+long_exit = short_conditions and trade_side[1] == 1 and not short_entry
+short_exit = long_conditions and trade_side[1] == -1 and not long_entry
+
+
+// bgcolor(short_exit or long_exit ? color.yellow : na)
+
+
+if long_exit or short_exit
+    trade_side := 0
+    trade_side
+
+// bgcolor(trade_side == 1 ? color.new(color.green, 90) : trade_side == -1 ? color.new(color.red, 90) : na)
+
+
+// EXIT FUNCTIONS //
+
+
+tp = input.float(2.0, title='TP R:R', minval=0)
+
+long_stop0 = ta.valuewhen(long_entry, low, 0)
+short_stop0 = ta.valuewhen(short_entry, high, 0)
+
+tp_long0 = ta.valuewhen(long_entry, close + math.abs(close - low) * tp, 0)
+tp_short0 = ta.valuewhen(short_entry, close - math.abs(close - high) * tp, 0)
+
+long_stop = use_rr_tp ? long_stop0 : 0
+short_stop = use_rr_tp ? short_stop0 : 99999
+tp_long = use_rr_tp ? tp_long0 : 99999
+tp_short = use_rr_tp ? tp_short0 : 0
+
+bgcolor(long_conditions ? color.new(color.green,60) : short_conditions ? color.new(color.red,60) : na)
+
+// plot(long_stop)
+
+
+// // Position Adjustment
+// long_sl = low < long_stop[1] and trade_side[1] == 1 and use_rr_tp
+// short_sl = high > short_stop[1] and trade_side[1] == -1 and use_rr_tp
+
+// final_long_tp = high > tp_long[1] and trade_side[1] == 1 and use_rr_tp
+// final_short_tp = low < tp_short[1] and trade_side[1] == -1 and use_rr_tp
+
+// if (long_sl or final_long_tp) and not short_entry or (short_sl or final_short_tp) and not long_entry
+//     trade_side := 0
+//     trade_side
+
+
+
+
+
+
+
+
+// // visual
+// plotshape(long_entry[1], color=color.new(color.lime, 0), style=shape.triangleup, text='Buy', textcolor = color.white, location=location.belowbar, offset=0, size=size.small)
+// plotshape(short_entry[1], color=color.new(color.red, 0), style=shape.triangledown, text='Sell', textcolor = color.white, location=location.abovebar, offset=0, size=size.small)
+
+// backtest certain time
+backtest_start = input.time(defval=timestamp('01 Jan 2021 13:30 +0000'), title='Backtesting Start Time', group = 'Backtesting Settings')
+backtest_end = input.time(defval=timestamp('01 Dec 2023 19:30 +0000'), title='Backtesting End Time', group = 'Backtesting Settings')
+is_backtesting_time = time > backtest_start and time < backtest_end
+
+
+// // --ORDERS-- //
+// entries
+if long_entry and is_backtesting_time
+    strategy.entry('LE', strategy.long)
+if short_entry and is_backtesting_time
+    strategy.entry('SS_E', strategy.short)
+
+// target / stop exits
+strategy.exit(id="LE", from_entry = 'LE', limit=tp_long, stop=long_stop , comment = "TP/SL")
+strategy.exit(id="SS_E", from_entry = 'SS_E', limit=tp_short, stop=short_stop , comment = "TP/SL")
+
+// time exits
+if not is_backtesting_time
+    strategy.close_all()
+// --ORDERS-- //
+
+
+plot(tp_long, color = color.green, style = plot.style_circles, linewidth = 5)
+plot(tp_short, color = color.red, style = plot.style_cross, linewidth = 5)
+
+plot(long_stop, color = color.green, style = plot.style_circles, linewidth = 1)
+plot(short_stop, color = color.red, style = plot.style_cross, linewidth = 1)

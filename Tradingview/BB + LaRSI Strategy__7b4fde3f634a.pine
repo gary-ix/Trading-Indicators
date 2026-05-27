@@ -1,0 +1,157 @@
+//@version=5
+strategy("BB + LaRSI Strategy", overlay=true, process_orders_on_close = false)
+
+// BB 1 {
+
+length = input.int(200, minval=1, group = "BB 1 Settings")
+src = input(close, title="Source", group = "BB 1 Settings")
+mult = input.float(2.0, minval=0.001, maxval=50, title="StdDev", group = "BB 1 Settings")
+
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+
+plot(basis, "Basis 1", color=#FF6D00)
+p1 = plot(upper, "Upper 1", color=#2962FF)
+p2 = plot(lower, "Lower 1", color=#2962FF)
+fill(p1, p2, title = "Background 1", color=color.rgb(33, 150, 243, 95))
+
+// }
+
+// BB 2 {
+
+length_2 = input.int(200, minval=1, group = "BB 2 Settings")
+src_2 = input(close, title="Source", group = "BB 2 Settings")
+mult_2 = input.float(3.0, minval=0.001, maxval=50, title="StdDev", group = "BB 2 Settings")
+
+basis_2 = ta.sma(src_2, length_2)
+dev_2 = mult_2 * ta.stdev(src_2, length_2)
+upper_2 = basis_2 + dev_2
+lower_2 = basis_2 - dev_2
+
+plot(basis_2, "Basis 2", color=#FF6D00)
+p1_2 = plot(upper_2, "Upper 2", color=color.rgb(123, 23, 194))
+p2_2 = plot(lower_2, "Lower 2", color=color.rgb(123, 23, 194))
+fill(p1_2, p2_2, title = "Background 2", color=color.rgb(33, 150, 243, 95))
+
+// }
+
+// LaRSI {
+
+src_3 = input(title='Source', defval=close, group = "LaRSI Settings")
+alpha = input.float(title='Alpha', minval=0, maxval=1, step=0.1, defval=0.2, group = "LaRSI Settings")
+
+gamma = 1 - alpha
+L0 = 0.0
+L0 := (1 - gamma) * src_3 + gamma * nz(L0[1])
+L1 = 0.0
+L1 := -gamma * L0 + nz(L0[1]) + gamma * nz(L1[1])
+L2 = 0.0
+L2 := -gamma * L1 + nz(L1[1]) + gamma * nz(L2[1])
+L3 = 0.0
+L3 := -gamma * L2 + nz(L2[1]) + gamma * nz(L3[1])
+cu = (L0 > L1 ? L0 - L1 : 0) + (L1 > L2 ? L1 - L2 : 0) + (L2 > L3 ? L2 - L3 : 0)
+cd = (L0 < L1 ? L1 - L0 : 0) + (L1 < L2 ? L2 - L1 : 0) + (L2 < L3 ? L3 - L2 : 0)
+temp = cu + cd == 0 ? -1 : cu + cd
+LaRSI = temp == -1 ? 0 : cu / temp
+Color = false ? LaRSI > LaRSI[1] ? color.green : color.red : color.blue
+
+// }
+
+// Strategy {
+
+enableBuy = input.bool(true, "Enable Buy", group = "Strategy Settings")
+enableSell = input.bool(true, "Enable Sell", group = "Strategy Settings")
+
+enableLastLineTouch = input.bool(true, "Enable Last Line Touch", group = "Strategy Settings")
+enableLastZoneTouch = input.bool(true, "Enable Last Zone Touch", group = "Strategy Settings")
+
+stopLossTrailingEnabled = input.bool(defval = true, title = 'Enable Stop Loss Trailing', tooltip = 'Enable or disable the trailing for stop loss.', group = 'Trailing Settings')
+slTrailPerc = input.float(title="Trailing Stop Loss (%)", minval=0.0, step=0.1, defval=1, group = 'Trailing Settings') * 0.01
+
+takeProfitTrailingEnabled = input.bool(defval = false, title = 'Enable Take Profit Trailing', tooltip = 'Enable or disable the trailing for take profit.', group = 'Trailing Settings')
+tpMult = input.float(1.0, "Take Profit Multiplier", minval = 0.0001, group = "Trailing Settings", step = 0.1)
+tpTrailPerc = input.float(title="Trailing Take Profit (%)", minval=0.0, step=0.1, defval=0.5, group = 'Trailing Settings') * 0.01
+
+tpVal = input.float(2.0, "Take Profit %", minval = 0.0001, group = "Static Settings", step = 0.1) / 100
+slVal = input.float(2.0, "Stop Loss %", minval = 0.0001, group = "Static Settings", step = 0.1) / 100
+
+botID = input.string("botID", "Bot ID", group = "Alert Settings")
+
+bool buy = (enableLastZoneTouch ? (low > lower_2 and high < lower) and ta.barssince(LaRSI < 0.01) <= ta.barssince(ta.crossunder(close, lower)) : true) and (enableLastLineTouch ? (ta.barssince(ta.cross(low, lower_2)) < ta.barssince(ta.cross(close, basis))) : true) //and (ta.barssince(ta.crossunder(LaRSI, 0.2)) < ta.barssince(ta.crossover(LaRSI, 0.2)) or na(ta.barssince(ta.crossunder(LaRSI, 0.2))))
+buy := enableLastLineTouch ? (ta.valuewhen(ta.cross(low, lower_2), time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or na(ta.valuewhen(strategy.position_size != 0, time, 0)) ? buy : false) : buy
+buy := ta.barssince(buy) <= ta.barssince(high > lower) and strategy.position_size == 0 and enableBuy //and close < lower
+//bgcolor(buy ? color.new(color.green,90) : na)
+bool sell = (enableLastZoneTouch ? (high < upper_2 and low > upper) and ta.barssince(LaRSI > 0.99) <= ta.barssince(ta.crossover(close, upper)) : true) and (enableLastLineTouch ? (ta.barssince(ta.cross(high, upper_2)) < ta.barssince(ta.cross(close, basis))) : true) //and (ta.barssince(ta.crossover(LaRSI, 0.8)) < ta.barssince(ta.crossunder(LaRSI, 0.8)) or na(ta.barssince(ta.crossover(LaRSI, 0.8))))
+sell := enableLastLineTouch ? (ta.valuewhen(ta.cross(high, upper_2), time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or na(ta.valuewhen(strategy.position_size != 0, time, 0)) ? sell : false) : sell
+sell := ta.barssince(sell) <= ta.barssince(low < upper) and strategy.position_size == 0 and enableSell //and close > upper
+//bgcolor(sell ? color.new(color.red,90) : na)
+
+buy := not enableLastLineTouch and not enableLastZoneTouch ? false : buy
+sell := not enableLastLineTouch and not enableLastZoneTouch ? false : sell
+
+int amountOfSlInARow = math.abs(ta.valuewhen(strategy.wintrades[1] != strategy.wintrades, strategy.losstrades, 0) - strategy.losstrades)
+
+longEntryAlertMessage = "ORDER_" + str.tostring(botID) + "_" + str.tostring(time) + "_" + str.tostring(syminfo.tickerid) + "_BUY_" + "TP." + str.tostring(tpVal) + "_SL." + str.tostring(slVal) + "_" + str.tostring(amountOfSlInARow)
+longExitAlertMessage = "ORDER_" + str.tostring(botID) + "_" + str.tostring(time) + "_" + str.tostring(syminfo.tickerid) + "_SELL_" + "TP." + str.tostring(tpVal) + "_SL." + str.tostring(slVal) + "_" + str.tostring(amountOfSlInARow)
+shortEntryAlertMessage = "ORDER_" + str.tostring(botID) + "_" + str.tostring(time) + "_" + str.tostring(syminfo.tickerid) + "_SELL_" + "TP." + str.tostring(tpVal) + "_SL." + str.tostring(slVal) + "_" + str.tostring(amountOfSlInARow)
+shortExitAlertMessage = "ORDER_" + str.tostring(botID) + "_" + str.tostring(time) + "_" + str.tostring(syminfo.tickerid) + "_BUY_" + "TP." + str.tostring(tpVal) + "_SL." + str.tostring(slVal) + "_" + str.tostring(amountOfSlInARow)
+
+var float longStopLossPrice = na
+longStopLossPrice := if (buy and strategy.position_size[1] == 0)
+    close * (1 - slTrailPerc)
+else if (strategy.position_size > 0)
+    float stopPrice = (stopLossTrailingEnabled ? high : strategy.opentrades.entry_price(strategy.opentrades - 1)) * (1 - slTrailPerc)
+    math.max(stopPrice, nz(longStopLossPrice[1]))
+else
+    na
+longStopLossPrice := na(longStopLossPrice) ? close * (1 - slTrailPerc) : longStopLossPrice
+
+var float shortStopLossPrice = na
+shortStopLossPrice := if (sell and strategy.position_size[1] == 0)
+    close * (1 + slTrailPerc)
+else if (strategy.position_size < 0)
+    float stopPrice = (stopLossTrailingEnabled ? low : strategy.opentrades.entry_price(strategy.opentrades - 1)) * (1 + slTrailPerc)
+    math.min(stopPrice, nz(shortStopLossPrice[1]))
+else
+    na
+shortStopLossPrice := na(shortStopLossPrice) ? close * (1 + slTrailPerc) : shortStopLossPrice
+
+slLong_1 = ta.valuewhen(buy and (strategy.position_size[1] <= 0 or strategy.position_size == 0), close * (1 - slVal), 0)
+tpLong_1 = ta.valuewhen(buy and (strategy.position_size[1] <= 0 or strategy.position_size == 0), close * (1 + tpVal), 0)
+slShort_1 = ta.valuewhen(sell and (strategy.position_size[1] >= 0 or strategy.position_size == 0), close * (1 + slVal), 0)
+tpShort_1 = ta.valuewhen(sell and (strategy.position_size[1] >= 0 or strategy.position_size == 0), close * (1 - tpVal), 0)
+slLong = stopLossTrailingEnabled ? longStopLossPrice : slLong_1//ta.valuewhen(buy, stopLossTrailingEnabled ? math.max(longStopLossPrice, lower_2) : lower_2, 0)
+tpLong = stopLossTrailingEnabled ? ta.valuewhen(buy, lower + math.abs(lower - slLong) * tpMult, 0) : tpLong_1
+slShort = stopLossTrailingEnabled ? shortStopLossPrice : slShort_1//ta.valuewhen(sell, stopLossTrailingEnabled ? math.min(shortStopLossPrice, upper_2) : upper_2, 0)
+tpShort = stopLossTrailingEnabled ? ta.valuewhen(sell, upper - math.abs(upper - slShort) * tpMult, 0) : tpShort_1
+
+if ta.valuewhen(buy, time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or (na(ta.valuewhen(strategy.position_size != 0, time, 0)) and not na(ta.valuewhen(buy, time, 0))) and strategy.position_size == 0
+    strategy.entry("Long", strategy.long, alert_message = longEntryAlertMessage, stop = lower)
+    strategy.exit("Close Long", "Long", limit = takeProfitTrailingEnabled ? na : tpLong, stop = slLong, trail_price = takeProfitTrailingEnabled ? tpLong : na, trail_offset = takeProfitTrailingEnabled ? tpLong * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Long", comment_loss = "SL Long", comment_trailing = "TTP Long")
+if strategy.position_size > 0
+    strategy.exit("Close Long", "Long", limit = takeProfitTrailingEnabled ? na : tpLong, stop = slLong, trail_price = takeProfitTrailingEnabled ? tpLong : na, trail_offset = takeProfitTrailingEnabled ? tpLong * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Long", comment_loss = "SL Long", comment_trailing = "TTP Long")
+if close > ta.valuewhen(buy, lower, 0) and strategy.position_size == 0 and not buy[1] and not buy
+    strategy.cancel("Long")
+//if buy[1] and close > lower and (enableLastLineTouch ? (ta.valuewhen(ta.crossunder(low, lower_2), time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or na(ta.valuewhen(strategy.position_size != 0, time, 0)) ? buy : false) : true)
+//    strategy.entry("Long", strategy.long, alert_message = longEntryAlertMessage)
+//    strategy.exit("Close Long", "Long", limit = takeProfitTrailingEnabled ? na : tpLong, stop = slLong, trail_price = takeProfitTrailingEnabled ? tpLong : na, trail_offset = takeProfitTrailingEnabled ? tpLong * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Long", comment_loss = "SL Long", comment_trailing = "TTP Long", alert_message = longExitAlertMessage)
+
+if ta.valuewhen(sell, time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or (na(ta.valuewhen(strategy.position_size != 0, time, 0)) and not na(ta.valuewhen(sell, time, 0))) and strategy.position_size == 0
+    strategy.entry("Short", strategy.short, alert_message = shortEntryAlertMessage, stop = upper)
+    strategy.exit("Close Short", "Short", limit = takeProfitTrailingEnabled ? na : tpShort, stop = slShort, trail_price = takeProfitTrailingEnabled ? tpShort : na, trail_offset = takeProfitTrailingEnabled ? tpShort * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Short", comment_loss = "SL Short", comment_trailing = "TTP Long")
+if strategy.position_size < 0
+    strategy.exit("Close Short", "Short", limit = takeProfitTrailingEnabled ? na : tpShort, stop = slShort, trail_price = takeProfitTrailingEnabled ? tpShort : na, trail_offset = takeProfitTrailingEnabled ? tpShort * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Short", comment_loss = "SL Short", comment_trailing = "TTP Long")
+if close < ta.valuewhen(sell, upper, 0) and strategy.position_size == 0 and not sell[1] and not sell
+    strategy.cancel("Short")
+//if sell[1] and close < upper and (enableLastLineTouch ? (ta.valuewhen(ta.crossover(high, upper_2), time, 0) > ta.valuewhen(strategy.position_size != 0, time, 0) or na(ta.valuewhen(strategy.position_size != 0, time, 0)) ? sell : false) : true)
+//    strategy.entry("Short", strategy.short, alert_message = shortEntryAlertMessage)
+//    strategy.exit("Close Short", "Short", limit = takeProfitTrailingEnabled ? na : tpShort, stop = slShort, trail_price = takeProfitTrailingEnabled ? tpShort : na, trail_offset = takeProfitTrailingEnabled ? tpShort * tpTrailPerc / syminfo.mintick : na, comment_profit = "TP Short", comment_loss = "SL Short", comment_trailing = "TTP Long", alert_message = shortExitAlertMessage)
+
+l1 = plot(strategy.position_size > 0 and not takeProfitTrailingEnabled ? tpLong : na, "TP Long", color.rgb(0,255,0,0), style = plot.style_linebr)
+l2 = plot(strategy.position_size > 0 and slLong != 0 ? slLong : na, "SL Long", color.rgb(255,0,0,0), style = plot.style_linebr)
+s1 = plot(strategy.position_size < 0 and not takeProfitTrailingEnabled ? tpShort : na, "TP Short", color.rgb(0,255,0,0), style = plot.style_linebr)
+s2 = plot(strategy.position_size < 0 and slShort != 0 ? slShort : na, "SL Short", color.rgb(255,0,0,0), style = plot.style_linebr)
+
+// }

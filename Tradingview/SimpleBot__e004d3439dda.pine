@@ -1,0 +1,86 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/ // You can change the License here
+// (c) SimpleSignalsOfficial //
+
+//@version=4
+study("SimpleBot", overlay=true)
+
+
+//--------------------------------------------------------
+//--------------------------------------------------------
+// Array Average
+//--------------------------------------------------------
+//--------------------------------------------------------
+i_Periods = input(3,   "Nbr Periods", group="Nbr Periods") 
+//--------------------------------------------------------
+//--------------------------------------------------------
+// Initialize array of user-selected size with `na` values. 
+var Open_Array = array.new_float(i_Periods) 
+var Close_Array = array.new_float(i_Periods) 
+if bar_index    
+    // Remove the oldest level from the beginning of the array.
+    array.shift(Open_Array)
+    array.shift(Close_Array)
+    //--------------------------------------------------------
+    // Add the new level to the end of the array. 
+    array.push(Open_Array, open[1])
+    array.push(Close_Array, close[1])
+    //--------------------------------------------------------
+// Calculate the avg of levels in the array, excluding any `na` values. 
+Avg_Open = array.avg(Open_Array)
+Avg_Close = array.avg(Close_Array)
+//--------------------------------------------------------
+//Plots (Can be hidden)
+//--------------------------------------------------------
+//plot(Avg_Open, "Average Open", close > Avg_Open ? color.lime : color.red)
+//plot(Avg_Close, "Average Close", close > Avg_Close ? color.lime : color.red)
+//--------------------------------------------------------
+
+
+//--------------------------------------------------------
+//--------------------------------------------------------
+
+l_style_ = input(defval = "Solid", title = "Line Style", options = ["Solid", "Dashed", "Dotted"], group="Style Settings")
+l_width = input(defval = 1, title = "Line Width", minval = 1, group="Style Settings")
+
+Open_col = input(defval = color.lime, title = "Open", group="Color Settings")
+Close_col = input(defval = color.red, title = "Close", group="Color Settings")
+//--------------------------------------------------------
+//--------------------------------------------------------
+// set line styles
+var l_style = l_style_ == "Solid" ? line.style_solid : 
+                       l_style_ == "Dashed" ? line.style_dashed :
+                       line.style_dotted
+                       //--------------------------------------------------------
+//--------------------------------------------------------
+
+
+//--------------------------------------------------------
+//--------------------------------------------------------
+var OpenLine = line.new(x1=bar_index, y1=Avg_Open[0],
+     x2=bar_index, y2=Avg_Open, color=Open_col, width = l_width, style=l_style,
+     extend=extend.right)
+// Update the Open line
+if (Avg_Open)
+    line.set_xy1(id=OpenLine, x=bar_index[1], y=Avg_Open)
+    line.set_xy2(id=OpenLine, x=bar_index, y=Avg_Open)
+    
+var CloseLine = line.new(x1=bar_index, y1=Avg_Open[0],
+     x2=bar_index, y2=Avg_Open, color=Close_col, width = l_width, style=l_style,
+     extend=extend.right)
+// Update the Open line
+if (Avg_Close)
+    line.set_xy1(id=CloseLine, x=bar_index[1], y=Avg_Close)
+    line.set_xy2(id=CloseLine, x=bar_index, y=Avg_Close)    
+//--------------------------------------------------------
+//--------------------------------------------------------
+
+
+//--------------------------------------------------------
+// Inbuilt Average
+//--------------------------------------------------------
+//periods = input(3)
+//Open = sma(open,periods)[1]
+//Close = sma(close,periods)[1]
+//plot(Open)
+//plot(Close, color=color.white)
+//--------------------------------------------------------

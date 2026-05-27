@@ -1,0 +1,32 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+strategy("My script", overlay = true)
+
+
+// This script is for scalp trading on a 5-minute time frame
+
+// Define the time frame and the RSI period
+timeframe = "5"
+rsiPeriod = 14
+
+// Get the close price and the RSI value
+rsiValue = ta.rsi(close, rsiPeriod)
+
+// Define the moving averages
+fastMA = ta.sma(close, 5)
+slowMA = ta.sma(close, 20)
+
+// Buy signal: RSI above 70 and fast MA crosses above slow MA
+if rsiValue > 70 and fastMA > slowMA
+    strategy.entry("Long", strategy.long)
+
+// Sell signal: RSI below 30 and fast MA crosses below slow MA
+if rsiValue < 30 and fastMA < slowMA
+    strategy.entry("Short", strategy.short)
+
+// Plot the RSI and moving averages
+plot(rsiValue, title="RSI")
+plot(fastMA, title="Fast MA")
+plot(slowMA, title="Slow MA")

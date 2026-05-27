@@ -1,0 +1,7 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("Alert Test")
+if close > 3000
+    alert("close is greater than 3000", alert.freq_once_per_bar)

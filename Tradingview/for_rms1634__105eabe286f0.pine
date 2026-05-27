@@ -1,0 +1,163 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("for_rms1634", overlay = true, max_lines_count = 500, max_boxes_count = 500, max_labels_count = 500)
+
+// assertions
+if timeframe.in_seconds() > timeframe.in_seconds("60")
+    runtime.error("Timeframe cannot be greater than 1hr...the levels will be inaccurate")
+
+
+
+
+// inputs
+handling_invalid= input.string('Stop', title = 'Handle Invalid', options = ['Stop', 'Delete', 'Change Color Only'], group = 'Settings', inline = 'invalid')
+invalid_css     = input.color(color.new(color.gray,80), title = ' ', group = 'Settings', inline = 'invalid')
+valid_bull      = input.color(color.green, title = 'Bull Level', group = 'Settings', inline = '1')
+valid_bear      = input.color(color.red, title = 'Bear Level', group = 'Settings', inline = '2')
+
+colorHourBG     = input.bool(false, title = 'Color Hourly BG', group = 'Settings', inline = '3')
+
+showDayOpen     = input.bool(true, title = '', group = 'Settings', inline = '4')
+dayOpenTxt      = input.string("Day O", title = 'Daily Open', group = 'Settings', inline = '4')
+dayOpenCSS      = input.color(color.new(color.yellow, 80), title = '', group = 'Settings', inline = '4')
+dayOpenLBLCSS   = input.color(color.new(color.yellow, 40), title = '', group = 'Settings', inline = '4')
+
+
+
+//  display daily open
+var float d_Open = na
+d_Open := dayofweek != dayofweek[1] ? open : d_Open[1]
+plot(d_Open, title = 'Daily Open', style = plot.style_line, color = dayofweek != dayofweek[1] ? color.new(color.white,100) : dayOpenCSS, linewidth = 2, display = showDayOpen ? display.all : display.none)
+
+
+
+// level vars
+var array_currentBULL   = array.new_line(250, na)
+var array_currentBEAR   = array.new_line(250, na)
+var array_invalid       = array.new_box(500, na)
+
+
+
+// calculate
+f_draw_dailyO_label(xValue, yValue) =>
+    var label openLabel = na
+
+    if showDayOpen
+        if yValue != yValue[1]
+            openLabel := label.new(x=xValue, y=yValue, text=dayOpenTxt, xloc = xloc.bar_time, yloc=yloc.price,
+             color = color.new(chart.bg_color,100), style = label.style_label_left, textcolor = dayOpenLBLCSS,
+             textalign = text.align_center, tooltip = 'Daily Open', size = size.small)
+        else 
+            label.set_x(openLabel[1], time)
+
+    false
+
+
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+
+
+f_draw_level(drawLevel, x1_value, yvalue, levelType) =>
+    line_css = levelType == 1 ? valid_bull : levelType == -1 ? valid_bear : color.black
+
+    if (drawLevel and not drawLevel[1]) or (drawLevel and levelType != levelType[1])
+        line.delete( array.get((levelType == 1 ? array_currentBULL : array_currentBEAR), array.size((levelType == 1 ? array_currentBULL : array_currentBEAR)) - 1) )
+        f_array_add_pop( (levelType == 1 ? array_currentBULL : array_currentBEAR), 
+             line.new( x1 = x1_value, y1 = yvalue, x2 = time+1, y2 = yvalue, xloc = xloc.bar_time,
+             extend = extend.right, color = color.new(line_css,0), style = line.style_solid, width = 2))
+     
+    
+
+f_hour_levels() =>
+    var bool newLevel   = false
+    var int  newTime    = na
+    var float newValue  = na
+
+    candleType  = close > open ? 1 : -1 
+    newLevel    := candleType != candleType[1] and barstate.isconfirmed
+    newTime     := newLevel ? time : na
+    newValue    := newLevel ? open : na
+
+    [newLevel, newTime, newValue, candleType, high, low, close, open, time]
+
+
+f_newday_levels() =>
+    var bool newLevel   = false
+    var int  newTime    = na
+    var float newValue  = na
+
+    candleType  = close > open ? 1 : -1
+    newLevel    := candleType != candleType[1] and dayofweek != dayofweek[1]
+    newTime     := newLevel ? time[1] : na
+    newValue    := newLevel ? close[1] : na
+
+    [newLevel, newTime, newValue, candleType[1]]
+
+
+
+f_valid_to_invalid(arrayType, arrayIndex) =>
+    if handling_invalid != 'Delete'
+        theLine     = array.get((arrayType == 1 ? array_currentBULL : array_currentBEAR), arrayIndex)
+        box_left    = line.get_x1(theLine)
+        box_top     = line.get_y1(theLine)
+        box_right   = time
+        box_bot     = box_top
+        box_extend  = handling_invalid == 'Stop' ? extend.none : extend.right
+        // box_css     = arrayType == 1 ? valid_bull : valid_bear
+        box_css     = invalid_css
+
+        f_array_add_pop(array_invalid, box.new( left = box_left, top = box_top, right = box_right, bottom = box_bot,
+         border_color = box_css, bgcolor = box_css, extend = box_extend, border_width = 1,
+         text = '', text_halign = text.align_center, text_valign = text.align_center,
+         text_color = color.new(box_css, 100), text_size = size.small, xloc = xloc.bar_time))
+
+    line.delete( array.get((arrayType == 1 ? array_currentBULL : array_currentBEAR), arrayIndex) )
+
+
+
+f_invalidate_levels(hourTime, hourHigh, hourLow, hourClose, hourOpen) =>
+    if time == hourTime and hourTime != hourTime[1]
+        arrayBullSize = array.size(array_currentBULL)
+        arrayBearSize = array.size(array_currentBEAR)
+
+        for bull = 0 to arrayBullSize - 1
+            bulllevel   = line.get_y1(array.get(array_currentBULL, bull))
+            bulltime    = line.get_x1(array.get(array_currentBULL, bull))
+
+            // if ((bulllevel > hourClose[1] and bulllevel < hourClose and hourOpen < bulllevel) or (bulllevel < hourClose[1] and bulllevel > hourClose and hourOpen > bulllevel)) and (hourHigh > bulllevel and hourLow < bulllevel)
+            bodyEngulfs = (math.max(hourClose[1], hourOpen[1]) >= bulllevel) and (math.min(hourClose[1], hourOpen[1]) <= bulllevel)
+            notNewLine  = bulltime < hourTime[1]
+            if bodyEngulfs and notNewLine
+                f_valid_to_invalid(1, bull)
+
+        for bear = 0 to arrayBearSize - 1
+            bearlevel   = line.get_y1(array.get(array_currentBEAR, bear))
+            beartime    = line.get_x1(array.get(array_currentBEAR, bear))
+
+            // if ((bearlevel > hourClose[1] and bearlevel < hourClose and hourOpen < bearlevel) or (bearlevel < hourClose[1] and bearlevel > hourClose and hourOpen > bearlevel)) and (hourHigh > bearlevel and hourLow < bearlevel)
+            bodyEngulfs = (math.max(hourClose[1], hourOpen[1]) >= bearlevel) and (math.min(hourClose[1], hourOpen[1]) <= bearlevel)
+            notNewLine  = beartime < hourTime[1]
+            if bodyEngulfs and notNewLine
+                f_valid_to_invalid(-1, bear)
+
+
+
+[newHourLevel, newHourTime, newHourValue, HourType, hourHigh, hourLow, hourClose, hourOpen, hourTime] = request.security(syminfo.tickerid, "60", f_hour_levels(), lookahead = barmerge.lookahead_on)
+// [newDayLevel, newDayTime, newDayValue, DayType] = request.security(syminfo.tickerid, "60", f_newday_levels(), lookahead = barmerge.lookahead_on)
+
+phigh   = plot(colorHourBG ? hourHigh : na, color = color.new(color.gray, 100), editable = false, style = plot.style_stepline)
+plow    = plot(colorHourBG ? hourLow : na, color = color.new(color.gray, 100), editable = false, style = plot.style_stepline)
+fill(phigh, plow, color = hourLow != hourLow[1] ? na : HourType == 1 ? color.new(color.green, 85) : color.new(color.red, 85), fillgaps = false)
+
+f_invalidate_levels(hourTime, hourHigh, hourLow, hourClose, hourOpen)
+
+f_draw_level(newHourLevel, newHourTime, newHourValue, HourType)
+// f_draw_level(newDayLevel, newDayTime, newDayValue, DayType)
+
+
+f_draw_dailyO_label(time[1], d_Open)
+// bgcolor(time == hourTime and barstate.isconfirmed ? color.rgb(255, 235, 59, 93) : na)
+// plot(hourClose, style = plot.style_stepline, linewidth = 5)

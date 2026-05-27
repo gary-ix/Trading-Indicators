@@ -1,0 +1,13 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("LinearRegressionSlope", overlay = false)
+
+f_linearregressionslope(price, length) =>
+    value =  6 * ( ta.wma(price, length) -  ta.sma(price, length) ) / (length - 1)
+    
+    
+LRS = f_linearregressionslope(close, 14)
+plot(LRS, title = 'LRS', color = color.yellow, linewidth = 2)
+plot(0, title = 'Zero', color = color.gray)

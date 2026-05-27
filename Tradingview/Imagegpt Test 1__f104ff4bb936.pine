@@ -1,0 +1,1583 @@
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©PranavMohan
+
+
+//@version=5
+indicator("Imagegpt Test 1", overlay=true, max_labels_count=500)
+
+
+// SIGNAL MEANINGS 
+//"Buy Label" = Strong Buy
+//"Sell Label" = Strong Sell
+//"Don't Long" = Green Cross
+//"Don't Short" = Red Cross
+//"Weak Buy " = Green Circle
+//"Weak Sell" = Red Circle
+//"Reversal Buy" = Green Diamond
+//"Reversal Sell" = Red Diamond
+
+//==================== Bollinger band ====================================//
+showBB = input.bool(false, "Show Bollinger Bands") 
+
+//======================================================Get user settings=================================================//
+res               = input.timeframe(title='TIMEFRAME', defval='D', group ="NON REPAINT")
+showBuySell       = input(true, "BUY/SELL SIGNALS ON/OFF", group="BUY & SELL SIGNALS")
+sensitivity       = input.float(2.67, "SENSITIVITY (1-6)", 0.1, 6, group="BUY & SELL SIGNALS")
+percentStop       = input.float(2, "STOP LOSS % (0 TO DISABLE)", 0, group="BUY & SELL SIGNALS")
+offsetSignal      = input.float(4, "SIGNAL OFFSET", 0, group="BUY & SELL SIGNALS")
+showReversal      = input(true, "REVERSAL SIGNALS ON/OFF", group="BUY & SELL SIGNALS")
+histLabel   		= input.int(0,'', minval=0, inline = 'STAT')
+hideLabel   	= input(false,'Hide Statistical Panel | Historical Readings', inline = 'STAT')
+
+//======================================================Entry & Exit======================================================//
+enableE           = input(true, "EXIT & ENTRY ON/OFF", group="EXIT & ENTRY")
+Stop              = input.color(color.new(#b2b5be, 5), "STOP LOSS", group="EXIT & ENTRY")
+Entry             = input.color(color.new(#ff0015, 5), "ENTRY", group="EXIT & ENTRY")
+Tp1               = input.color(color.new(#0f3014, 5), "TAKE PROFIT", group="EXIT & ENTRY")
+
+//======================================================Supply & Demand======================================================//
+enableSD          = input(true, "SUPPLY & DEMAND ON/OFF", group="SUPPLY & DEMAND")
+mitigation        = input.string('Wick', 'MITIGATION', options = ['Wick', 'Close'], group ="SUPPLY & DEMAND")
+length            = input.int(20, 'VOLUME PIVOT', minval = 1, group ="SUPPLY & DEMAND")
+bull_ext_last     = input.int(1, 'DEMAND', minval = 1, inline = 'bull', group ="SUPPLY & DEMAND")
+bull_avg_css      = input.color(color.new(#00ff0a, 1), '', inline = 'bull', group ="SUPPLY & DEMAND")
+bull_css          = input.color(color.new(#00000000, 100), '', inline = 'bull', group ="SUPPLY & DEMAND")
+bg_bull_css       = input.color(color.new(#00ff0a, 90), '', inline = 'bull', group ="SUPPLY & DEMAND")
+bear_ext_last     = input.int(1, 'SUPPLY', minval = 1 , inline = 'bear', group ="SUPPLY & DEMAND")
+bear_avg_css      = input.color(color.new(#ff0015, 1), '', inline = 'bear', group ="SUPPLY & DEMAND")
+bear_css          = input.color(color.new(#00000000, 100), '', inline = 'bear', group ="SUPPLY & DEMAND")
+bg_bear_css       = input.color(color.new(#ff0015, 90), '', inline = 'bear', group ="SUPPLY & DEMAND")
+line_style        = input.string("Solid", "LINE STYLE", ["Solid", "Dotted", "Dashed"], group ="SUPPLY & DEMAND")
+line_width        = input.int(2, 'LINE WIDTH', minval = 1, group ="SUPPLY & DEMAND")
+
+// =========================== Bollinger band chart ==================================================//
+//Inputs
+
+length5 = input.int(41, minval=1, title='Bollinger Length')
+mult3 = 2
+ 
+//Formulas
+src10 = close
+basis = ta.sma(src10, length5)
+dev = ta.stdev(src10, length5)
+dev2 = mult3 * dev
+ 
+upper1 = basis + dev
+lower1 = basis - dev
+upper2 = basis + dev2
+lower2 = basis - dev2
+ 
+//Style
+colorBasis = src10 >= basis ? color.blue : color.orange
+ 
+//Plots
+pBasis  = plot(showBB ? basis : na, linewidth=2, color=colorBasis)
+pUpper1 = plot(showBB ? upper1 : na, color=color.new(color.blue, 0), style=plot.style_circles)
+pUpper2 = plot(showBB ? upper2 : na, color=color.new(color.blue, 0))
+pLower1 = plot(showBB ? lower1 : na, color=color.new(color.orange, 0), style=plot.style_circles)
+pLower2 = plot(showBB ? lower2 : na, color=color.new(color.orange, 0))
+
+fill(pBasis, pUpper2, color=color.new(color.blue, 80))
+fill(pUpper1, pUpper2, color=color.new(color.blue, 80))
+fill(pBasis, pLower2, color=color.new(color.orange, 80))
+fill(pLower1, pLower2, color=color.new(color.orange, 80))
+
+
+//======================================================Support & Resistance======================================================//
+prd1 = input.int(defval=10, title='Pivot Period', minval=4, maxval=30, group='Setup')
+ppsrc = input.string(defval='High/Low', title='Source', options=['High/Low', 'Close/Open'], group='Setup')
+maxnumpp = input.int(defval=20, title=' Maximum Number of Pivot', minval=5, maxval=100, group='Setup')
+ChannelW1 = input.int(defval=10, title='Maximum Channel Width %', minval=1, group='Setup')
+maxnumsr = input.int(defval=5, title=' Maximum Number of S/R', minval=1, maxval=10, group='Setup')
+min_strength = input.int(defval=2, title=' Minimum Strength', minval=1, maxval=10, group='Setup')
+labelloc = input.int(defval=20, title='Label Location', group='SR', tooltip='Positive numbers reference future bars, negative numbers reference histical bars')
+linestyle2 = input.string(defval='Dotted', title='Line Style', options=['Solid', 'Dotted', 'Dashed'], group='SR')
+linewidth = input.int(defval=2, title='Line Width', minval=1, maxval=4, group='SR')
+resistancecolor = input.color(defval=color.maroon, title='Resistance Color', group='SR')
+supportcolor = input.color(defval=color.aqua, title='Support Color', group='SR')
+showpp = input(false, title='Show Points')
+
+float src11 = ppsrc == 'High/Low' ? high : math.max(close, open)
+float src22 = ppsrc == 'High/Low' ? low : math.min(close, open)
+float ph1 = ta.pivothigh(src11, prd1, prd1)
+float pl1 = ta.pivotlow(src22, prd1, prd1)
+
+plotshape(ph1 and showpp, "swing High", style=shape.labeldown, location=location.abovebar, textcolor=color.white, text= "High",  offset=-prd1)
+plotshape(pl1 and showpp, "swing Low", style=shape.labelup, location=location.belowbar, textcolor=color.white, text= "Low", offset=-prd1)
+
+Lstyle = linestyle2 == 'Dashed' ? line.style_dashed : linestyle2 == 'Solid' ? line.style_solid : line.style_dotted
+
+//=================================================== calculate maximum S/R channel zone width====================================================
+prdhighest3 = ta.highest(300)
+prdlowest3 = ta.lowest(300)
+cwidth1 = (prdhighest3 - prdlowest3) * ChannelW1 / 100
+
+var pivotvals = array.new_float(0)
+
+if ph1 or pl1
+    array.unshift(pivotvals, ph1 ? ph1 : pl1)
+    if array.size(pivotvals) > maxnumpp // limit the array size
+        array.pop(pivotvals)
+
+get_sr_vals(ind) =>
+    float lo = array.get(pivotvals, ind)
+    float hi = lo
+    int numpp = 0
+    for y = 0 to array.size(pivotvals) - 1 by 1
+        float cpp = array.get(pivotvals, y)
+        float wdth = cpp <= lo ? hi - cpp : cpp - lo
+        if wdth <= cwidth1 // fits the max channel width?
+            if cpp <= hi
+                lo := math.min(lo, cpp)
+            else
+                hi := math.max(hi, cpp)
+
+            numpp += 1
+            numpp
+    [hi, lo, numpp]
+
+var sr_up_level = array.new_float(0)
+var sr_dn_level = array.new_float(0)
+sr_strength = array.new_float(0)
+
+find_loc(strength) =>
+    ret = array.size(sr_strength)
+    for i = ret > 0 ? array.size(sr_strength) - 1 : na to 0 by 1
+        if strength <= array.get(sr_strength, i)
+            break
+        ret := i
+        ret
+    ret
+
+check_sr(hi, lo, strength) =>
+    ret = true
+    for i = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+        //included?
+        if array.get(sr_up_level, i) >= lo and array.get(sr_up_level, i) <= hi or array.get(sr_dn_level, i) >= lo and array.get(sr_dn_level, i) <= hi
+            if strength >= array.get(sr_strength, i)
+                array.remove(sr_strength, i)
+                array.remove(sr_up_level, i)
+                array.remove(sr_dn_level, i)
+                ret
+            else
+                ret := false
+                ret
+            break
+    ret
+
+var sr_lines = array.new_line(11, na)
+var sr_labels = array.new_label(11, na)
+
+for x = 1 to 10 by 1
+    rate = 100 * (label.get_y(array.get(sr_labels, x)) - close) / close
+    label.set_text(array.get(sr_labels, x), text=str.tostring(label.get_y(array.get(sr_labels, x))) + '(' + str.tostring(rate, '#.##') + '%)')
+    label.set_x(array.get(sr_labels, x), x=bar_index + labelloc)
+    label.set_color(array.get(sr_labels, x), color=label.get_y(array.get(sr_labels, x)) >= close ? color.maroon : color.aqua)
+    label.set_textcolor(array.get(sr_labels, x), textcolor=label.get_y(array.get(sr_labels, x)) >= close ? color.white : color.white)
+    label.set_style(array.get(sr_labels, x), style=label.get_y(array.get(sr_labels, x)) >= close ? label.style_label_down : label.style_label_up)
+    line.set_color(array.get(sr_lines, x), color=line.get_y1(array.get(sr_lines, x)) >= close ? resistancecolor : supportcolor)
+
+if ph1 or pl1
+    //because of new calculation, remove old S/R levels
+    array.clear(sr_up_level)
+    array.clear(sr_dn_level)
+    array.clear(sr_strength)
+    //find S/R zones
+    for x = 0 to array.size(pivotvals) - 1 by 1
+        [hi, lo, strength] = get_sr_vals(x)
+        if check_sr(hi, lo, strength)
+            loc = find_loc(strength)
+            // if strength is in first maxnumsr sr then insert it to the arrays 
+            if loc < maxnumsr and strength >= min_strength
+                array.insert(sr_strength, loc, strength)
+                array.insert(sr_up_level, loc, hi)
+                array.insert(sr_dn_level, loc, lo)
+                // keep size of the arrays = 5
+                if array.size(sr_strength) > maxnumsr
+                    array.pop(sr_strength)
+                    array.pop(sr_up_level)
+                    array.pop(sr_dn_level)
+
+    for x = 1 to 10 by 1
+        line.delete(array.get(sr_lines, x))
+        label.delete(array.get(sr_labels, x))
+
+    for x = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+        float mid = math.round_to_mintick((array.get(sr_up_level, x) + array.get(sr_dn_level, x)) / 2)
+        rate = 100 * (mid - close) / close
+        array.set(sr_labels, x + 1, label.new(x=bar_index + labelloc, y=mid, text=str.tostring(mid) + '(' + str.tostring(rate, '#.##') + '%)', color=mid >= close ? color.aqua : color.maroon, textcolor=mid >= close ? color.white : color.white, style=mid >= close ? label.style_label_down : label.style_label_up))
+
+        array.set(sr_lines, x + 1, line.new(x1=bar_index, y1=mid, x2=bar_index - 1, y2=mid, extend=extend.both, color=mid >= close ? resistancecolor : supportcolor, style=Lstyle, width=linewidth))
+
+f_crossed_over() =>
+    ret = false
+    for x = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+        float mid = math.round_to_mintick((array.get(sr_up_level, x) + array.get(sr_dn_level, x)) / 2)
+        if close[1] <= mid and close > mid
+            ret := true
+            ret
+    ret
+
+f_crossed_under() =>
+    ret = false
+    for x = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+        float mid = math.round_to_mintick((array.get(sr_up_level, x) + array.get(sr_dn_level, x)) / 2)
+        if close[1] >= mid and close < mid
+            ret := true
+            ret
+    ret
+
+//alertcondition(f_crossed_over(), title='Resistance Broken', message='Resistance Broken')
+//alertcondition(f_crossed_under(), title='Support Broken', message='Support Broken')
+
+//ALERTS {
+//i_alert_txt_entry_long = input.text_area(defval = "", title = "Long Entry Message", group = "Paste Payloads Here")
+//i_alert_txt_entry_short = input.text_area(defval = "", title = "Short Entry Message", group = "Paste Payloads Here")
+
+ //}
+
+//=========SUPERTREND CALCULATION METRICS=========================
+group_st     = 'SuperTrend Calculation Metrics'
+stMultIchi   = input.int(1 , '  SuperTrend Ichimoku : Multiplier Factor'    , minval=1, group = group_st)
+stLengthIchi = input.int(14, '  SuperTrend Ichimoku : Length of ATR Periods', minval=1, group = group_st)
+stMultDMI    = input.int(2 , '  SuperTrend DMI : Multiplier Factor'         , minval=1, group = group_st)
+stLengthDMI  = input.int(14, '  SuperTrend DMI : Length of ATR Periods'     , minval=1, group = group_st)
+
+group_color  = 'ADX'
+adxSmoothing = input.int(14, '  Directional Movement : ADX Smoothing'        , minval=1, group = group_color)
+diLength     = input.int(14, '  Directional Movement : DI Length'            , minval=1, group = group_color)
+strongTrend  = input(25    , '  Directional Movement : Strong Trend Theshold'          , group = group_color)
+weakTrend    = input(17    , '  Directional Movement : Weak Trend Theshold'            , group = group_color)
+
+conversionPeriods   = input.int(9 , '  Ichimoku Cloud : Conversion Line Periods', minval=1, group = group_color)
+basePeriods         = input.int(26, '  Ichimoku Cloud : Base Line Periods'      , minval=1, group = group_color)
+laggingSpan2Periods = input.int(52, '  Ichimoku Cloud : Lagging Span 2 Periods' , minval=1, group = group_color)
+displacement        = input.int(26, '  Ichimoku Cloud : Displacement'           , minval=1, group = group_color)
+
+vwcbLen      = input.int(21     , '  Volume Weighted Colored Bars : Length'        , minval=1           , group = group_color)
+vwcbUpper    = input.float(1.618, '  Volume Weighted Colored Bars : Upper Theshold', minval=0.1, step=.1, group = group_color)
+vwcbLower    = input.float(.618 , '  Volume Weighted Colored Bars : Lower Theshold', minval=0.1, step=.1, group = group_color)
+
+group_panel   = 'Statistical Panel : Momentum Indicators'
+rsiSrc        = input.source (close, '  RSI : Source', group=group_panel)
+rsiLength     = input.int(14, '  RSI : Length', minval=1, group=group_panel)
+rsiOversold   = input.int(30, '  RSI : OverSold Theshold', minval=1, group=group_panel)
+rsiOverbought = input.int(70, '  RSI : OverBought Theshold', minval=1, group=group_panel)
+
+stochLengthK    = input.int(14, '  Stoch : %K', minval=1, group=group_panel)
+stochLengthD    = input.int(3, '  Stoch : %D', minval=1, group=group_panel)
+stochSmoothingK = input.int(3, '  Stoch : Smoothing', minval=1, group=group_panel)
+stochOversold   = input.int(20, '  Stoch : OverSold Theshold', minval=1, group=group_panel)
+stochOverbought = input.int(80, '  Stoch : OverBought Theshold', minval=1, group=group_panel)
+
+macdSrc          = input.source(close, '  MACD : Source1', group=group_panel)
+macdFastLength   = input.int(12, '  MACD : Fast Length', minval=1, group=group_panel)
+macdSlowLength   = input.int(26, '  MACD : Slow Length', minval=1, group=group_panel)
+macdSignalLength = input.int(9, '  MACD : Signal Smoothing Length', minval=1, group=group_panel)
+
+dprLength    = input.int(13, 'DPR : Pressure Length', minval=1, group=group_panel)
+upperBand    = input.int(75, 'DPR : Pressure Upper Band', minval=50, maxval=99, group=group_panel)
+lowerBand    = input.int(25, 'DPR : Pressure Lower Band', minval=1 , maxval=49, group=group_panel)
+dprPlot      = input.bool(false, title='Enable DeMark’s Pressure Visualization', group=group_panel)
+dprSmoothing = input.bool(false, 'Smoothing Line', inline = 'DPR', group=group_panel)
+dprMaType    = input.string("EMA", "", options=["SMA", "EMA", "RMA", "WMA", "VWMA"], inline = 'DPR', group=group_panel)
+dprMaLength  = input.int(13, '', inline = 'DPR', group=group_panel)
+dprVOffset   = input.float(1.7, 'Vertical Offset', step=.1, inline = 'DISP', group=group_panel)
+dprHight     = input.float(1.2, 'Hight', step=.1, inline = 'DISP', group=group_panel)
+dprAlert     = input.bool(true, title='Enable DeMark’s Pressure Alerts', group=group_panel)
+
+//source1 = input(title="Source1", defval=close)
+source1 = close
+nzVolune = nz(volume)
+
+// -Calculations ================================================================================ //
+// SuperTrends
+[superTrendIchi, dirIchi] = ta.supertrend(stMultIchi, stLengthIchi)
+[superTrendDMI , dirDMI]  = ta.supertrend(stMultDMI , stLengthDMI )
+
+// Directional Movement Index 
+[diplus, diminus, adxValue] = ta.dmi(diLength, adxSmoothing)
+
+dmiBull = diplus   >= diminus and adxValue >= strongTrend
+dmiBear = diplus   <  diminus and adxValue >= strongTrend
+dmiWeak = adxValue < strongTrend and adxValue > weakTrend
+
+//dprBull = dprLength > dprUpperBand and dprLength > 60
+//dprBear = dprLength < dprLowerBand and dprLength < 60
+//dprNeutral = not (dprBull or dprBear)
+
+// Ichimoku Cloud 
+donchian(len)  => math.avg(ta.lowest(len), ta.highest(len))
+conversionLine = donchian(conversionPeriods)
+baseLine       = donchian(basePeriods)
+leadLine1      = math.avg(conversionLine, baseLine)
+leadLine2      = donchian(laggingSpan2Periods)
+
+aboveCloud     = source1 > leadLine1[displacement - 1] and source1 > leadLine2[displacement - 1]
+belowCloud     = source1 < leadLine1[displacement - 1] and source1 < leadLine2[displacement - 1]
+inCloud        = source1 > leadLine1[displacement - 1] and source1 < leadLine2[displacement - 1] or source1 < leadLine1[displacement - 1] and source1 > leadLine2[displacement - 1]
+
+// dpr
+buyPressure  = 0.
+sellPressure = 0.
+priceDelta   = 0.
+priceRange   = 0.
+dpr          = 0.
+dominance    = 0.
+
+if nzVolune
+    for i = 0 to dprLength
+        priceDelta := close[i] - open[i]
+        priceRange := high[i]  - low[i]
+    
+        if priceDelta > 0
+            buyPressure += priceDelta / priceRange * nzVolune[i]
+
+        if priceDelta < 0
+            sellPressure += priceDelta / priceRange * nzVolune[i]
+
+    dominance := buyPressure + math.abs(sellPressure)
+        
+    if dominance != 0.
+        dpr := 100 * (buyPressure / dominance)
+    else
+        dpr := 50
+   
+// Volume Weighted Colored Bars
+avrg     = ta.sma(nzVolune, vwcbLen)
+
+// Label
+//  lbStat  = histLabel > 0 ? 'Historical Status of ' + syminfo.description + '\n   -exchange: ' + syminfo.prefix + '\n   -timeframe: ' + timeframe.period + '\n   -history: ' + str.tostring(histLabel) + ' bar(s) earlier' : 
+//                           'Current Status of '    + syminfo.description + '\n   -exchange: ' + syminfo.prefix + '\n   -timeframe: ' + timeframe.period
+
+// stText  = source1 > superTrendIchi and source1 > superTrendDMI ? ' 🟢  both bullish' : 
+//           source1 < superTrendIchi and source1 < superTrendDMI ? ' 🔴  both bearish' : 
+//           source1 < superTrendIchi and source1 > superTrendDMI or source1 > superTrendIchi and source1 < superTrendDMI ? ' ⚫ trendless or transitioning' : na
+
+// adxMom  = adxValue > adxValue[1] ? ' and growing' : ' and falling'
+// diStat  = diplus >= diminus ? '\n   -diplus(' + str.tostring(diplus, '#.##') + ') >= diminus(' + str.tostring(diminus, '#.##') + ')' : 
+//                               '\n   -diplus(' + str.tostring(diplus, '#.##') + ') < diminus(' + str.tostring(diminus, '#.##') + ')'
+
+// dmiText = dmiBull ? '🟢  bullish\n   -adx(' + str.tostring(adxValue, '#.##') + ')' + adxMom + diStat : 
+//           dmiBear ? '🔴  bearish\n   -adx(' + str.tostring(adxValue, '#.##') + ')' + adxMom + diStat : 
+//           '⚫ trendless\n   -adx('  + str.tostring(adxValue, '#.##') + ')' + adxMom + diStat
+
+// tkStat  = conversionLine >= baseLine ? '\n   -tenkan-sen(' + str.tostring(conversionLine, format.mintick) + ') >= kijun-sen(' + str.tostring(baseLine, format.mintick) + ')' : 
+//                                        '\n   -tenkan-sen(' + str.tostring(conversionLine, format.mintick) + ') < kijun-sen(' + str.tostring(baseLine, format.mintick) + ')'
+
+// kumoStt = leadLine1 > leadLine2 ? '\n   -green kumo cloud ahead' : '\n   -red kumo cloud ahead'
+// ichiTxt = aboveCloud ? '🟢  bullish\n   -price action above the kumo cloud' + tkStat + kumoStt : 
+//           belowCloud ? '🔴  bearish\n   -price action below the kumo cloud' + tkStat + kumoStt : 
+//           inCloud ? '⚫  trendless or transitioning\n   -price action within the kumo cloud' + tkStat + kumoStt : na
+
+// dprChg = ta.change(dpr) > 0 ? '🟢  bullish\n       - growing (previous dpr(' + str.tostring(dpr[1], '#.##') + ')' : 
+//                               '🔴  bearish\n       - falling (previous dpr(' + str.tostring(dpr[1], '#.##') + ')'
+
+// volText = nzVolune >  avrg * vwcbUpper ? str.tostring(nzVolune, format.volume) + ' 🟢  high above average (' + str.tostring(avrg, format.volume) + ')' : 
+//           nzVolune >= avrg * vwcbLower and volume <= avrg * vwcbUpper ? str.tostring(volume, format.volume) + ' ⚫  average volume(' + str.tostring(avrg, format.volume) + ')' : 
+//           str.tostring(volume, format.volume) + ' 🔴  low below average(' + str.tostring(avrg, format.volume) + ')'
+
+// // Trend Statistical Panel
+// if not hideLabel
+
+//     // RSI
+//     rsiValue = ta.rsi(rsiSrc, rsiLength)
+//     rsiText = rsiValue >= 50 ? rsiValue > rsiOverbought ? '🟢  bullish (overbought)' : rsiValue > 60 ? '🟢  bullish (rsi > 60)' : '⚫ bullish (50 < rsi < 60)' : rsiValue < rsiOversold ? '🔴  bearish (oversold)' : rsiValue < 40 ? '🔴  bearish (rsi < 40)' : '⚫  bearish (40 < rsi < 50)'
+//     rsiText := ta.change(rsiValue) > 0 ? rsiText + '\n   -rsi(' + str.tostring(rsiValue, '#.##') + ') and rising' : rsiText + '\n   -rsi(' + str.tostring(rsiValue, '#.##') + ') and falling'
+
+//     // Stochastic
+//     stochK = ta.sma(ta.stoch(close, high, low, stochLengthK), stochSmoothingK)
+//     stochD = ta.sma(stochK, stochLengthD)
+//     stochMom = ta.change(stochK) > 0 ? ', stochK rising' : ', stochK falling'
+//     stochStat = stochK > stochOverbought ? ' (overbought)' : stochK < stochOversold ? ' (oversold)' : ''
+//     stochText = stochK > stochD ? '🟢  bullish' + stochStat + '\n   -%k(' + str.tostring(stochK, '#.##') + ') > %d(' + str.tostring(stochD, '#.##') + ')' + stochMom : '🔴  bearish' + stochStat + '\n   -%k(' + str.tostring(stochK, '#.##') + ') < %d(' + str.tostring(stochD, '#.##') + ')' + stochMom
+
+//     // MACD
+//     [macdLine, signalLine, histLine] = ta.macd(macdSrc, macdFastLength, macdSlowLength, macdSignalLength)
+//     macdMom = ta.change(histLine) > 0 ? ', momentum rising' : ', momentum falling'
+//     macdText = macdLine > signalLine ? '🟢  bullish (macd > signal)' + macdMom : '🔴  bearish (macd < signal)' + macdMom
+
+
+//     label indiLabel = label.new(time, source1[1], text=lbStat[histLabel] + 
+//          '\n\nSuperTrends (Trend):' + stText[histLabel] + 
+//          '\n\nDirectional Movement (trend): ' + dmiText[histLabel] + 
+//          '\n\nIchimoku Cloud (Trend): ' + ichiTxt[histLabel] + 
+//          '\n\nRSI (Momentum): ' + rsiText[histLabel] + 
+//          '\n\nStochastic (Momentum): ' + stochText[histLabel] + 
+//          '\n\nMACD (Momentum): ' + macdText[histLabel] +
+//          '\n\nDPR (Pressure)  : ' + dprChg[histLabel] +
+//          '\n\nVolume (Pressure): ' + volText[histLabel], 
+//          tooltip='Tolong baca dan pahami indicator-indicator ini sebelum mengambil keputusan', color=#4262ba, xloc=xloc.bar_time, style=label.style_label_left, textcolor=color.white, textalign=text.align_left)
+         
+//     label.set_x(indiLabel, label.get_x(indiLabel) + math.round(ta.change(time) * 5))
+//     label.delete(indiLabel[1])
+//     label indiLabel2 = label.new(histLabel > 0 ? time[histLabel] : na, low[histLabel] * 0.89, color=#4262ba, xloc=xloc.bar_time, style=label.style_triangleup, size=size.tiny)
+//     label.delete(indiLabel2[1]) 
+    
+//======================================================Trend Table======================================================//
+showDashboard     = input(true, "TREND DASHBOARD ON/OFF", group="TREND DASHBOARD")
+locationDashboard = input.string("Middle Right", "Table Location", ["Top Right", "Middle Right", "Bottom Right", "Top Center", "Middle Center", "Bottom Center", "Top Left", "Middle Left", "Bottom Left"], group="TREND DASHBOARD")
+tableTextColor    = input(color.white, "TEXT", group="TREND DASHBOARD")
+tableBgColor      = input(color.blue, "BACKGROUND", group="TREND DASHBOARD")
+sizeDashboard     = input.string("Small", "TABLE SIZE", ["Large", "Normal", "Small", "Tiny"], group="TREND DASHBOARD")
+showPdHlc         = input(false, "PREVIOUS DAY H/L/C", group="PREVIOUS DAY HIGH LOW CLOSE")
+lineColor         = input.color(#00ff0a, "LINE COLORS", group="PREVIOUS DAY HIGH LOW CLOSE")
+lineStyle3      = input.string("Solid", "LINE STYLE", ["Solid", "Dotted", "Dashed"], group ="PREVIOUS DAY HIGH LOW CLOSE")
+
+
+//========================================== Trend =================================================//
+autoTL          = input.bool(true, "TREND ON/OFF", group = "TREND")
+upperTL1        = input.color(color.new(#E91E63, 5), "TOP COLOR", group="TREND")
+middleTL2       = input.color(color.new(#ffffff, 5), "MIDDLE COLOR", group="TREND")
+lowerTL3        = input.color(color.new(#00DBFF, 5), "BOTTOM COLOR", group="TREND")
+styleOption     = input.string(title="LINE STYLE",options=["Solid ─", "Dotted ┈", "Dashed ╌", "Arrow Left ←", "Arrow Right →", "Arrows Both ↔"], defval="Solid ─", group = "TREND")
+lineWidth2      = input.int(2, title="LINE WIDTH", minval=1, maxval = 4, group = "TREND")
+expandTrend     = input(false, "EXTEND TREND LINES", group = "TREND")
+lineStyle2      = input.string("Solid", "LINE STYLE", ["Solid", "Dotted", "Dashed"], group ="TREND")
+lineWidth3         = input.int(1, "LINE WIDTH", group="PREVIOUS DAY HIGH LOW CLOSE")
+
+// Create non-repainting security function
+rp_security(_symbol, _res, _src) =>
+    request.security(_symbol, _res, _src[barstate.isrealtime ? 1 : 0])
+
+htfHigh = rp_security(syminfo.tickerid, res, high)
+htfLow = rp_security(syminfo.tickerid, res, low)
+
+// ======================================================Main Indicator======================================================//
+//====================================================== Functions ======================================================//
+smoothrng(x, t, m) =>
+    wper = t * 2 - 1
+    avrng = ta.ema(math.abs(x - x[1]), t)
+    smoothrng = ta.ema(avrng, wper) * m
+rngfilt(x, r) =>
+    rngfilt = x
+    rngfilt := x > nz(rngfilt[1]) ? x - r < nz(rngfilt[1]) ? nz(rngfilt[1]) : x - r : x + r > nz(rngfilt[1]) ? nz(rngfilt[1]) : x + r
+percWidth(len, perc) => (ta.highest(len) - ta.lowest(len)) * perc / 100
+securityNoRep(sym, res, src) => request.security(sym, res, src, barmerge.gaps_off, barmerge.lookahead_on)
+swingPoints(prd) =>
+    pivHi = ta.pivothigh(prd, prd)
+    pivLo = ta.pivotlow (prd, prd)
+    last_pivHi = ta.valuewhen(pivHi, pivHi, 1)
+    last_pivLo = ta.valuewhen(pivLo, pivLo, 1)
+    hh = pivHi and pivHi > last_pivHi ? pivHi : na
+    lh = pivHi and pivHi < last_pivHi ? pivHi : na
+    hl = pivLo and pivLo > last_pivLo ? pivLo : na
+    ll = pivLo and pivLo < last_pivLo ? pivLo : na
+    [hh, lh, hl, ll]
+f_chartTfInMinutes() =>
+    float _resInMinutes = timeframe.multiplier * (
+      timeframe.isseconds ? 1                   :
+      timeframe.isminutes ? 1.                  :
+      timeframe.isdaily   ? 60. * 24            :
+      timeframe.isweekly  ? 60. * 24 * 7        :
+      timeframe.ismonthly ? 60. * 24 * 30.4375  : na)
+f_kc(src, len, sensitivity) =>
+    basis = ta.sma(src, len) // sebelumnya(before) ta.sma
+    span  = ta.atr(len)
+    [basis + span * sensitivity, basis - span * sensitivity]
+wavetrend(src, chlLen, avgLen) =>
+    esa = ta.ema(src, chlLen)
+    d = ta.ema(math.abs(src - esa), chlLen)
+    ci = (src - esa) / (0.015 * d)
+    wt1 = ta.ema(ci, avgLen)
+    wt2 = ta.sma(wt1, 3) // sebelumnya ta.sma
+    [wt1, wt2]
+f_top_fractal(src) => src[4] < src[2] and src[3] < src[2] and src[2] > src[1] and src[2] > src[0]
+f_bot_fractal(src) => src[4] > src[2] and src[3] > src[2] and src[2] < src[1] and src[2] < src[0]
+f_fractalize (src) => f_top_fractal(src) ? 1 : f_bot_fractal(src) ? -1 : 0
+f_findDivs(src, topLimit, botLimit) =>
+    fractalTop = f_fractalize(src) > 0 and src[2] >= topLimit ? src[2] : na
+    fractalBot = f_fractalize(src) < 0 and src[2] <= botLimit ? src[2] : na
+    highPrev = ta.valuewhen(fractalTop, src[2], 0)[2]
+    highPrice = ta.valuewhen(fractalTop, high[2], 0)[2]
+    lowPrev = ta.valuewhen(fractalBot, src[2], 0)[2]
+    lowPrice = ta.valuewhen(fractalBot, low[2], 0)[2]
+    bearSignal = fractalTop and high[1] > highPrice and src[1] < highPrev
+    bullSignal = fractalBot and low[1] < lowPrice and src[1] > lowPrev
+    [bearSignal, bullSignal]
+
+//====================================================== Get components ======================================================//
+source    = close
+smrng1    = smoothrng(source, 27, 1.5)
+smrng2    = smoothrng(source, 55, sensitivity)
+smrng     = (smrng1 + smrng2) / 2
+filt      = rngfilt(source, smrng)
+up        = 0.0, up := filt > filt[1] ? nz(up[1]) + 1 : filt < filt[1] ? 0 : nz(up[1])
+dn        = 0.0, dn := filt < filt[1] ? nz(dn[1]) + 1 : filt > filt[1] ? 0 : nz(dn[1])
+bullCond  = bool(na), bullCond := source > filt and source > source[1] and up > 0 or source > filt and source < source[1] and up > 0
+bearCond  = bool(na), bearCond := source < filt and source < source[1] and dn > 0 or source < filt and source > source[1] and dn > 0
+lastCond  = 0, lastCond := bullCond ? 1 : bearCond ? -1 : lastCond[1]
+bull      = bullCond and lastCond[1] == -1
+bear      = bearCond and lastCond[1] == 1
+countBull = ta.barssince(bull)
+countBear = ta.barssince(bear)
+trigger   = nz(countBull, bar_index) < nz(countBear, bar_index) ? 1 : 0
+rsi       = ta.rsi(close, 28)
+rsiOb     = rsi > 78 and rsi > ta.ema(rsi, 10)
+rsiOs     = rsi < 27 and rsi < ta.ema(rsi, 10)
+dHigh     = securityNoRep(syminfo.tickerid, "D", high [1])
+dLow      = securityNoRep(syminfo.tickerid, "D", low  [1])
+dClose    = securityNoRep(syminfo.tickerid, "D", close[1])
+ema = ta.ema(close, 144)
+emaBull = close > ema
+equal_tf(res) => str.tonumber(res) == f_chartTfInMinutes() and not timeframe.isseconds
+higher_tf(res) => str.tonumber(res) > f_chartTfInMinutes() or timeframe.isseconds
+too_small_tf(res) => (timeframe.isweekly and res=="1") or (timeframe.ismonthly and str.tonumber(res) < 10)
+securityNoRep1(sym, res, src) =>
+    bool bull_ = na
+    bull_ := equal_tf(res) ? src : bull_
+    bull_ := higher_tf(res) ? request.security(sym, res, src, barmerge.gaps_off, barmerge.lookahead_on) : bull_
+    bull_array = request.security_lower_tf(syminfo.tickerid, higher_tf(res) ? str.tostring(f_chartTfInMinutes()) + (timeframe.isseconds ? "S" : "") : too_small_tf(res) ? (timeframe.isweekly ? "3" : "10") : res, src)
+    if array.size(bull_array) > 1 and not equal_tf(res) and not higher_tf(res)
+        bull_ := array.pop(bull_array)
+    array.clear(bull_array)
+    bull_
+TF1Bull   = securityNoRep1(syminfo.tickerid, "1"   , emaBull)
+TF3Bull   = securityNoRep1(syminfo.tickerid, "3"   , emaBull)
+TF5Bull   = securityNoRep1(syminfo.tickerid, "5"   , emaBull)
+TF15Bull  = securityNoRep1(syminfo.tickerid, "15"  , emaBull)
+TF30Bull  = securityNoRep1(syminfo.tickerid, "30"  , emaBull)
+TF60Bull  = securityNoRep1(syminfo.tickerid, "60"  , emaBull)
+TF120Bull = securityNoRep1(syminfo.tickerid, "120" , emaBull)
+TF240Bull = securityNoRep1(syminfo.tickerid, "240" , emaBull)
+TF480Bull = securityNoRep1(syminfo.tickerid, "480" , emaBull)
+TFDBull   = securityNoRep1(syminfo.tickerid, "1440", emaBull)
+[wt1, wt2] = wavetrend(close, 5, 10)
+[wtDivBear1, wtDivBull1] = f_findDivs(wt2, 15, -40)
+[wtDivBear2, wtDivBull2] = f_findDivs(wt2, 45, -65)
+wtDivBull = wtDivBull1 or wtDivBull2
+wtDivBear = wtDivBear1 or wtDivBear2
+
+// ====================================================== Colors ======================================================//
+white = #ffffff, white30 = color.new(white, 100)
+blue = #2962ff, blue30 = color.new(blue, 100)
+whiteish  = #ffffff, whiteish30  = color.new(whiteish , 100)
+
+// ====================================================== Plot ======================================================//
+off = percWidth(300, offsetSignal)
+barcolor(up > dn ? white : blue)
+plotshape(showBuySell and bull ? low  - off : na, "Label Beli2" , shape.labelup  , location.absolute, color(#065709), 0, "Buy 1" , color.white, size=size.small)
+plotshape(showBuySell and bear ? high + off : na, "Label Jual2", shape.labeldown, location.absolute, color(#ff0015), 0, "Sell 1", color.white, size=size.small)
+plotshape(ta.crossover(wt1, wt2) and wt2 <= -53, "Don't Sell/Bottom" , shape.xcross, location.belowbar, color(#ff0015), size=size.tiny)
+plotshape(ta.crossunder(wt1, wt2) and wt2 >= 53, "Don't Buy/Top", shape.xcross, location.abovebar, color(#00ff0a), size=size.tiny)
+plotshape(wtDivBull, "cicil/spec Beli", shape.circle  , location.belowbar, color(#00ff0a), 0, "cicil beli",color.white, size=size.auto)
+plotshape(wtDivBear, "cicil/spec Jual", shape.circle, location.abovebar, color(#ff0015), 0, "cicil jual", color.white,  size=size.auto)
+plotshape(showReversal and rsiOs, "Reversal Beli" , shape.diamond, location.belowbar, color(#00ff0a), size=size.tiny)
+plotshape(showReversal and rsiOb, "Reversal Jual", shape.diamond, location.abovebar, color(#ff0015), size=size.tiny)
+
+srcStop = close
+atrBand = srcStop * (percentStop / 100)
+atrStop = trigger ? srcStop - atrBand : srcStop + atrBand
+lastTrade(src) => ta.valuewhen(bull or bear, src, 0)
+entry_y = lastTrade(srcStop)
+stop_y = lastTrade(atrStop)
+tp1_y = (entry_y - lastTrade(atrStop)) * 1 + entry_y
+tp2_y = (entry_y - lastTrade(atrStop)) * 2 + entry_y
+tp3_y = (entry_y - lastTrade(atrStop)) * 3 + entry_y
+tp4_y = (entry_y - lastTrade(atrStop)) * 4 + entry_y
+tp5_y = (entry_y - lastTrade(atrStop)) * 5 + entry_y
+
+//====================================================== Label ======================================================//
+labelTpSl(y, txt, color) =>
+    label labelTpSl = percentStop and enableE != 0 ? label.new(bar_index + 1, y, txt, xloc.bar_index, yloc.price, color, label.style_label_left, color.white, size.normal) : na
+    label.delete(labelTpSl[1])
+labelTpSl(entry_y, "Entry: " + str.tostring(math.round_to_mintick(entry_y)), color = Entry)
+labelTpSl(stop_y , "SL: " + str.tostring(math.round_to_mintick(stop_y)), color = Stop)
+labelTpSl(tp1_y, "TP 1: " + str.tostring(math.round_to_mintick(tp1_y)), color = Tp1)
+labelTpSl(tp2_y, "TP 2: " + str.tostring(math.round_to_mintick(tp2_y)), color = Tp1)
+labelTpSl(tp3_y, "TP 3: " + str.tostring(math.round_to_mintick(tp3_y)), color = Tp1)
+labelTpSl(tp4_y, "TP 4: " + str.tostring(math.round_to_mintick(tp4_y)), color = Tp1)
+labelTpSl(tp5_y, "TP 5: " + str.tostring(math.round_to_mintick(tp5_y)), color = Tp1)
+lineTpSl(y, color) =>
+    line lineTpSl = percentStop and enableE != 0 ? line.new(bar_index - (trigger ? countBull : countBear) + 4, y, bar_index + 1, y, xloc.bar_index, extend.none, color, line.style_solid) : na
+    line.delete(lineTpSl[1])
+lineTpSl(entry_y, color = Entry)
+lineTpSl(stop_y, color = Stop)
+lineTpSl(tp1_y, color = Tp1)
+lineTpSl(tp2_y, color = Tp1)
+lineTpSl(tp3_y, color = Tp1)
+
+// ============================== TREND LINES ===============================================
+// Functions
+lineStyle1    =   (styleOption == "Dotted ┈") ? line.style_dotted :
+                  (styleOption == "Dashed ╌") ? line.style_dashed :
+                  (styleOption == "Arrow Left ←") ? line.style_arrow_left :
+                  (styleOption == "Arrow Right →") ? line.style_arrow_right :
+                  (styleOption == "Arrows Both ↔") ? line.style_arrow_both :
+                  line.style_solid
+
+supertrend(_src, factor, atrLen) =>
+	atr = ta.atr(atrLen)
+	upperBand = _src + factor * atr
+	lowerBand = _src - factor * atr
+	prevLowerBand = nz(lowerBand[1])
+	prevUpperBand = nz(upperBand[1])
+	lowerBand := lowerBand > prevLowerBand or close[1] < prevLowerBand ? lowerBand : prevLowerBand
+	upperBand := upperBand < prevUpperBand or close[1] > prevUpperBand ? upperBand : prevUpperBand
+	int direction = na
+	float superTrend = na
+	prevSuperTrend = superTrend[1]
+	if na(atr[1])
+		direction := 1
+	else if prevSuperTrend == prevUpperBand
+		direction := close > upperBand ? -1 : 1
+	else
+		direction := close < lowerBand ? 1 : -1
+	superTrend := direction == -1 ? lowerBand : upperBand
+	[superTrend, direction]
+lr_slope(_src, _len) =>
+    x = 0.0, y = 0.0, x2 = 0.0, xy = 0.0
+    for i = 0 to _len - 1
+        val = _src[i]
+        per = i + 1
+        x += per
+        y += val
+        x2 += per * per
+        xy += val * per
+    _slp = (_len * xy - x * y) / (_len * x2 - x * x)
+    _avg = y / _len
+    _int = _avg - _slp * x / _len + _slp
+    [_slp, _avg, _int]
+lr_dev(_src, _len, _slp, _avg, _int) =>
+    upDev = 0.0, dnDev = 0.0
+    val = _int
+    for j = 0 to _len - 1
+        price = high[j] - val
+        if price > upDev
+            upDev := price
+        price := val - low[j]
+        if price > dnDev
+            dnDev := price
+        price := _src[j]
+        val += _slp
+    [upDev, dnDev]
+
+barsL       = 10
+barsR       = 10
+pivotHigh = fixnan(ta.pivothigh(barsL, barsR)[1])
+pivotLow = fixnan(ta.pivotlow(barsL, barsR)[1])
+period = 150
+[s1, a1, i1] = lr_slope(source, period)
+[upDev, dnDev] = lr_dev(source, period, s1, a1, i1)
+
+y1 = low - (ta.atr(30) * 2), y1B = low - ta.atr(30)
+y2 = high + (ta.atr(30) * 2), y2B = high + ta.atr(30)
+x1 = bar_index - period + 1, _y1 = i1 + s1 * (period - 1), x2 = bar_index, _y2 = i1
+
+upperTL = autoTL ? line.new(x1, _y1 + upDev, x2, _y2 + upDev, xloc.bar_index, expandTrend ? extend.both : extend.none, width=lineWidth2, style = lineStyle1, color=upperTL1) : na
+line.delete(upperTL[1])
+middleTL = autoTL ? line.new(x1, _y1, x2, _y2, xloc.bar_index, expandTrend ? extend.both : extend.none, width=lineWidth2, style = lineStyle1, color=middleTL2) : na
+line.delete(middleTL[1])
+lowerTL = autoTL ? line.new(x1, _y1 - dnDev, x2, _y2 - dnDev, xloc.bar_index, expandTrend ? extend.both : extend.none, width=lineWidth2, style = lineStyle1, color=lowerTL3) : na
+line.delete(lowerTL[1])
+// ====================================================== SUPPLY & DEMAND ======================================================//
+//====================================================== FUNCTIONS ======================================================//
+//====================================================== Line Style function ======================================================//
+get_line_style(style) =>
+    out = switch style
+        'Solid'  => line.style_solid
+        'Dashed' => line.style_dashed
+        'Dotted' => line.style_dotted
+
+//====================================================== Function to get order block coordinates ======================================================//
+get_coordinates(condition, top, btm, ob_val)=>
+    var ob_top  = array.new_float(0)
+    var ob_btm  = array.new_float(0)
+    var ob_avg  = array.new_float(0)
+    var ob_left = array.new_int(0)
+
+    float ob = na
+
+    //Append coordinates to arrays
+    if condition and enableSD
+        avg = math.avg(top, btm)
+        
+        array.unshift(ob_top, top)
+        array.unshift(ob_btm, btm)
+        array.unshift(ob_avg, avg)
+        array.unshift(ob_left, time[length])
+        
+        ob := ob_val
+    
+    [ob_top, ob_btm, ob_avg, ob_left, ob]
+
+//====================================================== Function to remove mitigated order blocks from coordinate arrays======================================================//
+remove_mitigated(ob_top, ob_btm, ob_left, ob_avg, target, bull)=>
+    mitigated = false
+    target_array = bull ? ob_btm : ob_top
+
+    for element in target_array
+        idx = array.indexof(target_array, element)
+
+        if (bull ? target < element : target > element)
+            mitigated := true
+
+            array.remove(ob_top, idx)
+            array.remove(ob_btm, idx)
+            array.remove(ob_avg, idx)
+            array.remove(ob_left, idx)
+    
+    mitigated
+
+//====================================================== Function to set order blocks ======================================================//
+set_order_blocks(ob_top, ob_btm, ob_left, ob_avg, ext_last, bg_css, border_css, lvl_css)=>
+    var ob_box = array.new_box(0)
+    var ob_lvl = array.new_line(0)
+
+    //Fill arrays with boxes/lines
+    if barstate.isfirst
+        for i = 0 to ext_last-1
+            array.unshift(ob_box, box.new(na,na,na,na
+              , xloc = xloc.bar_time
+              , extend= extend.right
+              , bgcolor = bg_css
+              , border_color = color.new(border_css, 70)))
+
+            array.unshift(ob_lvl, line.new(na,na,na,na
+              , xloc = xloc.bar_time
+              , extend = extend.right
+              , color = lvl_css
+              , style = get_line_style(line_style)
+              , width = line_width))
+
+    //Set order blocks
+    if barstate.islast
+        if array.size(ob_top) > 0
+            for i = 0 to math.min(ext_last-1, array.size(ob_top)-1)
+                get_box = array.get(ob_box, i)
+                get_lvl = array.get(ob_lvl, i)
+
+                box.set_lefttop(get_box, array.get(ob_left, i), array.get(ob_top, i))
+                box.set_rightbottom(get_box, array.get(ob_left, i), array.get(ob_btm, i))
+
+                line.set_xy1(get_lvl, array.get(ob_left, i), array.get(ob_avg, i))
+                line.set_xy2(get_lvl, array.get(ob_left, i)+1, array.get(ob_avg, i))
+
+//====================================================== Global elements ======================================================// 
+var os = 0
+var target_bull = 0.
+var target_bear = 0.
+
+n = bar_index
+upper = ta.highest(length)
+lower = ta.lowest(length)
+
+if mitigation == 'Close'
+    target_bull := ta.lowest(close, length)
+    target_bear := ta.highest(close, length)
+else
+    target_bull := lower
+    target_bear := upper
+
+os := high[length] > upper ? 0 : low[length] < lower ? 1 : os[1]
+
+phv = ta.pivothigh(volume, length, length)
+
+//====================================================== Get bullish/bearish order blocks coordinates ======================================================//
+[bull_top
+  , bull_btm
+  , bull_avg
+  , bull_left
+  , bull_ob] = get_coordinates(phv and os == 1, hl2[length], low[length], low[length])
+
+[bear_top
+  , bear_btm
+  , bear_avg
+  , bear_left
+  , bear_ob] = get_coordinates(phv and os == 0, high[length], hl2[length], high[length])
+
+//====================================================== Remove mitigated order blocks ======================================================//
+mitigated_bull = remove_mitigated(bull_top
+  , bull_btm
+  , bull_left
+  , bull_avg
+  , target_bull
+  , true)
+
+mitigated_bear = remove_mitigated(bear_top
+  , bear_btm
+  , bear_left
+  , bear_avg
+  , target_bear
+  , false)
+
+//====================================================== Set bullish order blocks ======================================================//
+set_order_blocks(bull_top
+  , bull_btm
+  , bull_left
+  , bull_avg
+  , bull_ext_last
+  , bg_bull_css
+  , bull_css
+  , bull_avg_css)
+
+//====================================================== Set bearish order blocks ======================================================//
+set_order_blocks(bear_top
+  , bear_btm
+  , bear_left
+  , bear_avg
+  , bear_ext_last
+  , bg_bear_css
+  , bear_css
+  , bear_avg_css)
+  
+//======================================================= Show detected order blocks =======================================================//
+plot(bull_ob, 'Bull OB', bull_css, 2, plot.style_linebr
+  , offset = -length
+  , display = display.pane)
+
+plot(bear_ob, 'Bear OB', bear_css, 2, plot.style_linebr
+  , offset = -length
+  , display = display.pane)
+
+// ====================================================== Dashboard ======================================================//
+
+var dashboard_loc  = locationDashboard == "Top Right" ? position.top_right : locationDashboard == "Middle Right" ? position.middle_right : locationDashboard == "Bottom Right" ? position.bottom_right : locationDashboard == "Top Center" ? position.top_center : locationDashboard == "Middle Center" ? position.middle_center : locationDashboard == "Bottom Center" ? position.bottom_center : locationDashboard == "Top Left" ? position.top_left : locationDashboard == "Middle Left" ? position.middle_left : position.bottom_left
+var dashboard_size = sizeDashboard == "Large" ? size.large : sizeDashboard == "Normal" ? size.normal : sizeDashboard == "Small" ? size.small : size.tiny
+var dashboard      = showDashboard ? table.new(dashboard_loc, 2, 15, tableBgColor, #D28B29, 2, tableBgColor, 1) : na
+dashboard_cell(column, row, txt, signal=false) => table.cell(dashboard, column, row, txt, 0, 0, signal ? #D28B29 : tableTextColor, text_size=dashboard_size)
+dashboard_cell_bg(column, row, col) => table.cell_set_bgcolor(dashboard, column, row, col)
+if barstate.islast and showDashboard
+    dashboard_cell(0, 0 , "MCF TA")
+    dashboard_cell(0, 1 , "Current Position")
+    dashboard_cell(0, 2 , "Current Trend")
+    dashboard_cell(0, 3 , "Volume")
+    dashboard_cell(0, 4 , "Timeframe")
+    dashboard_cell(0, 5 , "1 min:")
+    dashboard_cell(0, 6 , "3 min:")
+    dashboard_cell(0, 7 , "5 min:")
+    dashboard_cell(0, 8 , "15 min:")
+    dashboard_cell(0, 9 , "30 min:")
+    dashboard_cell(0, 10, "1 H:")
+    dashboard_cell(0, 11, "2 H:")
+    dashboard_cell(0, 12, "4 H:")
+    dashboard_cell(0, 13, "8 H:")
+    dashboard_cell(0, 14, "Daily:")
+    dashboard_cell(1, 0 , "V.1.03-Alpha")
+    dashboard_cell(1, 1 , trigger ? "Buy" : "Sell", true), dashboard_cell_bg(1, 1, trigger ? #00ff0a : #ff0015)
+    dashboard_cell(1, 2 , emaBull ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 2, emaBull ? #00ff0a : #ff0015)
+    dashboard_cell(1, 3 , str.tostring(volume))
+    dashboard_cell(1, 4 , "Trends")
+    dashboard_cell(1, 5 , TF1Bull   ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 5 , TF1Bull   ? #00ff0a : #ff0015)
+    dashboard_cell(1, 6 , TF3Bull   ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 6 , TF3Bull   ? #00ff0a : #ff0015)
+    dashboard_cell(1, 7 , TF5Bull   ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 7 , TF5Bull   ? #00ff0a : #ff0015)
+    dashboard_cell(1, 8 , TF15Bull  ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 8 , TF15Bull  ? #00ff0a : #ff0015)
+    dashboard_cell(1, 9 , TF30Bull  ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 9 , TF30Bull  ? #00ff0a : #ff0015)
+    dashboard_cell(1, 10, TF60Bull  ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 10, TF60Bull  ? #00ff0a : #ff0015)
+    dashboard_cell(1, 11, TF120Bull ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 11, TF120Bull ? #00ff0a : #ff0015)
+    dashboard_cell(1, 12, TF240Bull ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 12, TF240Bull ? #00ff0a : #ff0015)
+    dashboard_cell(1, 13, TF480Bull ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 13, TF480Bull ? #00ff0a : #ff0015)
+    dashboard_cell(1, 14, TFDBull   ? "Bullish" : "Bearish", true), dashboard_cell_bg(1, 14, TFDBull   ? #00ff0a : #ff0015)
+
+// ====================================================== Previos Day H/L/C======================================================//
+
+lStyle = lineStyle3 == "Solid" ? line.style_solid : lineStyle3 == "Dotted" ? line.style_dotted : line.style_dashed
+dHighLine   = showPdHlc ? line.new(bar_index, dHigh,  bar_index + 1, dHigh , xloc.bar_index, extend.both, lineColor, lStyle, lineWidth3) : na, line.delete(dHighLine[1])
+dLowLine    = showPdHlc ? line.new(bar_index, dLow ,  bar_index + 1, dLow  , xloc.bar_index, extend.both, lineColor, lStyle, lineWidth3) : na, line.delete(dLowLine[1])
+dCloseLine  = showPdHlc ? line.new(bar_index, dClose, bar_index + 1, dClose, xloc.bar_index, extend.both, lineColor, lStyle, lineWidth3) : na, line.delete(dCloseLine[1])
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//====================================================== NEURAL NETWORK ======================================================//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+price = plot(close, title='Close Line', color=color.new(color.blue, 0), display=display.none)
+////////////////////////////////////////////////////////////////////////////////
+//TREND INDICATORS▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+//Trend EMA
+tttradetrend = 'Only place BUY or SELL orders with the direction of the Trend EMA.'
+tradetrendoption = input.bool(false, title='Only Tade with Trend', group = "NEURAL NETWORK", tooltip=tttradetrend)
+len111 = input.int(defval=200, minval=0, maxval=2000, title='Trend EMA Length')
+src111 = close
+out111 = ta.ema(src111, len111)
+ma111 = plot(out111, title='EMA 200', linewidth=5, color=color.new(color.red, 0), offset=0)
+mabuy = out111 > out111[1]
+masell = out111 < out111[1]
+
+//5 EMAs////////////////////////////////////////////////////////////////////////
+EMAlen1 = input.int(9)
+src1 = close
+out1 = ta.ema(src1, EMAlen1)
+ema1color = out1 > out1[1] ? #00bcd4 : #e91e63
+ema1 = plot(out1, title='EMA 9', linewidth=3, color=color.new(ema1color, 50), offset=0, display=display.none)
+fill(price, ema1, title='EMA 9 Fill', color=color.new(ema1color, 90), editable=true)
+EMAlen2 = input.int(21)
+src2 = close
+out2 = ta.ema(src2, EMAlen2)
+ema2color = out2 > out2[1] ? #00bcd4 : #e91e63
+ema2 = plot(out2, title='EMA 21', linewidth=3, color=color.new(ema2color, 50), offset=0, display=display.none)
+fill(price, ema2, title='EMA 21 Fill', color=color.new(ema2color, 90), editable=true)
+EMAlen3 = input.int(55)
+src3 = close
+out3 = ta.ema(src3, EMAlen3)
+ema3color = out3 > out3[1] ? #00bcd4 : #e91e63
+ema3 = plot(out3, title='EMA 55', linewidth=3, color=color.new(ema3color, 50), offset=0, display=display.none)
+fill(price, ema3, title='EMA 55 Fill', color=color.new(ema3color, 90), editable=true)
+EMAlen4 = input.int(100)
+src4 = close
+out4 = ta.ema(src4, EMAlen4)
+ema4color = out4 > out4[1] ? #00bcd4 : #e91e63
+ema4 = plot(out4, title='EMA 100', linewidth=3, color=color.new(ema4color, 50), offset=0, display=display.none)
+fill(price, ema4, title='EMA 100 Fill', color=color.new(ema4color, 90), editable=true)
+EMAlen5 = input.int(200)
+src5 = close
+out5 = ta.ema(src5, EMAlen5)
+ema5color = out5 > out5[1] ? #00bcd4 : #e91e63
+ema5 = plot(out5, title='EMA 200', linewidth=3, color=color.new(ema5color, 50), offset=0, display=display.none)
+fill(price, ema5, title='EMA 200 Fill', color=color.new(ema5color, 90), editable=true)
+
+//Supertrend////////////////////////////////////////////////////////////////////
+atrPeriod =30 //higher ATR period (such as 20 or more) to capture major trend changes and filter out noise. For intraday trading, you may want to use a lower ATR period (such as 10 or less) to catch smaller price movements and take advantage of volatility
+factor = 3 // intraday <3 , swing >3
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+bodyMiddle = plot((open + close) / 2, display=display.none, title='Body Middle Line')
+uptrend = direction < 0 and direction[1] > 0[1] ? supertrend : na
+downtrend = direction > 0 and direction[1] < 0[1] ? supertrend : na
+//fill(bodyMiddle, upTrend, color.new(color.green, 90), fillgaps=false)
+//fill(bodyMiddle, downTrend, color.new(color.red, 90), fillgaps=false)
+//bullishsupertrend = supertrend < close and supertrend[1] > close
+//plotshape(uptrend, style=shape.labelup, color=color.green, location=location.belowbar, size=size.large)
+
+//HMA///////////////////////////////////////////////////////////////////////////
+len6 = 100
+src6 = close
+hma = ta.wma(2 * ta.wma(src6, len6 / 2) - ta.wma(src6, len6), math.floor(math.sqrt(len6)))
+hmacolor = close > hma ? #8ad400 : #e91e63
+plot(hma, title='HMA Line', color=color.new(hmacolor, 25), linewidth=5)
+
+//Parabolic SAR/////////////////////////////////////////////////////////////////
+start = 0.02
+increment = 0.01
+maximum = 0.2
+psar = ta.sar(start, increment, maximum)
+plot(psar, "ParabolicSAR", style=plot.style_circles, color=#ffffff)
+
+//RSI Divergence////////////////////////////////////////////////////////////////
+len11 = 14
+src1111 = close
+lbR11 = 2
+lbL11 = 6
+rangeUpper11 = 60
+rangeLower11 = 5
+plotBull11 = true
+plotHiddenBull11 = false
+plotBear11 = true
+plotHiddenBear11 = false
+bearColor11 = color.red
+bullColor11 = color.green
+hiddenBullColor11 = color.new(color.green, 80)
+hiddenBearColor11 = color.new(color.red, 80)
+textColor11 = color.white
+noneColor11 = color.new(color.white, 100)
+osc11 = ta.rsi(src11, len11)
+
+//plot(osc11, title="RSI", linewidth=2, color=#2962FF)
+//hline(50, title="Middle Line", color=#787B86, linestyle=hline.style_dotted)
+//obLevel11 = hline(70, title="Overbought", color=#787B86, linestyle=hline.style_dotted)
+//osLevel11 = hline(30, title="Oversold", color=#787B86, linestyle=hline.style_dotted)
+//fill(obLevel11, osLevel11, title="Background", color=color.rgb(33, 150, 243, 90))
+
+plFound11 = na(ta.pivotlow(osc11, lbL11, lbR11)) ? false : true
+phFound11 = na(ta.pivothigh(osc11, lbL11, lbR11)) ? false : true
+_inRange11(cond) =>
+    bars11 = ta.barssince(cond == true)
+    rangeLower11 <= bars11 and bars11 <= rangeUpper11
+
+//Regular Bullish Divergence
+
+//Osc: Higher Low
+oscHL11 = osc11[lbR11] > ta.valuewhen(plFound11, osc11[lbR11], 1) and _inRange11(plFound11[1])
+//Price: Lower Low
+priceLL11 = low[lbR11] < ta.valuewhen(plFound11, low[lbR11], 1)
+
+bullCond11 = plotBull11 and priceLL11 and oscHL11 and plFound11
+//plot(plFound11 ? osc11[lbR11] : na, offset=-lbR11, title="Regular Bullish", linewidth=2, color=(bullCond11 ? bullColor11 : noneColor11))
+//plotshape(bullCond11 ? osc11[lbR11] : na, offset=-lbR11, title="Regular Bullish Label", text=" Bull ", style=shape.labelup, location=location.absolute, color=bullColor11, textcolor=textColor11)
+
+//Hidden Bullish Divergence
+
+//Osc: Lower Low
+oscLL11 = osc11[lbR11] < ta.valuewhen(plFound11, osc11[lbR11], 1) and _inRange11(plFound11[1])
+//Price: Higher Low
+priceHL11 = low[lbR11] > ta.valuewhen(plFound11, low[lbR11], 1)
+
+hiddenBullCond11 = plotHiddenBull11 and priceHL11 and oscLL11 and plFound11
+//plot(plFound11 ? osc11[lbR11] : na, offset=-lbR11, title="Hidden Bullish", linewidth=2, color=(hiddenBullCond11 ? hiddenBullColor11 : noneColor11))
+//plotshape(hiddenBullCond11 ? osc11[lbR11] : na, offset=-lbR11, title="Hidden Bullish Label", text=" H Bull ", style=shape.labelup, location=location.absolute, color=bullColor11, textcolor=textColor11)
+
+//Regular Bearish Divergence
+
+//Osc: Lower High
+oscLH11 = osc11[lbR11] < ta.valuewhen(phFound11, osc11[lbR11], 1) and _inRange11(phFound11[1])
+//Price: Higher High
+priceHH11 = high[lbR11] > ta.valuewhen(phFound11, high[lbR11], 1)
+
+bearCond11 = plotBear11 and priceHH11 and oscLH11 and phFound11
+//plot(phFound11 ? osc11[lbR11] : na, offset=-lbR11, title="Regular Bearish", linewidth=2, color=(bearCond11 ? bearColor11 : noneColor11))
+//plotshape(bearCond11 ? osc11[lbR11] : na, offset=-lbR11, title="Regular Bearish Label", text=" Bear ", style=shape.labeldown, location=location.absolute, color=bearColor11, textcolor=textColor11)
+
+//Hidden Bearish Divergence
+//Osc: Higher High
+oscHH11 = osc11[lbR11] > ta.valuewhen(phFound11, osc11[lbR11], 1) and _inRange11(phFound11[1])
+// Price: Lower High
+priceLH11 = high[lbR11] < ta.valuewhen(phFound11, high[lbR11], 1)
+
+hiddenBearCond11 = plotHiddenBear11 and priceLH11 and oscHH11 and phFound11
+//plot(phFound11 ? osc11[lbR11] : na, offset=-lbR11, title="Hidden Bearish", linewidth=2, color=(hiddenBearCond11 ? hiddenBearColor11 : noneColor11))
+//plotshape(hiddenBearCond11 ? osc11[lbR11] : na, offset=-lbR11, title="Hidden Bearish Label", text=" H Bear ", style=shape.labeldown, location=location.absolute, color=bearColor11, textcolor=textColor11)
+
+//MACD Divergence///////////////////////////////////////////////////////////////
+fast_length12 = 12
+slow_length12 = 26
+src12 = close
+signal_length12 = 9
+sma_source12 = 'EMA'
+sma_signal12 = 'EMA'
+//Plot colors
+col_macd12 = #2962FF
+col_signal12 = #FF6D00
+col_grow_above12 = #26A69A
+col_fall_above12 = #B2DFDB
+col_grow_below12 = #FFCDD2
+col_fall_below12 = #FF5252
+//Calculating
+fast_ma12 = sma_source12 == 'SMA' ? ta.sma(src12, fast_length12) : ta.ema(src12, fast_length12)
+slow_ma12 = sma_source12 == 'SMA' ? ta.sma(src12, slow_length12) : ta.ema(src12, slow_length12)
+macd = fast_ma12 - slow_ma12
+signal = sma_signal12 == 'SMA' ? ta.sma(macd, signal_length12) : ta.ema(macd, signal_length12)
+hist = macd - signal
+//plot(hist, title="Histogram", style=plot.style_columns, color=(hist>=0 ? (hist[1] < hist ? col_grow_above12 : col_fall_above12) : (hist[1] < hist ? col_grow_below12 : col_fall_below12)))
+//plot(macd, title="MACD", color=col_macd12)
+//plot(signal, title="Signal", color=col_signal12)
+
+donttouchzero12 = true
+
+lbR12 = 2
+lbL12 = 6
+rangeUpper12 = 60
+rangeLower12 = 5
+plotBull12 = true
+plotHiddenBull12 = false
+plotBear12 = true
+plotHiddenBear12 = false
+bearColor12 = color.red
+bullColor12 = color.green
+hiddenBullColor12 = color.new(color.green, 80)
+hiddenBearColor12 = color.new(color.red, 80)
+textColor12 = color.white
+noneColor12 = color.new(color.white, 100)
+osc12 = macd
+
+plFound12 = na(ta.pivotlow(osc12, lbL12, lbR12)) ? false : true
+phFound12 = na(ta.pivothigh(osc12, lbL12, lbR12)) ? false : true
+_inRange12(cond) =>
+    bars12 = ta.barssince(cond == true)
+    rangeLower12 <= bars12 and bars12 <= rangeUpper12
+
+//Regular Bullish Divergence
+
+//Osc: Higher Low
+oscHL12 = osc12[lbR12] > ta.valuewhen(plFound12, osc12[lbR12], 1) and _inRange12(plFound12[1]) and osc12[lbR12] < 0
+// Price: Lower Low
+priceLL12 = low[lbR12] < ta.valuewhen(plFound12, low[lbR12], 1)
+priceHHZero12 = ta.highest(osc12, lbL12 + lbR12 + 5)
+//plot(priceHHZero,title="priceHHZero",color=color.green)
+blowzero12 = donttouchzero12 ? priceHHZero12 < 0 : true
+
+bullCond12 = plotBull12 and priceLL12 and oscHL12 and plFound12 and blowzero12
+//plot(plFound12 ? osc12[lbR12] : na, offset=-lbR12, title="Regular Bullish", linewidth=2, color=(bullCond12 ? bullColor12 : noneColor12))
+//plotshape(bullCond12 ? osc12[lbR12] : na, offset=-lbR12, title="Regular Bullish Label", text=" Bull ", style=shape.labelup, location=location.absolute, color=bullColor12, textcolor=textColor12)
+
+//Hidden Bullish Divergence
+
+//Osc: Lower Low
+oscLL12 = osc12[lbR12] < ta.valuewhen(plFound12, osc12[lbR12], 1) and _inRange12(plFound12[1])
+//Price: Higher Low
+priceHL12 = low[lbR12] > ta.valuewhen(plFound12, low[lbR12], 1)
+
+hiddenBullCond12 = plotHiddenBull12 and priceHL12 and oscLL12 and plFound12
+//plot(plFound12 ? osc12[lbR12] : na, offset=-lbR12, title="Hidden Bullish", linewidth=2, color=(hiddenBullCond12 ? hiddenBullColor12 : noneColor12))
+//plotshape(hiddenBullCond12 ? osc12[lbR12] : na, offset=-lbR12, title="Hidden Bullish Label", text=" H Bull ", style=shape.labelup, location=location.absolute, color=bullColor12, textcolor=textColor12)
+
+//Regular Bearish Divergence
+
+//Osc: Lower High
+oscLH12 = osc12[lbR12] < ta.valuewhen(phFound12, osc12[lbR12], 1) and _inRange12(phFound12[1]) and osc12[lbR12] > 0
+priceLLZero12 = ta.lowest(osc12, lbL12 + lbR12 + 5)
+//plot(priceLLZero,title="priceLLZero", color=color.red)
+bearzero12 = donttouchzero12 ? priceLLZero12 > 0 : true
+//Price: Higher High
+priceHH12 = high[lbR12] > ta.valuewhen(phFound12, high[lbR12], 1)
+
+bearCond12 = plotBear12 and priceHH12 and oscLH12 and phFound12 and bearzero12
+//plot(phFound12 ? osc12[lbR12] : na, offset=-lbR12, title="Regular Bearish", linewidth=2, color=(bearCond12 ? bearColor12 : noneColor12))
+//plotshape(bearCond12 ? osc12[lbR12] : na, offset=-lbR12, title="Regular Bearish Label", text=" Bear ", style=shape.labeldown, location=location.absolute, color=bearColor12, textcolor=textColor12)
+
+//Hidden Bearish Divergence
+
+//Osc: Higher High
+oscHH12 = osc12[lbR12] > ta.valuewhen(phFound12, osc12[lbR12], 1) and _inRange12(phFound12[1])
+//Price: Lower High
+priceLH12 = high[lbR12] < ta.valuewhen(phFound12, high[lbR12], 1)
+
+hiddenBearCond12 = plotHiddenBear12 and priceLH12 and oscHH12 and phFound12
+//plot(phFound12 ? osc12[lbR12] : na, offset=-lbR12, title="Hidden Bearish", linewidth=2, color=(hiddenBearCond12 ? hiddenBearColor12 : noneColor12))
+//plotshape(hiddenBearCond12 ? osc12[lbR12] : na, offset=-lbR12, title="Hidden Bearish Label", text=" H Bear ", style=shape.labeldown, location=location.absolute, color=bearColor12, textcolor=textColor12)
+
+//Wave Trend Divergence/////////////////////////////////////////////////////////
+n1 = 9
+n2 = 12
+ap = hlc3
+hline = 0
+
+//Divergence
+lbR13 = 2
+lbL13 = 6
+rangeUpper13 = 60
+rangeLower13 = 5
+plotBull13 = true
+plotHiddenBull13 = false
+plotBear13 = true
+plotHiddenBear13 = false
+
+bearColor13 = color.red
+bullColor13 = color.green
+hiddenBullColor13 = color.green
+hiddenBearColor13 = color.red
+textColor13 = color.white
+noneColor13 = color.new(color.white, 100)
+
+_inRange13(cond) =>
+    bars13 = ta.barssince(cond == true)
+    rangeLower13 <= bars13 and bars13 <= rangeUpper13
+
+//Stochastic Divergence/////////////////////////////////////////////////////////
+periodK14 = 14
+smoothK14 = 3
+periodD14 = 3
+k14 = ta.sma(ta.stoch(close, high, low, periodK14), smoothK14)
+d14 = ta.sma(k14, periodD14)
+
+//Divergence
+lbR14 = 2
+lbL14 = 6
+rangeUpper14 = 60
+rangeLower14 = 5
+plotBull14 = true
+plotHiddenBull14 = false
+plotBear14 = true
+plotHiddenBear14 = false
+
+bearColor14 = color.red
+bullColor14 = color.green
+hiddenBullColor14 = color.green
+hiddenBearColor14 = color.red
+textColor14 = color.white
+noneColor14 = color.new(color.white, 100)
+
+osc14 = k14
+
+plFound14 = na(ta.pivotlow(osc14, lbL14, lbR14)) ? false : true
+phFound14 = na(ta.pivothigh(osc14, lbL14, lbR14)) ? false : true
+
+_inRange14(cond) =>
+    bars14 = ta.barssince(cond == true)
+    rangeLower14 <= bars14 and bars14 <= rangeUpper14
+
+//Regular Bullish
+//Osc: Higher Low
+oscHL14 = osc14[lbR14] > ta.valuewhen(plFound14, osc14[lbR14], 1) and _inRange14(plFound14[1])
+
+//Price: Lower Low
+priceLL14 = low[lbR14] < ta.valuewhen(plFound14, low[lbR14], 1)
+
+bullCond14 = plotBull14 and priceLL14 and oscHL14 and plFound14
+//plot(plFound14 ? osc14[lbR14] : na, offset=-lbR14, title="Regular Bullish", linewidth=2, color=(bullCond14 ? bullColor14 : noneColor14))
+//plotshape(bullCond14 ? osc14[lbR14] : na, offset=-lbR14, title="Regular Bullish Label", text=" Bull ", style=shape.labelup, location=location.absolute, color=bullColor14, textcolor=textColor14)
+
+//Hidden Bullish
+
+//Osc: Lower Low
+oscLL14 = osc14[lbR14] < ta.valuewhen(plFound14, osc14[lbR14], 1) and _inRange14(plFound14[1])
+
+//Price: Higher Low
+priceHL14 = low[lbR14] > ta.valuewhen(plFound14, low[lbR14], 1)
+
+hiddenBullCond14 = plotHiddenBull14 and priceHL14 and oscLL14 and plFound14
+//plot(plFound14 ? osc14[lbR14] : na, offset=-lbR14, title="Hidden Bullish", linewidth=2, color=(hiddenBullCond14 ? hiddenBullColor14 : noneColor14))
+//plotshape(hiddenBullCond14 ? osc14[lbR14] : na, offset=-lbR14, title="Hidden Bullish Label", text=" H Bull ", style=shape.labelup, location=location.absolute, color=bullColor14, textcolor=textColor14)
+
+//Regular Bearish
+
+//Osc: Lower High
+oscLH14 = osc14[lbR14] < ta.valuewhen(phFound14, osc14[lbR14], 1) and _inRange14(phFound14[1])
+
+//Price: Higher High
+priceHH14 = high[lbR14] > ta.valuewhen(phFound14, high[lbR14], 1)
+
+bearCond14 = plotBear14 and priceHH14 and oscLH14 and phFound14
+//plot(phFound14 ? osc14[lbR14] : na, offset=-lbR14, title="Regular Bearish", linewidth=2, color=(bearCond14 ? bearColor14 : noneColor14))
+//plotshape(bearCond14 ? osc14[lbR14] : na, offset=-lbR14, title="Regular Bearish Label", text=" Bear ", style=shape.labeldown, location=location.absolute, color=bearColor14, textcolor=textColor14)
+
+//Hidden Bearish
+
+//Osc: Higher High
+oscHH14 = osc14[lbR14] > ta.valuewhen(phFound14, osc14[lbR14], 1) and _inRange14(phFound14[1])
+
+//Price: Lower High
+priceLH14 = high[lbR14] < ta.valuewhen(phFound14, high[lbR14], 1)
+
+hiddenBearCond14 = plotHiddenBear14 and priceLH14 and oscHH14 and phFound14
+//plot(phFound14 ? osc14[lbR14] : na, offset=-lbR14, title="Hidden Bearish", linewidth=2, color=(hiddenBearCond14 ? hiddenBearColor14 : noneColor14))
+//plotshape(hiddenBearCond14 ? osc14[lbR14] : na, offset=-lbR14, title="Hidden Bearish Label", text=" H Bear ", style=shape.labeldown, location=location.absolute, color=bearColor14, textcolor=textColor14)
+
+//Average True Range /////////////////////////////////////////////////
+length2 = 1
+mult2 = 1.85
+showLabels = true
+useClose = false
+highlightState = false
+
+atr = mult2 * ta.atr(length2)
+
+longStop = (useClose ? ta.highest(close, length2) : ta.highest(length2)) - atr
+longStopPrev = nz(longStop[1], longStop)
+longStop := close[1] > longStopPrev ? math.max(longStop, longStopPrev) : longStop
+
+shortStop = (useClose ? ta.lowest(close, length2) : ta.lowest(length2)) + atr
+shortStopPrev = nz(shortStop[1], shortStop)
+shortStop := close[1] < shortStopPrev ? math.min(shortStop, shortStopPrev) : shortStop
+
+var int dir = 1
+dir := close > shortStopPrev ? 1 : close < longStopPrev ? -1 : dir
+
+var color longColor = color.green
+var color shortColor = color.red
+
+buySignal = dir == 1 and dir[1] == -1
+//plotshape(buySignal and showLabels ? longStop : na, title="Beli based on ATR", text="Beli 1", location=location.belowbar, style=shape.labelup, size=size.tiny, color=longColor, textcolor=color.new(color.white, 0))
+
+sellSignal = dir == -1 and dir[1] == 1
+//plotshape(sellSignal and showLabels ? shortStop : na, title="Jual based on ATR", text="Jual 1", location=location.abovebar, style=shape.labeldown, size=size.tiny, color=shortColor, textcolor=color.new(color.white, 0))
+
+//Relative Volatility Index Divergence//////////////////////////////////////////
+length15 = 12
+src15 = close
+len15 = 14
+stddev15 = ta.stdev(src15, length15)
+upper15 = ta.ema(ta.change(src15) <= 0 ? 0 : stddev15, len15)
+lower15 = ta.ema(ta.change(src15) > 0 ? 0 : stddev15, len15)
+rvi = upper15 / (upper15 + lower15) * 100
+
+//Divergence
+lbR15 = 2
+lbL15 = 6
+rangeUpper15 = 60
+rangeLower15 = 5
+plotBull15 = true
+plotHiddenBull15 = false
+plotBear15 = true
+plotHiddenBear15 = false
+
+bearColor15 = color.red
+bullColor15 = color.green
+hiddenBullColor15 = color.green
+hiddenBearColor15 = color.red
+textColor15 = color.white
+noneColor15 = color.new(color.white, 100)
+
+d15 = rvi
+osc15 = d15
+
+plFound15 = na(ta.pivotlow(osc15, lbL15, lbR15)) ? false : true
+phFound15 = na(ta.pivothigh(osc15, lbL15, lbR15)) ? false : true
+
+_inRange15(cond) =>
+    bars15 = ta.barssince(cond == true)
+    rangeLower15 <= bars15 and bars15 <= rangeUpper15
+
+//Regular Bullish
+
+//Osc: Higher Low
+oscHL15 = osc15[lbR15] > ta.valuewhen(plFound15, osc15[lbR15], 1) and _inRange15(plFound15[1])
+
+//Price: Lower Low
+priceLL15 = low[lbR15] < ta.valuewhen(plFound15, low[lbR15], 1)
+
+bullCond15 = plotBull15 and priceLL15 and oscHL15 and plFound15
+//plot(plFound15 ? osc15[lbR15] : na, offset=-lbR15, title="Regular Bullish", linewidth=2, color=(bullCond15 ? bullColor15 : noneColor15))
+//plotshape(bullCond15 ? osc15[lbR15] : na, offset=-lbR15, title="Regular Bullish Label", text=" Bull ", style=shape.labelup, location=location.absolute, color=bullColor15, textcolor=textColor15)
+
+//Hidden Bullish
+
+//Osc: Lower Low
+oscLL15 = osc15[lbR15] < ta.valuewhen(plFound15, osc15[lbR15], 1) and _inRange15(plFound15[1])
+
+//Price: Higher Low
+priceHL15 = low[lbR15] > ta.valuewhen(plFound15, low[lbR15], 1)
+
+hiddenBullCond15 = plotHiddenBull15 and priceHL15 and oscLL15 and plFound15
+//plot(plFound15 ? osc15[lbR15] : na, offset=-lbR15, title="Hidden Bullish", linewidth=2, color=(hiddenBullCond15 ? hiddenBullColor15 : noneColor15))
+//plotshape(hiddenBullCond15 ? osc15[lbR15] : na, offset=-lbR15, title="Hidden Bullish Label", text=" H Bull ", style=shape.labelup, location=location.absolute, color=bullColor15, textcolor=textColor15)
+
+//Regular Bearish
+
+//Osc: Lower High
+oscLH15 = osc15[lbR15] < ta.valuewhen(phFound15, osc15[lbR15], 1) and _inRange15(phFound15[1])
+
+//Price: Higher High
+priceHH15 = high[lbR15] > ta.valuewhen(phFound15, high[lbR15], 1)
+
+bearCond15 = plotBear15 and priceHH15 and oscLH15 and phFound15
+//plot(phFound15 ? osc15[lbR15] : na, offset=-lbR15, title="Regular Bearish", linewidth=2, color=(bearCond15 ? bearColor15 : noneColor15))
+//plotshape(bearCond15 ? osc15[lbR15] : na, offset=-lbR15, title="Regular Bearish Label", text=" Bear ", style=shape.labeldown, location=location.absolute, color=bearColor15, textcolor=textColor15)
+
+//Hidden Bearish
+
+//Osc: Higher High
+oscHH15 = osc15[lbR15] > ta.valuewhen(phFound15, osc15[lbR15], 1) and _inRange15(phFound15[1])
+
+//Price: Lower High
+priceLH15 = high[lbR15] < ta.valuewhen(phFound15, high[lbR15], 1)
+
+hiddenBearCond15 = plotHiddenBear15 and priceLH15 and oscHH15 and phFound15
+//plot(phFound15 ? osc15[lbR15] : na, offset=-lbR15, title="Hidden Bearish", linewidth=2, color=(hiddenBearCond15 ? hiddenBearColor15 : noneColor15))
+//plotshape(hiddenBearCond15 ? osc15[lbR15] : na, offset=-lbR15, title="Hidden Bearish Label", text=" H Bear ", style=shape.labeldown, location=location.absolute, color=bearColor15, textcolor=textColor15)
+
+//Support and Resistance////////////////////////////////////////////////////////
+left16 = 200
+right16 = 20
+quick_right16 = 5
+src16 = 'Close'
+
+pivothigh_1 = ta.pivothigh(close, left16, right16)
+pivothigh_2 = ta.pivothigh(high, left16, right16)
+pivot_high16 = src16 == 'Close' ? pivothigh_1 : pivothigh_2
+pivotlow_1 = ta.pivotlow(close, left16, right16)
+pivotlow_2 = ta.pivotlow(low, left16, right16)
+pivot_lows16 = src16 == 'Close' ? pivotlow_1 : pivotlow_2
+
+pivothigh_3 = ta.pivothigh(close, left16, quick_right16)
+pivothigh_4 = ta.pivothigh(high, left16, quick_right16)
+quick_pivot_high16 = src16 == 'Close' ? pivothigh_3 : pivothigh_4
+pivotlow_3 = ta.pivotlow(close, left16, quick_right16)
+pivotlow_4 = ta.pivotlow(low, left16, quick_right16)
+quick_pivot_lows16 = src16 == 'Close' ? pivotlow_3 : pivotlow_4
+
+valuewhen_1 = ta.valuewhen(quick_pivot_high16, close[quick_right16], 0)
+valuewhen_2 = ta.valuewhen(quick_pivot_high16, high[quick_right16], 0)
+level1 = src16 == 'Close' ? valuewhen_1 : valuewhen_2
+valuewhen_3 = ta.valuewhen(quick_pivot_lows16, close[quick_right16], 0)
+valuewhen_4 = ta.valuewhen(quick_pivot_lows16, low[quick_right16], 0)
+level2 = src16 == 'Close' ? valuewhen_3 : valuewhen_4
+valuewhen_5 = ta.valuewhen(pivot_high16, close[right16], 0)
+valuewhen_6 = ta.valuewhen(pivot_high16, high[right16], 0)
+level3 = src16 == 'Close' ? valuewhen_5 : valuewhen_6
+valuewhen_7 = ta.valuewhen(pivot_lows16, close[right16], 0)
+valuewhen_8 = ta.valuewhen(pivot_lows16, low[right16], 0)
+level4 = src16 == 'Close' ? valuewhen_7 : valuewhen_8
+valuewhen_9 = ta.valuewhen(pivot_high16, close[right16], 1)
+valuewhen_10 = ta.valuewhen(pivot_high16, high[right16], 1)
+level5 = src16 == 'Close' ? valuewhen_9 : valuewhen_10
+valuewhen_11 = ta.valuewhen(pivot_lows16, close[right16], 1)
+valuewhen_12 = ta.valuewhen(pivot_lows16, low[right16], 1)
+level6 = src16 == 'Close' ? valuewhen_11 : valuewhen_12
+valuewhen_13 = ta.valuewhen(pivot_high16, close[right16], 2)
+valuewhen_14 = ta.valuewhen(pivot_high16, high[right16], 2)
+level7 = src16 == 'Close' ? valuewhen_13 : valuewhen_14
+valuewhen_15 = ta.valuewhen(pivot_lows16, close[right16], 2)
+valuewhen_16 = ta.valuewhen(pivot_lows16, low[right16], 2)
+level8 = src16 == 'Close' ? valuewhen_15 : valuewhen_16
+
+level1_col = close >= level1 ? color.green : color.red
+level2_col = close >= level2 ? color.green : color.red
+level3_col = close >= level3 ? color.green : color.red
+level4_col = close >= level4 ? color.green : color.red
+level5_col = close >= level5 ? color.green : color.red
+level6_col = close >= level6 ? color.green : color.red
+level7_col = close >= level7 ? color.green : color.red
+level8_col = close >= level8 ? color.green : color.red
+
+length17 = 9
+src17 = close
+hma17 = ta.wma(2 * ta.wma(src17, length17 / 2) - ta.wma(src17, length17), math.floor(math.sqrt(length17)))
+
+buy1 = hma17 > level1 and hma17[1] < level1[1] and close > close[2]
+buy2 = hma17 > level2 and hma17[1] < level2[1] and close > close[2]
+buy3 = hma17 > level3 and hma17[1] < level3[1] and close > close[2]
+buy4 = hma17 > level4 and hma17[1] < level4[1] and close > close[2]
+buy5 = hma17 > level5 and hma17[1] < level5[1] and close > close[2]
+buy6 = hma17 > level6 and hma17[1] < level6[1] and close > close[2]
+buy7 = hma17 > level7 and hma17[1] < level7[1] and close > close[2]
+buy8 = hma17 > level8 and hma17[1] < level8[1] and close > close[2]
+
+sell1 = hma17 < level1 and hma17[1] > level1[1] and close < close[2]
+sell2 = hma17 < level2 and hma17[1] > level2[1] and close < close[2]
+sell3 = hma17 < level3 and hma17[1] > level3[1] and close < close[2]
+sell4 = hma17 < level4 and hma17[1] > level4[1] and close < close[2]
+sell5 = hma17 < level5 and hma17[1] > level5[1] and close < close[2]
+sell6 = hma17 < level6 and hma17[1] > level6[1] and close < close[2]
+sell7 = hma17 < level7 and hma17[1] > level7[1] and close < close[2]
+sell8 = hma17 < level8 and hma17[1] > level8[1] and close < close[2]
+
+//OBV Divergence////////////////////////////////////////////////////////////////
+len18 = 20
+src18 = close
+lbR18 = 2
+lbL18 = 6
+rangeUpper18 = 60
+rangeLower18 = 5
+plotBull18 = true
+plotHiddenBull18 = false
+plotBear18 = true
+plotHiddenBear18 = false
+
+
+bearColor18 = color.red
+bullColor18 = color.green
+hiddenBullColor18 = color.green
+hiddenBearColor18 = color.new(color.red, 80)
+textColor18 = color.white
+noneColor18 = color.new(color.white, 100)
+
+csrc = ta.change(src18)
+obv1(src18) =>
+    ta.cum(ta.change(src18) > 0 ? volume : csrc < 0 ? -volume : 0 * volume)
+
+_inRange(cond) =>
+    bars = ta.barssince(cond == true)
+    rangeLower18 <= bars and bars <= rangeUpper18
+
+//Chaikin Money Flow////////////////////////////////////////////////////////////
+length19 = 50
+ad19 = close == high and close == low or high == low ? 0 : (2 * close - low - high) / (high - low) * volume
+cmf = math.sum(ad19, length19) / math.sum(volume, length19)
+//plot(cmf, color=#43A047, title="MF")
+//hline(0, color=#787B86, title="Zero", linestyle=hline.style_dashed)
+
+//VWAP//////////////////////////////////////////////////////////////////////////
+computeVWAP(src20, isNewPeriod, stDevMultiplier) =>
+    var float sumSrcVol = na
+    var float sumVol = na
+    var float sumSrcSrcVol = na
+
+    sumSrcVol := isNewPeriod ? src20 * volume : src20 * volume + sumSrcVol[1]
+    sumVol := isNewPeriod ? volume : volume + sumVol[1]
+    // sumSrcSrcVol calculates the dividend of the equation that is later used to calculate the standard deviation
+    sumSrcSrcVol := isNewPeriod ? volume * math.pow(src20, 2) : volume * math.pow(src20, 2) + sumSrcSrcVol[1]
+
+    _vwap = sumSrcVol / sumVol
+    variance = sumSrcSrcVol / sumVol - math.pow(_vwap, 2)
+    variance := variance < 0 ? 0 : variance
+    stDev = math.sqrt(variance)
+
+    lowerBand20 = _vwap - stDev * stDevMultiplier
+    upperBand20 = _vwap + stDev * stDevMultiplier
+
+    [_vwap, lowerBand20, upperBand20]
+
+hideonDWM = false
+var anchor = 'Session'
+src20 = hlc3
+offset20 = 0
+
+showBands = true
+stdevMult = 1.0
+
+timeChange(period) =>
+    ta.change(time(period))
+
+new_earnings = request.earnings(syminfo.tickerid, earnings.actual, barmerge.gaps_on, barmerge.lookahead_on)
+new_dividends = request.dividends(syminfo.tickerid, dividends.gross, barmerge.gaps_on, barmerge.lookahead_on)
+new_split = request.splits(syminfo.tickerid, splits.denominator, barmerge.gaps_on, barmerge.lookahead_on)
+
+tcD = timeChange('D')
+tcW = timeChange('W')
+tcM = timeChange('M')
+tc3M = timeChange('3M')
+tc12M = timeChange('12M')
+
+isNewPeriod = anchor == 'Earnings' ? new_earnings : anchor == 'Dividends' ? new_dividends : anchor == 'Splits' ? new_split : na(src20[1]) ? true : anchor == 'Session' ? tcD : anchor == 'Week' ? tcW : anchor == 'Month' ? tcM : anchor == 'Quarter' ? tc3M : anchor == 'Year' ? tc12M : anchor == 'Decade' ? tc12M and year % 10 == 0 : anchor == 'Century' ? tc12M and year % 100 == 0 : false
+
+float vwapValue = na
+float std = na
+float upperBandValue = na
+float lowerBandValue = na
+
+if not(hideonDWM and timeframe.isdwm)
+    [_vwap, bottom, top] = computeVWAP(src20, isNewPeriod, stdevMult)
+    vwapValue := _vwap
+    upperBandValue := showBands ? top : na
+    lowerBandValue := showBands ? bottom : na
+    lowerBandValue
+
+//Candle Patterns///////////////////////////////////////////////////////////////
+
+//Bullish Engulfing
+C_DownTrend = true
+C_UpTrend = true
+var trendRule1 = 'SMA50'
+var trendRule2 = 'SMA50, SMA200'
+var trendRule = trendRule1
+
+if trendRule == trendRule1
+    priceAvg = ta.sma(close, 50)
+    C_DownTrend := close < priceAvg
+    C_UpTrend := close > priceAvg
+    C_UpTrend
+
+if trendRule == trendRule2
+    sma200 = ta.sma(close, 200)
+    sma50 = ta.sma(close, 50)
+    C_DownTrend := close < sma50 and sma50 < sma200
+    C_UpTrend := close > sma50 and sma50 > sma200
+    C_UpTrend
+C_Len = 14  // ema depth for bodyAvg
+C_ShadowPercent = 5.0  // size of shadows
+C_ShadowEqualsPercent = 100.0
+C_DojiBodyPercent = 5.0
+C_Factor = 2.0  // shows the number of times the shadow dominates the candlestick body
+
+C_BodyHi = math.max(close, open)
+C_BodyLo = math.min(close, open)
+C_Body = C_BodyHi - C_BodyLo
+C_BodyAvg = ta.ema(C_Body, C_Len)
+C_SmallBody = C_Body < C_BodyAvg
+C_LongBody = C_Body > C_BodyAvg
+C_UpShadow = high - C_BodyHi
+C_DnShadow = C_BodyLo - low
+C_HasUpShadow = C_UpShadow > C_ShadowPercent / 100 * C_Body
+C_HasDnShadow = C_DnShadow > C_ShadowPercent / 100 * C_Body
+C_WhiteBody = open < close
+C_BlackBody = open > close
+C_Range = high - low
+C_IsInsideBar = C_BodyHi[1] > C_BodyHi and C_BodyLo[1] < C_BodyLo
+C_BodyMiddle = C_Body / 2 + C_BodyLo
+C_ShadowEquals = C_UpShadow == C_DnShadow or math.abs(C_UpShadow - C_DnShadow) / C_DnShadow * 100 < C_ShadowEqualsPercent and math.abs(C_DnShadow - C_UpShadow) / C_UpShadow * 100 < C_ShadowEqualsPercent
+C_IsDojiBody = C_Range > 0 and C_Body <= C_Range * C_DojiBodyPercent / 100
+C_Doji = C_IsDojiBody and C_ShadowEquals
+
+patternLabelPosLow = low - ta.atr(30) * 0.6
+patternLabelPosHigh = high + ta.atr(30) * 0.6
+
+label_color_bullish = color.blue
+C_EngulfingBullishNumberOfCandles = 2
+C_EngulfingBullish = C_DownTrend and C_WhiteBody and C_LongBody and C_BlackBody[1] and C_SmallBody[1] and close >= open[1] and open <= close[1] and (close > open[1] or open < close[1])
+if C_EngulfingBullish
+    var ttBullishEngulfing = 'Engulfing\nAt the end of a given downward trend, there will most likely be a reversal pattern. To distinguish the first day, this candlestick pattern uses a small body, followed by a day where the candle body fully overtakes the body from the day before, and closes in the trend’s opposite direction. Although similar to the outside reversal chart pattern, it is not essential for this pattern to completely overtake the range (high to low), rather only the open and the close.'
+    ttBullishEngulfing
+    //label.new(bar_index, patternLabelPosLow, text="BE", style=label.style_label_up, color = label_color_bullish, textcolor=color.white, tooltip = ttBullishEngulfing)
+//bgcolor(highest(C_EngulfingBullish?1:0, C_EngulfingBullishNumberOfCandles)!=0 ? color.blue : na, offset=-(C_EngulfingBullishNumberOfCandles-1))
+
+//Bearish Engulfing
+label_color_bearish = color.red
+C_EngulfingBearishNumberOfCandles = 2
+C_EngulfingBearish = C_UpTrend and C_BlackBody and C_LongBody and C_WhiteBody[1] and C_SmallBody[1] and close <= open[1] and open >= close[1] and (close < open[1] or open > close[1])
+if C_EngulfingBearish
+    var ttBearishEngulfing = 'Engulfing\nAt the end of a given uptrend, a reversal pattern will most likely appear. During the first day, this candlestick pattern uses a small body. It is then followed by a day where the candle body fully overtakes the body from the day before it and closes in the trend’s opposite direction. Although similar to the outside reversal chart pattern, it is not essential for this pattern to fully overtake the range (high to low), rather only the open and the close.'
+    ttBearishEngulfing
+    //label.new(bar_index, patternLabelPosHigh, text="BE", style=label.style_label_down, color = label_color_bearish, textcolor=color.white, tooltip = ttBearishEngulfing)
+//bgcolor(highest(C_EngulfingBearish?1:0, C_EngulfingBearishNumberOfCandles)!=0 ? color.red : na, offset=-(C_EngulfingBearishNumberOfCandles-1))
+
+//END▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+////////////////////////////////////////////////////////////////////////////////

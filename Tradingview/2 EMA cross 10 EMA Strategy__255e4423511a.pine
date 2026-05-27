@@ -1,0 +1,59 @@
+//@version=5
+strategy('2 EMA cross 10 EMA Strategy', overlay=true)
+
+// Exponential Moving Averages
+blueEma = ta.ema(close, 1)
+redEma = ta.ema(close, 15)
+greenEma = ta.ema(close, 21)
+whiteEma = ta.sma(close, 5)
+
+// EMA Crossover
+crossover = ta.crossover(blueEma, redEma)
+exitCross = ta.crossover(redEma, whiteEma)
+
+// color variables
+blue = color.blue
+red = color.red
+green = color.green
+
+// Plot EMA lines
+plot(blueEma, color=color.new(blue, 0), linewidth=2)
+plot(redEma, color=color.new(red, 0), linewidth=2)
+plot(greenEma, color=color.new(green, 0), linewidth=2)
+
+// Long Entry
+longCondition = crossover and blueEma 
+longConfirm = close[1] < close
+longEntry = longCondition and longConfirm ? blueEma : na
+plot(longEntry, color=color.new(green, 0), linewidth=2, title='Long Entry')
+
+// Short Entry
+shortCondition = ta.crossunder(blueEma, redEma)
+shortConfirm = close[1] > close
+shortEntry = shortCondition and shortConfirm ? blueEma : na
+plot(shortEntry, color=color.new(red, 0), linewidth=2, title='Short Entry')
+
+// // Alert for Long Entry
+// alertcondition(longCondition and longConfirm, title='Long Entry Alert', message='Long Entry')
+
+// // Alert for Short Entry
+// alertcondition(shortCondition and shortConfirm, title='Short Entry Alert', message='Short Entry')
+
+// // Alert for Exit
+// alertcondition(exitCross, title='Long Exit Alert', message='Long Exit')
+
+// // Alert for Exit
+// alertcondition(ta.crossover(blueEma, redEma), title='Short Exit Alert', message='Short Exit')
+
+// strategy
+if longCondition and longConfirm
+    strategy.entry('Long', strategy.long)
+
+if shortCondition and shortConfirm
+    strategy.entry('Short', strategy.short)
+
+if exitCross
+    strategy.close('Long')
+
+if ta.crossover(blueEma, redEma)
+    strategy.close("Short")

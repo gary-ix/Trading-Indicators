@@ -1,0 +1,42 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © atraderstoolbox
+
+//@version=5
+indicator("DTEK Candles")
+
+
+// DTEK CANDLES
+getMA(src, len, type) =>
+    ma_value = type == 'SMA' ? ta.sma(src, len) : type == 'WMA' ? ta.wma(src, len) : type == 'VWMA' ? ta.vwma(src, len) : type == 'EMA' ? ta.ema(src, len) : type == 'HMA' ? ta.hma(src, len) : ta.sma(src, len)
+    ma_value
+
+ST_Atr_Mult = input.float(1.0, title = 'ST ATR Mult')
+ST_Length = input.int(4, title = 'ST Length')
+ST_AvgType = input.string('HMA', title = 'ST AvgType', options = ['SMA', 'WMA','VWMA', 'EMA', 'HMA'])
+
+ATR = getMA( ta.tr(false), ST_Length, ST_AvgType )
+UP = hl2 + (ST_Atr_Mult* ATR) 
+DN = hl2 + (-ST_Atr_Mult * ATR) 
+var float ST = na
+ST := close < ST[1] ? UP : DN 
+
+SuperTrend = ST 
+
+lengthCCI = input.int(50, title = 'CCI Length')
+lengthATR = input.int(21, title = 'CCI ATR Length')
+AtrFactor = input.float(1.0, title = 'CCI ATR Factor')
+
+ATRcci = ta.sma( ta.tr(false), lengthATR) * AtrFactor
+price = close + low + high
+pricedata = hl2
+CCI = (price - ta.sma(price, lengthCCI)) / (0.015 * ta.dev(price, lengthCCI))
+
+var float MT1 = 0
+MT1 := CCI > 0 ? math.max(nz(MT1[1],0), pricedata - ATRcci) : math.min(nz(MT1[1],0), pricedata + ATRcci)
+CCI_ATR_TREND = MT1
+
+green_candles =  close > MT1 and close > ST
+red_candles =  close < MT1 and close < ST
+
+bgcolor(green_candles ? color.green : red_candles ? color.red : color.gray)
+// DTEK CANDLES

@@ -1,0 +1,5707 @@
+{
+  "fetchedAt": "2026-05-27T19:41:05.828Z",
+  "count": 436,
+  "scripts": [
+    {
+      "scriptIdPart": "USER;c497aacd25d64de1bff1bc6ff606417e",
+      "version": "9.0",
+      "scriptName": "2 EMA cross 10 EMA",
+      "scriptTitle": "2 EMA cross 10 EMA",
+      "modified": 1675522192,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;255e4423511a410bae556f212db4c909",
+      "version": "2.0",
+      "scriptName": "2 EMA cross 10 EMA Strategy",
+      "scriptTitle": "2 EMA cross 10 EMA Strategy",
+      "modified": 1675522211,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3e3712d5d3e14c54a2ae5a4fe6d884bc",
+      "version": "162.0",
+      "scriptName": "2TF TMO",
+      "scriptTitle": "2TF TMO",
+      "modified": 1648405738,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e231bf975cd443229bdad02c4825d110",
+      "version": "36.0",
+      "scriptName": "2TF TMO v2",
+      "scriptTitle": "2TF TMO",
+      "modified": 1648402840,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;e0e1fedf81b94309a1ea75e0777f10ef",
+      "version": "10.0",
+      "scriptName": "3MA Average",
+      "scriptTitle": "3MA Average",
+      "modified": 1682799118,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1702a006e5c5449e9fc593fde093264a",
+      "version": "29.0",
+      "scriptName": "7 in 1",
+      "scriptTitle": "7 in 1",
+      "modified": 1686067909,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;e003241bf62440368be1065504bd6bff",
+      "version": "5.0",
+      "scriptName": "8/20 Cross Colored Candles",
+      "scriptTitle": "8/20 Cross Colored Candles",
+      "modified": 1643935517,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;af1e97d349894edbadb483a45a01f3e3",
+      "version": "156.0",
+      "scriptName": "ADR % Ranges",
+      "scriptTitle": "ADR % Ranges",
+      "modified": 1700523103,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;35da76dd433d4e5a9db88f8e77bf5f4a",
+      "version": "1.0",
+      "scriptName": "Alert Test",
+      "scriptTitle": "Alert Test",
+      "modified": 1643319997,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;dc13da3b6f85461b876ddbe472ea887f",
+      "version": "1.0",
+      "scriptName": "ATR Levels + CALL/PUT",
+      "scriptTitle": "ATR Levels + CALL/PUT",
+      "modified": 1678540920,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7d1b734ee8504f00bd4873fb6b01e273",
+      "version": "1.0",
+      "scriptName": "ATR TRAILING",
+      "scriptTitle": "ATR TRAILING",
+      "modified": 1660236219,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;80d4cbabf6984ee5865009310914529f",
+      "version": "8.0",
+      "scriptName": "Auto S/R v2",
+      "scriptTitle": "Auto S/R v2",
+      "modified": 1664204703,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7daf4b3e6d124a239681c2c9565abe69",
+      "version": "1.0",
+      "scriptName": "Bands Indicator",
+      "scriptTitle": "Bands Indicator",
+      "modified": 1699617363,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;674aad8d8a8c4e57ab2dffc88f16eb71",
+      "version": "17.0",
+      "scriptName": "Bankai + DTEK",
+      "scriptTitle": "Bankai + DTEK",
+      "modified": 1668704613,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;43b1edec087147fa92ae9d8f91a90190",
+      "version": "16.0",
+      "scriptName": "Bankai DTEK Strategy",
+      "scriptTitle": "Bankai DTEK Strategy",
+      "modified": 1669236346,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7263d029b5674d558ada362b66d10514",
+      "version": "3.0",
+      "scriptName": "Bankai DXY",
+      "scriptTitle": "Bankai DXY",
+      "modified": 1670872433,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;aad6257aa9284e02a800ffe4d708d7a3",
+      "version": "9.0",
+      "scriptName": "Bankai ES TREND",
+      "scriptTitle": "Bankai ES TREND",
+      "modified": 1678566001,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;f65a68ccd3394a8bb7a505805835baae",
+      "version": "97.0",
+      "scriptName": "bars%move indicator",
+      "scriptTitle": "bars%move indicator",
+      "modified": 1700317938,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;39e095b50a0a4f618b3bb506b1ed5b3f",
+      "version": "17.0",
+      "scriptName": "bars%move strategy",
+      "scriptTitle": "bars%move strategy",
+      "modified": 1700317827,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7b4fde3f634a4a4db029848d55f6f98d",
+      "version": "1.0",
+      "scriptName": "BB + LaRSI Strategy",
+      "scriptTitle": "BB + LaRSI Strategy",
+      "modified": 1682200973,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;4ca5eca182c34d6eb55df319a2562c51",
+      "version": "1.0",
+      "scriptName": "Blastoise's Indicator",
+      "scriptTitle": "Blastoise's Indicator",
+      "modified": 1681417958,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1a05e83e526a4be785018acb5abd66bb",
+      "version": "4.0",
+      "scriptName": "Buy Low Sell High Composite",
+      "scriptTitle": "Buy Low Sell High Composite",
+      "modified": 1681475124,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a1791d6e9ec84ee1ae4d3f0fe050aa99",
+      "version": "8.0",
+      "scriptName": "Buy & Sell Volume",
+      "scriptTitle": "Buy & Sell Volume",
+      "modified": 1680900429,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;443f60909dd54ae48312ac717b74606a",
+      "version": "1.0",
+      "scriptName": "Canca`s Sweeps`n`Raids",
+      "scriptTitle": "Canca`s Sweeps`n`Raids",
+      "modified": 1695144198,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;849c8bc3ea82494fa6840be929b9e448",
+      "version": "25.0",
+      "scriptName": "Candles In a Row",
+      "scriptTitle": "Candles In a Row",
+      "modified": 1646522627,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;42e4de52b76946f0b67d41ca36d52bba",
+      "version": "28.0",
+      "scriptName": "CCI + Stoch + HA",
+      "scriptTitle": "CCI + Stoch + HA",
+      "modified": 1668805061,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;87fbb144d8c940be8d8bb884bcdd3c29",
+      "version": "84.0",
+      "scriptName": "% Chg Lines",
+      "scriptTitle": "% Chg Lines",
+      "modified": 1700084239,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;39240066eb7348d7a8868e630d0b4dee",
+      "version": "9.0",
+      "scriptName": "CM_Williams_Vix_Fix",
+      "scriptTitle": "CM_Williams_Vix_Fix",
+      "modified": 1678551304,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ff1f2a9999854e92935a294c269f1e29",
+      "version": "3.0",
+      "scriptName": "code",
+      "scriptTitle": "Chilllax Moving Averages with Qullamaggie colors",
+      "modified": 1689779535,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;b04afbef017c4e979601edf925d1746c",
+      "version": "4.0",
+      "scriptName": "Color Changing Moving Average",
+      "scriptTitle": "Color Changing Moving Average",
+      "modified": 1679002464,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;2204595864e64b38832048b465ee3fb7",
+      "version": "9.0",
+      "scriptName": "Commodity Channel Index Custom",
+      "scriptTitle": "Commodity Channel Index Custom",
+      "modified": 1675979124,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;069456a9138542a686e91ae164d3bc4a",
+      "version": "33.0",
+      "scriptName": "CPL",
+      "scriptTitle": "CPL",
+      "modified": 1650504313,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d6f4129d650245d59da33ed70d9dd593",
+      "version": "1.0",
+      "scriptName": "CSW Sentiment Line",
+      "scriptTitle": "CSW Sentiment Line",
+      "modified": 1683720039,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0e85e4fcaa544e13abde0827447c83b0",
+      "version": "545.0",
+      "scriptName": "Current Backtester",
+      "scriptTitle": "Current Backtester",
+      "modified": 1645904867,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bfa380e49e9744509ce44de71fcf6ff1",
+      "version": "12.0",
+      "scriptName": "Custom Engulfing",
+      "scriptTitle": "Custom Engulfing",
+      "modified": 1677878093,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7d9fae1ce48e43d89ae4c178fe2946fd",
+      "version": "12.0",
+      "scriptName": "Custom MACD",
+      "scriptTitle": "Custom MACD",
+      "modified": 1675285521,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;8d33cfd37ca549d6abe2e5935a924315",
+      "version": "15.0",
+      "scriptName": "Custom Time Highlighter",
+      "scriptTitle": "Custom Time Highlighter",
+      "modified": 1774906974,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "is_price_study": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;6adf883c171044cb884748719b72f092",
+      "version": "7.0",
+      "scriptName": "Custom True Momentum Oscillator",
+      "scriptTitle": "True Momentum Oscillator",
+      "modified": 1648314096,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;2b944e79048a472ebeafd8d94b4df7c5",
+      "version": "68.0",
+      "scriptName": "Daily Levels",
+      "scriptTitle": "Daily Levels",
+      "modified": 1646961875,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b78a0fc73f364b70b29cd15fcc18eae1",
+      "version": "1.0",
+      "scriptName": "datsana V.1",
+      "scriptTitle": "datsana V.1",
+      "modified": 1645789400,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9a349b9d44374f6d9bc2b70bedb54763",
+      "version": "34.0",
+      "scriptName": "Day Trading Reversal System",
+      "scriptTitle": "Day Trading Reversal System",
+      "modified": 1671317436,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4a960aa71fb347ec8ecf222c29c9643b",
+      "version": "4.0",
+      "scriptName": "DEBUG Lower TF Supertrend",
+      "scriptTitle": "DEBUG Lower TF Supertrend",
+      "modified": 1675016598,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;87e271552ed74ecc9b4a8be1eeafe65b",
+      "version": "1.0",
+      "scriptName": "DeMark 9",
+      "scriptTitle": "DeMark 9",
+      "modified": 1660609631,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c2df7780d23f42ec98201c2594a163c7",
+      "version": "1.0",
+      "scriptName": "Directional Movement Index",
+      "scriptTitle": "Directional Movement Index",
+      "modified": 1640174229,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;409ff97e956c4dc19050b356ab4cffa3",
+      "version": "12.0",
+      "scriptName": "Donchian Channels",
+      "scriptTitle": "Donchian Channels",
+      "modified": 1639656439,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;14a41fbc357048a090bc37d82c476920",
+      "version": "13.0",
+      "scriptName": "DTEK Candles",
+      "scriptTitle": "DTEK Candles",
+      "modified": 1668704560,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9bfb89538b4345a7ad6b2ed353017741",
+      "version": "8.0",
+      "scriptName": "DX SPX VLT",
+      "scriptTitle": "DX SPX VLT",
+      "modified": 1670959528,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;54516545d332414fb502e5aefd944c91",
+      "version": "17.0",
+      "scriptName": "EFI Normalized",
+      "scriptTitle": "EFI Normalized",
+      "modified": 1682131646,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;fb238535d8034df5a8e2532f1a0fafdb",
+      "version": "17.0",
+      "scriptName": "EMA Crossover 8/15",
+      "scriptTitle": "EMA Crossover 8/15",
+      "modified": 1687008143,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;d582f2774c8c4d3cbef896daf24affd3",
+      "version": "4.0",
+      "scriptName": "Enhanced Time Segmented Volume",
+      "scriptTitle": "Enhanced Time Segmented Volume",
+      "modified": 1646134215,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7c2b2aaa92bd44ca813453afbfbf5bf9",
+      "version": "1.0",
+      "scriptName": "Equivolume Bars",
+      "scriptTitle": "Equivolume Bars",
+      "modified": 1639252489,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e5ed1b364c244f2687ba2611154ac38b",
+      "version": "13.0",
+      "scriptName": "Faith JL",
+      "scriptTitle": "Faith JL",
+      "modified": 1664230370,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;b5b7f520c4d044b9b712c4daf647efbb",
+      "version": "214.0",
+      "scriptName": "for_abstract4201",
+      "scriptTitle": "for_abstract4201",
+      "modified": 1695334637,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;74636c90750c46d789c19c5e486a544e",
+      "version": "166.0",
+      "scriptName": "for_anandvenkate",
+      "scriptTitle": "for_anandvenkate",
+      "modified": 1697147469,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;b91c15356397426e8150e531d8a8db7e",
+      "version": "22.0",
+      "scriptName": "for_anandvenkate492",
+      "scriptTitle": "for_anandvenkate492",
+      "modified": 1689458413,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;65d3ee4e48cf4e1bbb6fa038ddda7990",
+      "version": "51.0",
+      "scriptName": "for_andreroux07_signals",
+      "scriptTitle": "for_andreroux07_signals",
+      "modified": 1673978898,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb590effbe5e4ed7aba9033f39ee9b70",
+      "version": "109.0",
+      "scriptName": "for_azanomajor",
+      "scriptTitle": "for_azanomajor",
+      "modified": 1652310299,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;725eab905e444ee4bad6854091ef87de",
+      "version": "25.0",
+      "scriptName": "for_binchur",
+      "scriptTitle": "for_binchur",
+      "modified": 1685403503,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d2a2bf7f4c024b90ba0025ec2a42f77c",
+      "version": "4.0",
+      "scriptName": "for_binchur_v2",
+      "scriptTitle": "for_binchur_v2",
+      "modified": 1687951776,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f785e471470e4de589d6fdf6f14f8028",
+      "version": "198.0",
+      "scriptName": "for_boknoy9999",
+      "scriptTitle": "for_boknoy9999",
+      "modified": 1649947993,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;b3817bf9bc88437c962858f6a6284f11",
+      "version": "221.0",
+      "scriptName": "for_brandonj100",
+      "scriptTitle": "for_brandonj100",
+      "modified": 1697546066,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;230ec50060354f229708da8d3d90d910",
+      "version": "552.0",
+      "scriptName": "for_brandonj100_v2",
+      "scriptTitle": "for_brandonj100_v2",
+      "modified": 1698075854,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bac1749c6dc04035a67759d4c99a3b30",
+      "version": "115.0",
+      "scriptName": "for_dan_skarda",
+      "scriptTitle": "for_dan_skarda",
+      "modified": 1699305942,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f98be2a22ac940728f559a2dda5ae631",
+      "version": "1.0",
+      "scriptName": "for_directoriestoda",
+      "scriptTitle": "for_directoriestoda",
+      "modified": 1685819925,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;819fc27461f34142b09f84598456b864",
+      "version": "32.0",
+      "scriptName": "for_Donkeen",
+      "scriptTitle": "for_Donkeen",
+      "modified": 1681837943,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;11e04be907f94203bb0267e03401c5de",
+      "version": "67.0",
+      "scriptName": "for_Donkeen_v3",
+      "scriptTitle": "for_Donkeen_v3",
+      "modified": 1682615531,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;1639d7f164094371bc25c9e19beaaca1",
+      "version": "76.0",
+      "scriptName": "For Dvarner Alert System",
+      "scriptTitle": "For Dvarner Alert System",
+      "modified": 1644613767,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;c62ca2cc69ab43e4a4c833508700175a",
+      "version": "1.0",
+      "scriptName": "For Dvarner Alert System DEMO",
+      "scriptTitle": "For Dvarner Alert System",
+      "modified": 1644178230,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;45ecfef5abf5429a800fee37f7dfdda1",
+      "version": "74.0",
+      "scriptName": "for_ecasazone",
+      "scriptTitle": "for_ecasazone",
+      "modified": 1688742576,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;a94ae4f00bc14f379fc705d538ccd223",
+      "version": "6.0",
+      "scriptName": "for_ecasazone strategy",
+      "scriptTitle": "for_ecasazone strategy",
+      "modified": 1688735258,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;767d5e73d61a4f38b9704fb4624475a2",
+      "version": "82.0",
+      "scriptName": "for_ecasazone_TOS",
+      "scriptTitle": "for_ecasazone_TOS",
+      "modified": 1688742786,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;7715bb27aa76403da92bf678d8d10357",
+      "version": "5.0",
+      "scriptName": "for_ecasazone_TOS strategy",
+      "scriptTitle": "for_ecasazone_TOS strategy",
+      "modified": 1688735076,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;6996f14b0e654eff906034c6f181f7f7",
+      "version": "126.0",
+      "scriptName": "for_epidemicmedia",
+      "scriptTitle": "for_epidemicmedia",
+      "modified": 1656088667,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;605b06695b9a421b8caaf938394c2c3e",
+      "version": "24.0",
+      "scriptName": "for_faridmakram",
+      "scriptTitle": "for_faridmakram",
+      "modified": 1684762724,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;e9165f3ac2964c9f93efab201c12f075",
+      "version": "48.0",
+      "scriptName": "for_goldfpv",
+      "scriptTitle": "for_goldfpv",
+      "modified": 1648903029,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5ddeafbc3c7e485b860b4ac93e687d61",
+      "version": "174.0",
+      "scriptName": "for_griffin_diggs",
+      "scriptTitle": "for_griffin_diggs",
+      "modified": 1697719486,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;314e13110d524e8eb6f85b707a95b6ed",
+      "version": "106.0",
+      "scriptName": "for_gugelhupf",
+      "scriptTitle": "for_gugelhupf",
+      "modified": 1690400867,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9dc7e85451074dd8af84ff2cbf746975",
+      "version": "31.0",
+      "scriptName": "for_harmonyojehomon Alert System",
+      "scriptTitle": "for_harmonyojehomon Alert System",
+      "modified": 1648816678,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0da4dd27f8c64d88b1774f67318e30ef",
+      "version": "87.0",
+      "scriptName": "for_hibbertventures_indicator",
+      "scriptTitle": "for_hibbertventures_indicator",
+      "modified": 1690559099,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;9d4ec862f8f44deb826eb2c4f33a5db1",
+      "version": "11.0",
+      "scriptName": "for_hibbertventures_indicator_v2",
+      "scriptTitle": "for_hibbertventures_indicator_v2",
+      "modified": 1691410319,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;0121c850f43f4ed2863e667061fd4122",
+      "version": "10.0",
+      "scriptName": "for_hibbertventures_strategy",
+      "scriptTitle": "for_hibbertventures_strategy",
+      "modified": 1690559325,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;074af2158b4140859b482462b354821e",
+      "version": "2.0",
+      "scriptName": "for_hibbertventures_strategy_v2",
+      "scriptTitle": "for_hibbertventures_strategy_v2",
+      "modified": 1691410343,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;4d015ecbcfd64adebdf08a16899c2411",
+      "version": "321.0",
+      "scriptName": "for_hooplah_futures",
+      "scriptTitle": "for_hooplah_futures",
+      "modified": 1669849199,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4ae23e4f075041169be49aeb22db10a7",
+      "version": "1.0",
+      "scriptName": "for_hooplah_futures 1",
+      "scriptTitle": "for_hooplah_futures",
+      "modified": 1669651142,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;98d5e980db344b299a8ec1b7924a3b7f",
+      "version": "1.0",
+      "scriptName": "for_hooplah_futures 2",
+      "scriptTitle": "for_hooplah_futures",
+      "modified": 1669652680,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0600b84d7b6c42039bf6caeb9eae3195",
+      "version": "15.0",
+      "scriptName": "for_hooplah_futures_rsm",
+      "scriptTitle": "for_hooplah_futures_rsm",
+      "modified": 1659395141,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;255d1235c5a749c3aa6df84491689d86",
+      "version": "4.0",
+      "scriptName": "for_hooplah_stocks",
+      "scriptTitle": "for_hooplah_stocks",
+      "modified": 1659390985,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e1f07d38aef24a038186a65f9fbb7bc9",
+      "version": "1.0",
+      "scriptName": "for_huatruong",
+      "scriptTitle": "for_huatruong",
+      "modified": 1665486036,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;eb6d4d1f96164a4d9a12eeac3e976121",
+      "version": "85.0",
+      "scriptName": "for_Huefinnews",
+      "scriptTitle": "for_Huefinnews",
+      "modified": 1661884957,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;925427227aaf48efa9a8aec712e2c185",
+      "version": "71.0",
+      "scriptName": "for_immobilienseege",
+      "scriptTitle": "for_immobilienseege",
+      "modified": 1698882553,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;093f4c3f8ef64d38ae76f2bd5eabea74",
+      "version": "93.0",
+      "scriptName": "for_innerpower689",
+      "scriptTitle": "for_innerpower689",
+      "modified": 1679855711,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9a86bc72e7d94cb49a2a301dd01b49fa",
+      "version": "3.0",
+      "scriptName": "for_innerpower689_v2",
+      "scriptTitle": "for_innerpower689_v2",
+      "modified": 1679855373,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;be71626fafb44ac587ef9bf356cebd08",
+      "version": "220.0",
+      "scriptName": "for_inti",
+      "scriptTitle": "for_inti_untestedlines",
+      "modified": 1671738595,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;232755560d894c028c6276c3e93d998b",
+      "version": "17.0",
+      "scriptName": "for_inti_justuntested",
+      "scriptTitle": "for_inti_justuntested",
+      "modified": 1671740190,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4721ab99eaf4459a89251d339c315ffe",
+      "version": "109.0",
+      "scriptName": "for_ishmaelkaikai",
+      "scriptTitle": "for_ishmaelkaikai",
+      "modified": 1659294802,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d73104337af5454290146811053fd16c",
+      "version": "180.0",
+      "scriptName": "for_j1noobie",
+      "scriptTitle": "for_j1noobie",
+      "modified": 1699562830,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;10a1d49b6a9f4e55a648ea2ca878b28b",
+      "version": "69.0",
+      "scriptName": "for_jacobdmoss",
+      "scriptTitle": "for_jacobdmoss",
+      "modified": 1661862707,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 5
+      }
+    },
+    {
+      "scriptIdPart": "USER;7334068f0a8548f88eb2079012228b01",
+      "version": "44.0",
+      "scriptName": "For jacobdmoss",
+      "scriptTitle": "For jacobdmoss 1",
+      "modified": 1638409186,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;e28113c8521c4477bbd2cb851224f73e",
+      "version": "58.0",
+      "scriptName": "for_jerry_may292023",
+      "scriptTitle": "for_jerry_may292023",
+      "modified": 1685314897,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;112296a3ba4447afb9a72606f34b89ae",
+      "version": "125.0",
+      "scriptName": "for_jess5842 strategy",
+      "scriptTitle": "for_jess5842 strategy",
+      "modified": 1679528304,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;dccea8004d674618b35a36061f7ebf8e",
+      "version": "192.0",
+      "scriptName": "for_jesse5841",
+      "scriptTitle": "for_jesse5841",
+      "modified": 1679425509,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0206e44fcc5940ea9e8a40ffa66deb8c",
+      "version": "655.0",
+      "scriptName": "for_jiv789",
+      "scriptTitle": "for_jiv789",
+      "modified": 1665171847,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4605e801a5c94b948d6630b5fa10b80e",
+      "version": "225.0",
+      "scriptName": "for_jiv789_v2",
+      "scriptTitle": "for_jiv789_v2",
+      "modified": 1666903249,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ec5dd7a909d64ac08a45b0dc4c22b00c",
+      "version": "182.0",
+      "scriptName": "for_jiv789_v3",
+      "scriptTitle": "for_jiv789_v3",
+      "modified": 1674174687,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;161092404e88444c80197dbc1456aea5",
+      "version": "186.0",
+      "scriptName": "for_jiv789_v4",
+      "scriptTitle": "for_jiv789_v4",
+      "modified": 1680822081,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb9e0ec2df9b42efaa5ed7556be22522",
+      "version": "254.0",
+      "scriptName": "for_jiv789_v5",
+      "scriptTitle": "for_jiv789_v5",
+      "modified": 1681490055,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8451082877ce41979de8b966e107ac6d",
+      "version": "65.0",
+      "scriptName": "for_jlirano",
+      "scriptTitle": "for_jlirano",
+      "modified": 1649002664,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;3431b1dec8af4c31b68181169f12a4b7",
+      "version": "36.0",
+      "scriptName": "for_jlirano_111622_1",
+      "scriptTitle": "for_jlirano_111622_1",
+      "modified": 1668803138,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;3f74a82c7efb419a8e5bb9eb050c0362",
+      "version": "6.0",
+      "scriptName": "for_jlirano_111622_2",
+      "scriptTitle": "for_jlirano_111622_2",
+      "modified": 1668803247,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;07c8932f98684b8b93943c4c53840955",
+      "version": "6.0",
+      "scriptName": "for_jlirano_111622_3",
+      "scriptTitle": "for_jlirano_111622_3",
+      "modified": 1668805175,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;ce4ae34600434de5a848fbdfa182c53d",
+      "version": "88.0",
+      "scriptName": "for_jlirano_61522",
+      "scriptTitle": "for_jlirano_61522",
+      "modified": 1659117405,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;0da8da162e0f434a8bc50cbb5b741d5f",
+      "version": "28.0",
+      "scriptName": "for_jlirano_71723",
+      "scriptTitle": "for_jlirano_71723",
+      "modified": 1689795058,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;eec168f35fc7434e9b417589ebf9b36d",
+      "version": "24.0",
+      "scriptName": "for_jlirano_91522",
+      "scriptTitle": "for_jlirano_91522",
+      "modified": 1663270812,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;eb7326a66b5e4ff3808ab401afd4010e",
+      "version": "30.0",
+      "scriptName": "for_jlirano_customrsi",
+      "scriptTitle": "for_jlirano_customrsi",
+      "modified": 1663267054,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;d6ddea4ad0b041a69178322ee53235c3",
+      "version": "16.0",
+      "scriptName": "for_johnnash0674",
+      "scriptTitle": "for_johnnash0674",
+      "modified": 1655465660,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;30a3843cdde442819fe5ced7f1669704",
+      "version": "8.0",
+      "scriptName": "for_johnnash0674_v2",
+      "scriptTitle": "for_johnnash0674_v2",
+      "modified": 1655752330,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;64cabe10e3574f51a86d141f8ce4a89b",
+      "version": "132.0",
+      "scriptName": "for justinanthon339 1221",
+      "scriptTitle": "for justinanthon339 1221",
+      "modified": 1640372666,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7148526d3e9943018e9c8284e9b71ae3",
+      "version": "101.0",
+      "scriptName": "for_kalex4142",
+      "scriptTitle": "for_sesskalex4142",
+      "modified": 1684354604,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;2203860f047440d0b3edf5ae4b7c0811",
+      "version": "49.0",
+      "scriptName": "for_kareemfarid",
+      "scriptTitle": "for_kareemfarid",
+      "modified": 1654712285,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5956b3233d854931a4f08f8df5da8231",
+      "version": "553.0",
+      "scriptName": "For kt4343  Strategy v1",
+      "scriptTitle": "For kt4343 Strategy v1",
+      "modified": 1648178351,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6636772265674530965ba0fb36ac184c",
+      "version": "17.0",
+      "scriptName": "For kt4343 Strategy v2",
+      "scriptTitle": "For kt4343 Strategy v2",
+      "modified": 1648179526,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;065e982458c44499b789596045ec7412",
+      "version": "79.0",
+      "scriptName": "for_lavis25",
+      "scriptTitle": "for_lavis25",
+      "modified": 1682870927,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;bfc4303ca8994853b9d8e72b73d1fadc",
+      "version": "112.0",
+      "scriptName": "for_lavis_divergence_scan",
+      "scriptTitle": "for_lavis_divergence_scan",
+      "modified": 1680997852,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0d4d89b86c2c47ebb94d04384896ce10",
+      "version": "79.0",
+      "scriptName": "for_Luxoralcare",
+      "scriptTitle": "for_Luxoralcare",
+      "modified": 1697147726,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cdf23293683a49e2af88003a3d56ac94",
+      "version": "19.0",
+      "scriptName": "for_Luxoralcare_103123",
+      "scriptTitle": "for_Luxoralcare_103123",
+      "modified": 1698944012,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6def4e77548a44ae8993e73dab728724",
+      "version": "7.0",
+      "scriptName": "for_Luxoralcare_110223",
+      "scriptTitle": "for_Luxoralcare_110223",
+      "modified": 1698943982,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8274a372ba77495e92249ed309947b46",
+      "version": "77.0",
+      "scriptName": "for_Luxoralcare_closes",
+      "scriptTitle": "for_Luxoralcare_closes",
+      "modified": 1697626087,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e449ad0b1b624a9da0bcb110d1bf5908",
+      "version": "16.0",
+      "scriptName": "for_manetrader",
+      "scriptTitle": "for_manetrader",
+      "modified": 1677099535,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;27a7309146cd49fdb9c6e790945a95ae",
+      "version": "66.0",
+      "scriptName": "for_manganet",
+      "scriptTitle": "for_manganet",
+      "modified": 1676384782,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e42cc053854843369505c30ef4c12e5f",
+      "version": "41.0",
+      "scriptName": "for_manganet_1min",
+      "scriptTitle": "for_manganet_1min",
+      "modified": 1676674381,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;35c84df7cd42419ba96bce7754d49673",
+      "version": "65.0",
+      "scriptName": "for_manganet_v2",
+      "scriptTitle": "for_manganet_v2",
+      "modified": 1676670106,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;35b43cbadece44f6b65dfc1a0dbe41b3",
+      "version": "146.0",
+      "scriptName": "for_marketmakerssl",
+      "scriptTitle": "for_marketmakerssl",
+      "modified": 1677015125,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;263fd35d1acb42349d6e88b3f634432f",
+      "version": "29.0",
+      "scriptName": "for_marketmakerssl_v2",
+      "scriptTitle": "for_marketmakerssl_v2",
+      "modified": 1675987706,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;79fa7de4f32742779a52b1e7edfeb6ee",
+      "version": "28.0",
+      "scriptName": "for_marksanch",
+      "scriptTitle": "for_marksanch",
+      "modified": 1682780151,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7f1349ef472c432a8773932a667ee3a0",
+      "version": "410.0",
+      "scriptName": "for_mattmoheeka",
+      "scriptTitle": "LC_SignalGenerator",
+      "modified": 1665615387,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bcc2984b8a294601b525ba3d46d05890",
+      "version": "142.0",
+      "scriptName": "for_mattmoheeka_candles",
+      "scriptTitle": "for_mattmoheeka_candles",
+      "modified": 1682370094,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9e57ab4690104380b766fed8981a3277",
+      "version": "15.0",
+      "scriptName": "for_mattmoheeka_combined",
+      "scriptTitle": "for_mattmoheeka_combined",
+      "modified": 1695743427,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;fe7dfee0ad5b488c800d28b5ebc97d3e",
+      "version": "97.0",
+      "scriptName": "for_max97",
+      "scriptTitle": "for_max97",
+      "modified": 1654189466,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;983bb43b39564cc6b0f0a65bb3cd8ce4",
+      "version": "62.0",
+      "scriptName": "for_max97_v2",
+      "scriptTitle": "for_max97_v2",
+      "modified": 1654434773,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4723e84bec4d429ebb761308b98f1742",
+      "version": "49.0",
+      "scriptName": "for_megatronx023",
+      "scriptTitle": "for_megatronx023",
+      "modified": 1673819784,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5d38273b3c624b8997895c0f00d074e0",
+      "version": "9.0",
+      "scriptName": "for_millerboy123",
+      "scriptTitle": "for_millerboy123",
+      "modified": 1696183824,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;08f684cdf80a458d96d16b0fcf2f5811",
+      "version": "134.0",
+      "scriptName": "for_mmayes313",
+      "scriptTitle": "for_mmayes313",
+      "modified": 1676409615,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;93f882fc846a47a89239e229dada1592",
+      "version": "25.0",
+      "scriptName": "for_moises1118",
+      "scriptTitle": "for_moises1118",
+      "modified": 1681424803,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;3d2ef831c68a4b1c982a596915c18eda",
+      "version": "74.0",
+      "scriptName": "for_mouizrana",
+      "scriptTitle": "for_mouizrana",
+      "modified": 1650322460,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ef7f1c579eb34762ac14fcc3fce3ee24",
+      "version": "24.0",
+      "scriptName": "for_mouizrana Indicator",
+      "scriptTitle": "for_mouizrana Indicator",
+      "modified": 1650413196,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0ac9a0c064a64669a478a3635c9153d3",
+      "version": "46.0",
+      "scriptName": "for_Nakefoster",
+      "scriptTitle": "for_Nakefoster",
+      "modified": 1681058803,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;bc6976d686184feda693b7b319f58bed",
+      "version": "68.0",
+      "scriptName": "for_nakefoster_mtf",
+      "scriptTitle": "for_nakefoster_mtf",
+      "modified": 1683045040,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;eb1a7c492e4e42c58c7f1a234b3134a6",
+      "version": "4.0",
+      "scriptName": "for_nakefoster_mtf strategy",
+      "scriptTitle": "for_nakefoster_mtf strategy",
+      "modified": 1683050420,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;05f98fc4c6b040a5bf8948e4dd1b9c9d",
+      "version": "137.0",
+      "scriptName": "for_Nakefoster_V2",
+      "scriptTitle": "for_Nakefoster_V2",
+      "modified": 1681588199,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8424a3243474470f9b6dae00464cf318",
+      "version": "3.0",
+      "scriptName": "for_Nakefoster_V3",
+      "scriptTitle": "for_Nakefoster_V3",
+      "modified": 1681918051,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b380e11f4de04274ae3b97f828886ef1",
+      "version": "9.0",
+      "scriptName": "for_Nakefoster_V4",
+      "scriptTitle": "for_Nakefoster_V4",
+      "modified": 1682962525,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;54dcd43f1f9243babc47140a35693c92",
+      "version": "16.0",
+      "scriptName": "for_Nakefoster_V5",
+      "scriptTitle": "for_Nakefoster_V5",
+      "modified": 1683600825,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3441ffbab61e4e489d47bb7b492612ab",
+      "version": "2.0",
+      "scriptName": "for_Nakefoster_V5 no bsw",
+      "scriptTitle": "for_Nakefoster_V5 no bsw",
+      "modified": 1683636497,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;411b9385df7845daada7c1bd1e1eb32c",
+      "version": "34.0",
+      "scriptName": "for_nakefoster v5 strategy",
+      "scriptTitle": "for_nakefoster v5 strategy",
+      "modified": 1683600405,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f5477d899d7b4b9cb47b20ee37ad662e",
+      "version": "17.0",
+      "scriptName": "for_Nakefoster_v6 BOTH",
+      "scriptTitle": "for_Nakefoster_v6 BOTH",
+      "modified": 1683891618,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;06a9f3fc14454c79b4666e94b8941eec",
+      "version": "12.0",
+      "scriptName": "for_Nakefoster_V7",
+      "scriptTitle": "for_Nakefoster_V7",
+      "modified": 1684186044,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;928ccf90822449b2a3e0c3f612d1d3c6",
+      "version": "22.0",
+      "scriptName": "for_nirlapu",
+      "scriptTitle": "for_nirlapu",
+      "modified": 1678734976,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;8413a4ee211f482293fe38d42c013450",
+      "version": "46.0",
+      "scriptName": "for_nofado",
+      "scriptTitle": "for_nofado",
+      "modified": 1682624126,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a943e991621945feb51c21c27f7fe8fb",
+      "version": "1.0",
+      "scriptName": "for_nofado v2",
+      "scriptTitle": "for_nofado v2",
+      "modified": 1682628299,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c93b0865460a4f1ababfb159bad0d49c",
+      "version": "6.0",
+      "scriptName": "for_officemonster",
+      "scriptTitle": "for_officemonster",
+      "modified": 1676676171,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8f1d6d848c3f4432b6b2919304cf667e",
+      "version": "43.0",
+      "scriptName": "for_oluwoleajiboso",
+      "scriptTitle": "for_oluwoleajiboso_UPDATE",
+      "modified": 1677182335,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;65498981711c40e9a22e677b370499b3",
+      "version": "46.0",
+      "scriptName": "for_optiontrader123",
+      "scriptTitle": "for_optiontrader123",
+      "modified": 1674134815,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f19cdd11413b4fa897f305e8e690b04d",
+      "version": "22.0",
+      "scriptName": "for_optiontrader123_50223",
+      "scriptTitle": "for_optiontrader123_50223",
+      "modified": 1683132517,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;db8a84b41ee941e5a1fe048c78c9477f",
+      "version": "27.0",
+      "scriptName": "for_optiontrader123 MACD-RSI",
+      "scriptTitle": "for_optiontrader123",
+      "modified": 1682368128,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;cfaab680987043b6bd39c1b3dbdf157b",
+      "version": "88.0",
+      "scriptName": "for_pierreicon",
+      "scriptTitle": "for_pierreicon",
+      "modified": 1673294193,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d71b5c7c69004cd2a615e18e3ddead18",
+      "version": "65.0",
+      "scriptName": "for_praneshsridhara",
+      "scriptTitle": "for_praneshsridhara",
+      "modified": 1652178424,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;105eabe286f0478eb171c807b68827c6",
+      "version": "201.0",
+      "scriptName": "for_rms1634",
+      "scriptTitle": "for_rms1634",
+      "modified": 1700484375,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b07900a07de5476eaefd952878e037f8",
+      "version": "133.0",
+      "scriptName": "for_rms1634_v2",
+      "scriptTitle": "for_rms1634_v2",
+      "modified": 1700665938,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a45940db47cc4dbfb6d34ccfbbe79676",
+      "version": "200.0",
+      "scriptName": "for_robertpaxton936",
+      "scriptTitle": "for_robertpaxton936",
+      "modified": 1673152001,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;da4193d456d64cf69a907fb2c2cf61a9",
+      "version": "226.0",
+      "scriptName": "for_Robwharton",
+      "scriptTitle": "for_Robwharton",
+      "modified": 1698500647,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d4cfcdf4a34940caa30ea3d6fa2f519a",
+      "version": "10.0",
+      "scriptName": "for_roonery_71923_strat",
+      "scriptTitle": "for_roonery_71923_strat",
+      "modified": 1690650790,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;725935cc10fc4cf79de0f7dae17a93ae",
+      "version": "140.0",
+      "scriptName": "for_rooney_71923",
+      "scriptTitle": "for_roonery_71923",
+      "modified": 1690650854,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;26e0f7be2e1448a89171569f3a8c1ad6",
+      "version": "227.0",
+      "scriptName": "for_Roony515_111622",
+      "scriptTitle": "for_Roony515_111622",
+      "modified": 1668796180,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e497c6904f504600983073792fbb4d43",
+      "version": "149.0",
+      "scriptName": "for_Roony515_111622 Strategy",
+      "scriptTitle": "for_Roony515_111622 Strategy",
+      "modified": 1668796165,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e95f8c2333fe4920a602665b36aaadb7",
+      "version": "21.0",
+      "scriptName": "for_Roony515_121222",
+      "scriptTitle": "for_Roony515_121222",
+      "modified": 1672947715,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b2bfa0b2093b406692ddb383272f52c7",
+      "version": "314.0",
+      "scriptName": "for_Roony515_121222 Strategy",
+      "scriptTitle": "for_Roony515_121222 Strategy",
+      "modified": 1671311180,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;05f5edcad9ae4bd4974c2c68d9f44b23",
+      "version": "92.0",
+      "scriptName": "for_russellgilbert",
+      "scriptTitle": "for_russellgilbert",
+      "modified": 1659719282,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;16ef2ab96fac414db83eb49e4f8ecb5a",
+      "version": "92.0",
+      "scriptName": "for_ryanmuehlfelt",
+      "scriptTitle": "for_ryanmuehlfelt",
+      "modified": 1683558467,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3ff4923eaf3e4e9facaef93347b5eea1",
+      "version": "132.0",
+      "scriptName": "for_scottsmith7033",
+      "scriptTitle": "for_scottsmith7033",
+      "modified": 1649728218,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a0f6dc9393f0440ca89115e2bed9e5dd",
+      "version": "1.0",
+      "scriptName": "for_scottsmith7033 1",
+      "scriptTitle": "for_scottsmith7033",
+      "modified": 1650203007,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d0112ec5703d400b9525489b9f77fd37",
+      "version": "27.0",
+      "scriptName": "for_seedxofficial",
+      "scriptTitle": "for_seedxofficial",
+      "modified": 1699480522,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;87004997599b4f49a705f6e4b344dfbc",
+      "version": "253.0",
+      "scriptName": "for_snaidug",
+      "scriptTitle": "for_snaidug",
+      "modified": 1679428175,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;eec3107633c14964b252a95d10c7e2a8",
+      "version": "119.0",
+      "scriptName": "for_snaidug_v2",
+      "scriptTitle": "for_snaidug_v2",
+      "modified": 1679439637,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;fa5ec92c56e948f59dec7274f229f9a0",
+      "version": "77.0",
+      "scriptName": "for_tangelak",
+      "scriptTitle": "for_tangelak",
+      "modified": 1678125712,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3e4877b7fdad4ca8bf67a22bc5fbf404",
+      "version": "24.0",
+      "scriptName": "for_tennesseejoseph_v1",
+      "scriptTitle": "for_tennesseejoseph_v1",
+      "modified": 1688593933,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9705b41776c54fbaa78d48411d5ce36b",
+      "version": "80.0",
+      "scriptName": "for_tennesseejoseph_v2",
+      "scriptTitle": "for_tennesseejoseph_v2",
+      "modified": 1688594135,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e74c04b708b84f2f85322d408f991e56",
+      "version": "139.0",
+      "scriptName": "for_tomaszpanek990",
+      "scriptTitle": "for_tomaszpanek990",
+      "modified": 1677635036,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;db818423b58041998422b8dd3f230a33",
+      "version": "104.0",
+      "scriptName": "for_tomaszpanke990",
+      "scriptTitle": "for_tomaszpanke990",
+      "modified": 1700138506,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8817a7bc978e44adadc6a4b667a3b6fa",
+      "version": "75.0",
+      "scriptName": "for_ultimatescalper",
+      "scriptTitle": "for_ultimatescalper",
+      "modified": 1658774476,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;18290110a3724408aae74fbcd5d17fa5",
+      "version": "21.0",
+      "scriptName": "for_Ycginvb",
+      "scriptTitle": "for_Ycginvb",
+      "modified": 1663672749,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;d3498226b9d341c99e331c56ebc6f18f",
+      "version": "88.0",
+      "scriptName": "for_youngjules",
+      "scriptTitle": "for_youngjules",
+      "modified": 1672955719,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;462fdf83c7e446f080baa55e03c619d7",
+      "version": "89.0",
+      "scriptName": "for_yummypotato",
+      "scriptTitle": "for_yummypotato",
+      "modified": 1682597908,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;67f1bca14258433f886486f65086f875",
+      "version": "3.0",
+      "scriptName": "Fractals",
+      "scriptTitle": "Fractals",
+      "modified": 1639616147,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;584bd62ea4204e409d7cc46d483cb069",
+      "version": "1.0",
+      "scriptName": "from_alicia_rivas",
+      "scriptTitle": "Untitled Script",
+      "modified": 1659441690,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 10
+      }
+    },
+    {
+      "scriptIdPart": "USER;0f32ba578ec34cbca42bac67f795f927",
+      "version": "1.0",
+      "scriptName": "FX Market Sessions",
+      "scriptTitle": "FX Market Sessions",
+      "modified": 1681917152,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;19b7ebdbbad840b6a9f1652fb6045782",
+      "version": "1.0",
+      "scriptName": "GAIN28",
+      "scriptTitle": "GAIN28",
+      "modified": 1645289021,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4db9fa77545c4e74a8f7a5fe888cd7d9",
+      "version": "214.0",
+      "scriptName": "GARY - FVGs",
+      "scriptTitle": "GARY Fair-Value GAPS",
+      "modified": 1668353030,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;42d09c45046340b1a94edf61a1800676",
+      "version": "55.0",
+      "scriptName": "Gary - Levels",
+      "scriptTitle": "Gary - Levels",
+      "modified": 1689864815,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;10cec9ef27a54b7ca0e4d190d76e62fb",
+      "version": "32.0",
+      "scriptName": "Gary - Oscillator",
+      "scriptTitle": "Gary - Oscillator",
+      "modified": 1689866406,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;aca6a0c201824d55b43c378e18cdc479",
+      "version": "174.0",
+      "scriptName": "GARY - Patterns",
+      "scriptTitle": "GARY - Patterns",
+      "modified": 1668554426,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b1c09f780e8e4f1095214619161d73cc",
+      "version": "44.0",
+      "scriptName": "GARY - Prior Levels",
+      "scriptTitle": "GARY - Prior Levels",
+      "modified": 1667929923,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;67d0d064cb4041a6a446f90a586352cf",
+      "version": "245.0",
+      "scriptName": "GG - Levels",
+      "scriptTitle": "GG - Levels",
+      "modified": 1721058678,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b5ae38c7c79241339b2f218540bc2fa9",
+      "version": "24.0",
+      "scriptName": "GM VWAP",
+      "scriptTitle": "GM VWAP",
+      "modified": 1650322885,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;fbcc6d8e90e4432b94c894b4e3f2a093",
+      "version": "4.0",
+      "scriptName": "Hercules Indicator 1.7",
+      "scriptTitle": "Hercules Indicator 1.7",
+      "modified": 1682371949,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;8db79fa2335e4bf6b93e8ad1c9ab336d",
+      "version": "30.0",
+      "scriptName": "Hercules Rewrite",
+      "scriptTitle": "Hercules Rewrite",
+      "modified": 1677963847,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;f6a9c7a32078473fb20b208d4cd9b467",
+      "version": "75.0",
+      "scriptName": "Hercules Strategy",
+      "scriptTitle": "Hercules Srategy",
+      "modified": 1675909525,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;dec4035e5f5846debf126a5e0992e65c",
+      "version": "40.0",
+      "scriptName": "Hercules Strategy 1.7",
+      "scriptTitle": "Hercules Strategy 1.7",
+      "modified": 1682552469,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;aeefcc801da9423db116e848783880b7",
+      "version": "396.0",
+      "scriptName": "Hercules Strategy Rewrite",
+      "scriptTitle": "Hercules Strategy Rewrite",
+      "modified": 1698880801,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;c61a1b80e1f24742b2667948460dd2f8",
+      "version": "6.0",
+      "scriptName": "Highlight Month",
+      "scriptTitle": "Highlight Month",
+      "modified": 1642889110,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a951910f81634ef0acfd1c29a713a7ec",
+      "version": "2.0",
+      "scriptName": "Historical Vol MA Band Indicator",
+      "scriptTitle": "Historical Vol MA Band Indicator",
+      "modified": 1672693107,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0b4bd4450b124403b32a59ddb44cdcb8",
+      "version": "57.0",
+      "scriptName": "Hooplah High Low + table",
+      "scriptTitle": "Hooplah High Low + table",
+      "modified": 1690726875,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;574aa3a7d2814e6cb4838a6ff92686a7",
+      "version": "1.0",
+      "scriptName": "Hull Suite by InSilico",
+      "scriptTitle": "Hull Suite by InSilico",
+      "modified": 1688341778,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;27f0198c673349e7a3e43d2ed4d5e32d",
+      "version": "67.0",
+      "scriptName": "Ichimoku Cloud Weight",
+      "scriptTitle": "Ichimoku Cloud Weight",
+      "modified": 1686845151,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c310ba752b0e419688fd00a7ee06b7f5",
+      "version": "1.0",
+      "scriptName": "Ichimoku Cloud Weight Original",
+      "scriptTitle": "Ichimoku Cloud Weight Original",
+      "modified": 1686844576,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;76c29628542f4067b74f06c8d507e496",
+      "version": "99.0",
+      "scriptName": "ID50",
+      "scriptTitle": "ID50",
+      "modified": 1678191553,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;f104ff4bb936448fb1f57016a9978752",
+      "version": "2.0",
+      "scriptName": "Imagegpt",
+      "scriptTitle": "Imagegpt Test 1",
+      "modified": 1691166991,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;fefa4b83c09e4c3f84945ca7f7f5ea78",
+      "version": "200.0",
+      "scriptName": "In Out Divergence",
+      "scriptTitle": "Pro In Out Divergence",
+      "modified": 1654453171,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d7883be604f24d76945060332aab2d75",
+      "version": "154.0",
+      "scriptName": "Inside Extended",
+      "scriptTitle": "Inside Extended",
+      "modified": 1653084030,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cd1c2de5d4ac4b56a895fc23ed9c55f2",
+      "version": "93.0",
+      "scriptName": "J8_30_123_Spy_Scalping_Lower_Pro_2_Jerry",
+      "scriptTitle": "J8_30_123_Spy_Scalping_Lower_Pro_2_Jerry",
+      "modified": 1675199290,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;409a26ba29a24dd6a993cc9635ec43f0",
+      "version": "72.0",
+      "scriptName": "J8_30_123_Spy_Scalping_Lower_Pro_2_Jerry_V2",
+      "scriptTitle": "J8_30_123_Spy_Scalping_Lower_Pro_2_Jerry_V2",
+      "modified": 1675199328,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;ff460e666c654e8b990f305adb271df6",
+      "version": "226.0",
+      "scriptName": "J8_30_123_SPY_Scalping_PRO_2_Jerry",
+      "scriptTitle": "J8_30_123_SPY_Scalping_PRO_2_Jerry",
+      "modified": 1677358272,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;1af285ca91e14ad38e5882f43dfbaa43",
+      "version": "13.0",
+      "scriptName": "J8_30_123_SPY_Scalping_PRO_2_Jerry_V2",
+      "scriptTitle": "J8_30_123_SPY_Scalping_PRO_2_Jerry_V2",
+      "modified": 1675199719,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;ae645513fe854611836040eed58e157b",
+      "version": "100.0",
+      "scriptName": "j8_refactor",
+      "scriptTitle": "j8_refactor",
+      "modified": 1677365814,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;c36eafe7f48141c1b4ef81e6500f0a37",
+      "version": "1.0",
+      "scriptName": "Jerry Buy Sell Indicator Premium",
+      "scriptTitle": "Jerry Buy Sell Indicator Premium",
+      "modified": 1640800799,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;dd6aca983db74809834dfdb3e2824968",
+      "version": "73.0",
+      "scriptName": "Jerry Buy Sell Indicator Premium w MTF",
+      "scriptTitle": "Jerry Buy Sell Indicator Premium",
+      "modified": 1641918847,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;d73ed2d6b335424284690b7bba9f2535",
+      "version": "1.0",
+      "scriptName": "Jerry Buy Zone Strategy",
+      "scriptTitle": "Jerry Buy Zone Strategy",
+      "modified": 1644762979,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;79f7846be8c143e3b015f84f6a0271d8",
+      "version": "62.0",
+      "scriptName": "Jerry_MACD",
+      "scriptTitle": "Jerry_MACD",
+      "modified": 1675687799,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a35f25caf103492ea48d5e89027a406d",
+      "version": "382.0",
+      "scriptName": "Jerry Strategy/Dashboard",
+      "scriptTitle": "Jerry Strategy/Dashboard",
+      "modified": 1645193521,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;db0735fe813e43bab100fb2db04205c3",
+      "version": "15.0",
+      "scriptName": "KANEBERG",
+      "scriptTitle": "Rising/bars/30/sec/buy/rsi/sma/vwma/exit/rsi/one/trade/per/day/8-3-22",
+      "modified": 1659723061,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;ebf54a1e944f45e5962f0edbf01f4504",
+      "version": "1.0",
+      "scriptName": "kane-Bollinger Bands",
+      "scriptTitle": "kane-Bollinger Bands",
+      "modified": 1670852209,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;0156c5fbe0a0475faf19c532ac2d037a",
+      "version": "51.0",
+      "scriptName": "Krypton Indicator 1.0",
+      "scriptTitle": "Krypton Indicator 1.0",
+      "modified": 1689697671,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb815bec17f042f08df39cf4623bf60f",
+      "version": "9.0",
+      "scriptName": "Level Theory",
+      "scriptTitle": "Level Theory",
+      "modified": 1689261908,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ce1a9fc852534bec9d801b4ea8c241b7",
+      "version": "5.0",
+      "scriptName": "Level Theory + Vector Candles",
+      "scriptTitle": "Level Theory + Vector Candles",
+      "modified": 1689262008,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;757cfc19208c4ebb9d5f5930e43a7bdb",
+      "version": "1.0",
+      "scriptName": "LibraryStopwatch",
+      "scriptTitle": "LibraryStopwatch",
+      "modified": 1649547063,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "library",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bfc1652fdcbf43b48bf35f9672d5206d",
+      "version": "158.0",
+      "scriptName": "Limitless Trading Indicator",
+      "scriptTitle": "Limitless Trading Indicator",
+      "modified": 1685991477,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d39eaefd959f4989b598de85f22d7260",
+      "version": "26.0",
+      "scriptName": "Linear Regression MTF + Bands",
+      "scriptTitle": "Linear Regression MTF + Bands",
+      "modified": 1700862904,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;76f5870bfd6a45c285054cc645f03f26",
+      "version": "5.0",
+      "scriptName": "LinearRegressionSlope",
+      "scriptTitle": "LinearRegressionSlope",
+      "modified": 1661884718,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b978580fe99747b28076b615a0363337",
+      "version": "64.0",
+      "scriptName": "LinReg Bands",
+      "scriptTitle": "LinReg Bands",
+      "modified": 1682789093,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;5853627785b143c4a364ab6c80ff5761",
+      "version": "222.0",
+      "scriptName": "LinReg MTF",
+      "scriptTitle": "LinReg MTF",
+      "modified": 1657313263,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;587f0b95048240a4a7b8822027375e22",
+      "version": "128.0",
+      "scriptName": "LinReg MTF More TFs",
+      "scriptTitle": "LinReg MTF More TFs",
+      "modified": 1659820917,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 12
+      }
+    },
+    {
+      "scriptIdPart": "USER;530e19bbe1e24b80bf5cf2b06bedbfbe",
+      "version": "7.0",
+      "scriptName": "LinReg MTF More TFs EXPORT ONLY",
+      "scriptTitle": "LinReg MTF More TFs EXPORT ONLY",
+      "modified": 1681087174,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;c98d0017aa8e42edb3253ec701e2112c",
+      "version": "29.0",
+      "scriptName": "Lin Reg Simplified",
+      "scriptTitle": "Lin Reg Simplified",
+      "modified": 1680996313,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a10753cb7c6843d084e3bfa16c4c705a",
+      "version": "1.0",
+      "scriptName": "Litt Volume ++",
+      "scriptTitle": "Litt Volume ++",
+      "modified": 1682552608,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;86c619ab9ad44bc8856af4cf894dbf8b",
+      "version": "106.0",
+      "scriptName": "Lower Forecast",
+      "scriptTitle": "Lower Forecast",
+      "modified": 1661524122,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;4807f119286a46f0a98ad6ba992001d3",
+      "version": "10.0",
+      "scriptName": "Lower Labels",
+      "scriptTitle": "Lower Labels",
+      "modified": 1673295185,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f190d4fbf7be475fbde9106364ee1e96",
+      "version": "41.0",
+      "scriptName": "LUX Main Chart Mood",
+      "scriptTitle": "Normalized Oscillators Spider Chart [LUX]",
+      "modified": 1639330252,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a9ac3db96e2841c2b537d53f18874044",
+      "version": "6.0",
+      "scriptName": "MACD - Divergence",
+      "scriptTitle": "MACD - Divergence",
+      "modified": 1683043934,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;eaaff1e9d82d4e678218711c273be3a9",
+      "version": "5.0",
+      "scriptName": "Main",
+      "scriptTitle": "Main",
+      "modified": 1685099088,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b7ee94b0d460424aa91e4e1334ce37e4",
+      "version": "29.0",
+      "scriptName": "Market Rhythm Adaptive Trading Algo V1",
+      "scriptTitle": "Market Rhythm Adaptive Trading Algo V1",
+      "modified": 1647551537,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;db4c0043c50148bebca34c5720110735",
+      "version": "200.0",
+      "scriptName": "Market View++",
+      "scriptTitle": "Market View++",
+      "modified": 1725027880,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6c6751f88ffa4affa98c2a4d1f9123e4",
+      "version": "30.0",
+      "scriptName": "MCF and Trendy Pipsy",
+      "scriptTitle": "MCF and Trendy Pipsy",
+      "modified": 1691798628,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;8c6c1e7bf52441e188d811d75fd8c362",
+      "version": "3.0",
+      "scriptName": "Mean Reversion Channel",
+      "scriptTitle": "Mean Reversion Channel - MRI Variant",
+      "modified": 1681506137,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;664bbf5e23e84bb6a16ad79336656c65",
+      "version": "9.0",
+      "scriptName": "Messing with Alerts & Calc Every Tick",
+      "scriptTitle": "Messing with Alerts & Calc Every Tick",
+      "modified": 1660066115,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;2fe09aaebb7942bc96e31aaef09e4f6b",
+      "version": "1.0",
+      "scriptName": "MFI Divergences",
+      "scriptTitle": "MFI Divergences",
+      "modified": 1686690374,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d1e1853680c045d5b7e45bc93f698cf4",
+      "version": "47.0",
+      "scriptName": "MFI Divergences Lower",
+      "scriptTitle": "MFI Divergences Lower",
+      "modified": 1686845870,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;b2772de1b11d4d4885e42ff708f20f71",
+      "version": "87.0",
+      "scriptName": "MFI Divergences Lower v2",
+      "scriptTitle": "MFI Divergences Lower v2",
+      "modified": 1687005788,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;d570f0e9fe2f4714aebecbd001515add",
+      "version": "22.0",
+      "scriptName": "MFI Divergences Lower v3",
+      "scriptTitle": "MFI Divergences Lower v3",
+      "modified": 1687006713,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;c7ad7de970d44f05adfa4907eb952890",
+      "version": "9.0",
+      "scriptName": "MicroQuant Momentum",
+      "scriptTitle": "MicroQuant Momentum",
+      "modified": 1688069183,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8b12459dbcdf4727a6daa1ff14fce4d4",
+      "version": "34.0",
+      "scriptName": "MicroQuant Trend",
+      "scriptTitle": "MicroQuant Trend",
+      "modified": 1689897343,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb74fbbf62924251972a75369e38b53d",
+      "version": "11.0",
+      "scriptName": "MicroQuant Trend Strat",
+      "scriptTitle": "MicroQuant Trend Strat",
+      "modified": 1692790688,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;75dd2ab8889e48f3970a94c81caedc3c",
+      "version": "53.0",
+      "scriptName": "MicroQuant Trend Strat +TS",
+      "scriptTitle": "MicroQuant Trend Strat +TS",
+      "modified": 1697589677,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;54630c12e8294872aa09179cf8bd0f22",
+      "version": "266.0",
+      "scriptName": "M&M Trading",
+      "scriptTitle": "M&M Trading",
+      "modified": 1681657887,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;dedd26c5b8de416bbf80be34c927408b",
+      "version": "6.0",
+      "scriptName": "Moon Phases Source Code",
+      "scriptTitle": "Moon Phases Source Code",
+      "modified": 1651677564,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;646b74ecca5b42a08a38aafecc254b5c",
+      "version": "3.0",
+      "scriptName": "Moving Average Convergence Divergence copy",
+      "scriptTitle": "Moving Average Convergence Divergence",
+      "modified": 1778874559,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "is_price_study": false,
+        "stats": {
+          "plot": 1
+        }
+      }
+    },
+    {
+      "scriptIdPart": "USER;69b14b37288a4854a5d7710aaa5411a2",
+      "version": "2.0",
+      "scriptName": "Mrhyh21_buy_sell",
+      "scriptTitle": "Mrhyh21_buy_sell",
+      "modified": 1692964532,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5a83c344fc4c4b30bc580b32231850fb",
+      "version": "16.0",
+      "scriptName": "Mrhyh21_Levels",
+      "scriptTitle": "Mrhyh21_Levels",
+      "modified": 1693264794,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b8b8415ce734473ca72eb2fb8a1949c1",
+      "version": "8.0",
+      "scriptName": "Mrhyh21_SMC",
+      "scriptTitle": "Mrhyh21_SMC",
+      "modified": 1692965070,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;40b06458562e4419b29eaf9568d14bec",
+      "version": "14.0",
+      "scriptName": "Mrhyh21_SMC_v2",
+      "scriptTitle": "Mrhyh21_SMC_v2",
+      "modified": 1692965733,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;aa5d63f0e75143f3962df080af7669b9",
+      "version": "4.0",
+      "scriptName": "MTF 2TF Cipher",
+      "scriptTitle": "MTF 2TF Cipher",
+      "modified": 1693432947,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ccb0aa6c72094110b222aee56ea169c1",
+      "version": "284.0",
+      "scriptName": "MTF Candles",
+      "scriptTitle": "MTF Candles",
+      "modified": 1688487514,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;03d4d184c2234291bd6dff32f8389901",
+      "version": "29.0",
+      "scriptName": "MTF Candles + MAs",
+      "scriptTitle": "MTF Candles + MAs",
+      "modified": 1688734720,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6fc20605fe494420bafcaa28a9d4d6db",
+      "version": "4.0",
+      "scriptName": "MTF Candles + MAs v2",
+      "scriptTitle": "MTF Candles + MAs v2",
+      "modified": 1693529600,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;245f20ca00e54572808dc76f2e9cbf3b",
+      "version": "38.0",
+      "scriptName": "MTF CCI & SAR",
+      "scriptTitle": "MTF CCI & SAR",
+      "modified": 1649002631,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;e778d998810a4d32bf60561e205a80d4",
+      "version": "39.0",
+      "scriptName": "MTF Charting",
+      "scriptTitle": "MTF Charting",
+      "modified": 1701099069,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ff84a7d4ed79416c8595c48ea92ceb31",
+      "version": "97.0",
+      "scriptName": "MTF Cipher Dots",
+      "scriptTitle": "MTF Cipher Dots",
+      "modified": 1693438325,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;ae204fd3f920457fa2c7e0ff6bc28721",
+      "version": "17.0",
+      "scriptName": "MTF EFI",
+      "scriptTitle": "MTF EFI",
+      "modified": 1682200788,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;975956f4d3e84c4db50f6f3d471dd0e7",
+      "version": "124.0",
+      "scriptName": "MTF EFI Strategy",
+      "scriptTitle": "MTF EFI Strategy",
+      "modified": 1682111007,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e92378aa4e264a62b32aba44521d32a3",
+      "version": "191.0",
+      "scriptName": "MTF EFI Test",
+      "scriptTitle": "MTF EFI TEST",
+      "modified": 1682200081,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;52ef189903b34279a19fef7d53201855",
+      "version": "70.0",
+      "scriptName": "MTF Supply/Demand",
+      "scriptTitle": "MTF Supply/Demand",
+      "modified": 1682285664,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;dab1762b1c634c9383f0c10277993733",
+      "version": "2.0",
+      "scriptName": "MTF Supply/Demand v2",
+      "scriptTitle": "MTF Supply/Demand v2",
+      "modified": 1715995116,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e94e7cfe199c46508986436c07674aba",
+      "version": "2.0",
+      "scriptName": "Multi-Asset Performance [Spaghetti] - By Leviathan",
+      "scriptTitle": "Multi-Asset Performance [Spaghetti] - By Leviathan",
+      "modified": 1698338589,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;17aa9490f2c847edbd5fe76997f41b4f",
+      "version": "2.0",
+      "scriptName": "my Fractals",
+      "scriptTitle": "my Fractals",
+      "modified": 1681044857,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ca8457c018d44166b367ec9111294118",
+      "version": "10.0",
+      "scriptName": "My Historical Volatility",
+      "scriptTitle": "My Historical Volatility",
+      "modified": 1645888074,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;2f2853c7b8dd4a2499f24106d9fd4777",
+      "version": "61.0",
+      "scriptName": "my Matrix Momentum",
+      "scriptTitle": "my Matrix Momentum",
+      "modified": 1681166041,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;67e306acfa1e463e90ab6b878cf09619",
+      "version": "4.0",
+      "scriptName": "my QQE",
+      "scriptTitle": "my QQE",
+      "modified": 1681917321,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;c7b71f560c354b5b82fee5b2b388c246",
+      "version": "131.0",
+      "scriptName": "My script",
+      "scriptTitle": "DeMark 9",
+      "modified": 1660610196,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6653ee33317f47468ea2d3ee8ea9cf62",
+      "version": "1.0",
+      "scriptName": "My Script",
+      "scriptTitle": "TL",
+      "modified": 1650902602,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;38ae1717ad744a9b8fd70c19f937b549",
+      "version": "1.0",
+      "scriptName": "My script 1",
+      "scriptTitle": "My script",
+      "modified": 1655116725,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;63ad90a7fbcc4c2b8288122c8dd2c3ec",
+      "version": "2.0",
+      "scriptName": "My script 10",
+      "scriptTitle": "Error: cannot compile script",
+      "modified": 1677164331,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3a5b8a6a52774ee3abd7d424625b1864",
+      "version": "1.0",
+      "scriptName": "My script 11",
+      "scriptTitle": "My script",
+      "modified": 1677759425,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;21f4facb505f4f14a9ed5baf9b69ef63",
+      "version": "4.0",
+      "scriptName": "My script 12",
+      "scriptTitle": "My script",
+      "modified": 1677759872,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d17443dc863a45d0a2ea18818e7afb3f",
+      "version": "5.0",
+      "scriptName": "My script 13",
+      "scriptTitle": "My script",
+      "modified": 1681164013,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;2f0560045dbb4041ac91d0be1ab6485a",
+      "version": "3.0",
+      "scriptName": "My script 14",
+      "scriptTitle": "My script",
+      "modified": 1683133224,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0ee890a53c5b4eee9ca184211ee2d496",
+      "version": "3.0",
+      "scriptName": "My script 15",
+      "scriptTitle": "My script",
+      "modified": 1688483199,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;afcabd9882534658a85e7edd4761eeb3",
+      "version": "1.0",
+      "scriptName": "My script 16",
+      "scriptTitle": "My script",
+      "modified": 1695299622,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f3bab074bdea41bc8e3c005d0bd4244e",
+      "version": "3.0",
+      "scriptName": "My script 17",
+      "scriptTitle": "My script",
+      "modified": 1698714987,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;680eb8dd3ab1435ab25c483e609bcf7f",
+      "version": "1.0",
+      "scriptName": "My script 18",
+      "scriptTitle": "My script",
+      "modified": 1707516771,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3e3e6b9df7ec42458ce04ea07e12a685",
+      "version": "9.0",
+      "scriptName": "My script 2",
+      "scriptTitle": "My script",
+      "modified": 1657312052,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3261de3f3abf450eb9e284f2ff30b7ca",
+      "version": "2.0",
+      "scriptName": "My script 3",
+      "scriptTitle": "My script",
+      "modified": 1666370924,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;62d743a959bf4fef88a23de71496015a",
+      "version": "13.0",
+      "scriptName": "My Script 3",
+      "scriptTitle": "`matrix.new&lt;type&gt;()` Example 1",
+      "modified": 1657313235,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;058de24913f84ba5854621c1b993f6d4",
+      "version": "1.0",
+      "scriptName": "My script 4",
+      "scriptTitle": "My script",
+      "modified": 1668551807,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;294caf80a3c849d88cf3ab96ed9a32c7",
+      "version": "4.0",
+      "scriptName": "My script 5",
+      "scriptTitle": "My script",
+      "modified": 1671827591,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;013fa493f45f4013841889829e20209f",
+      "version": "10.0",
+      "scriptName": "My script 6",
+      "scriptTitle": "My script",
+      "modified": 1673291740,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;31f55abc182c4d7abc6a4f4395442877",
+      "version": "1.0",
+      "scriptName": "My script 7",
+      "scriptTitle": "My script",
+      "modified": 1675115555,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e1573797ace245ada0e2eaa42f21047a",
+      "version": "2.0",
+      "scriptName": "My script 8",
+      "scriptTitle": "My script",
+      "modified": 1675985722,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1da73d43f42d4303b04215b9b78b9e5f",
+      "version": "1.0",
+      "scriptName": "My script 9",
+      "scriptTitle": "My script",
+      "modified": 1676408055,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;103db250929e4ab6a5a2df039e2d0db0",
+      "version": "5.0",
+      "scriptName": "My strategy",
+      "scriptTitle": "My strategy",
+      "modified": 1674257130,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e4c11ae3b8fe4046934f415e724687ed",
+      "version": "4.0",
+      "scriptName": "MyVIXFIX",
+      "scriptTitle": "MyVIXFIX",
+      "modified": 1680371233,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;befa7781d66c4019ab3776b2ab04a950",
+      "version": "6.0",
+      "scriptName": "myVolume Profile [LUX]",
+      "scriptTitle": "myVolume Profile [LUX]",
+      "modified": 1680814509,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;26e306bd436b4cfcb9fdd624d799bab0",
+      "version": "4.0",
+      "scriptName": "Nubia - Auto Midas Anchored VWAP [xdecow]",
+      "scriptTitle": "Nubia - Auto Midas Anchored VWAP [xdecow]",
+      "modified": 1682465255,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;301fdec07eed43ac827a1314bacaada5",
+      "version": "3.0",
+      "scriptName": "OBV MACD Indicator",
+      "scriptTitle": "OBV MACD Indicator",
+      "modified": 1688342257,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;22b444d93a43408ebc1cf61f6d7ffe1b",
+      "version": "6.0",
+      "scriptName": "On Balance Volume Custom",
+      "scriptTitle": "On Balance Volume",
+      "modified": 1675979115,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6f4bec8d0fe5477fbbdfa98ab9f3a401",
+      "version": "35.0",
+      "scriptName": "ORB_hooplah",
+      "scriptTitle": "ORB_hooplah",
+      "modified": 1683138550,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7c6f838599fe4b9e98d2085bba7b5786",
+      "version": "67.0",
+      "scriptName": "ORB_hooplah strategy",
+      "scriptTitle": "ORB_hooplah strategy",
+      "modified": 1683574099,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0a393e99517f4ce8a57bbd41f3eeee95",
+      "version": "258.0",
+      "scriptName": "ORB_twisted_m",
+      "scriptTitle": "ORB_twisted_m_v2",
+      "modified": 1692807264,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;96116c869a4542329622ba906df9b418",
+      "version": "9.0",
+      "scriptName": "ORB_twisted_m_v3",
+      "scriptTitle": "ORB_twisted_m_v3",
+      "modified": 1694182710,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;635dda97ec9a4af1b1ca15cf6775940a",
+      "version": "1.0",
+      "scriptName": "Parabolic SAR",
+      "scriptTitle": "Parabolic SAR",
+      "modified": 1681251668,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ea0ef6d98d804efeacf3e5ae2ac5cd9f",
+      "version": "30.0",
+      "scriptName": "Parabolic SAR + RSI",
+      "scriptTitle": "Parabolic SAR",
+      "modified": 1678452679,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7c0887c62bc64f4b9d005acd64b22c0c",
+      "version": "214.0",
+      "scriptName": "Parabolic SAR v2",
+      "scriptTitle": "Parabolic SAR v2",
+      "modified": 1681342023,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f7eadb8eca1d4de38fe2ba68cfcfd96c",
+      "version": "10.0",
+      "scriptName": "Period VWAP",
+      "scriptTitle": "Period VWAP",
+      "modified": 1650330212,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1119d98306e84705b3e5f0cf9b9c1e0d",
+      "version": "101.0",
+      "scriptName": "Pivot Trendlines",
+      "scriptTitle": "Pivot Trendlines",
+      "modified": 1681147785,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6231b4ed42044a988ea1c2705a90694c",
+      "version": "15.0",
+      "scriptName": "Pivot Trendlines_v2",
+      "scriptTitle": "Pivot Trendlines_v2",
+      "modified": 1681156340,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0782035950f14e63bb508b2f8086ac50",
+      "version": "194.0",
+      "scriptName": "Premium Dashboard",
+      "scriptTitle": "Premium Dashboard",
+      "modified": 1680891465,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a3e564bc13534a06bd5068f31cf059f0",
+      "version": "129.0",
+      "scriptName": "Price-Action Candles",
+      "scriptTitle": "Price-Action Candles",
+      "modified": 1701865677,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;4e0a2ba3c66848b190faa832fc6e6155",
+      "version": "28.0",
+      "scriptName": "Price-Action Candles (Lower)",
+      "scriptTitle": "Price-Action Candles (Lower)",
+      "modified": 1701111489,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;636f337bf4d04932a30d40abf257aba8",
+      "version": "210.0",
+      "scriptName": "Psych Levels",
+      "scriptTitle": "Psych. Levels",
+      "modified": 1700668631,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;63bbbf069aac47608baeb2a68760c7ca",
+      "version": "3.0",
+      "scriptName": "🛠️ Psychological Lines - NOT PUBLISHED",
+      "scriptTitle": "🛠️ Psychological Lines",
+      "modified": 1668796523,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5c6081084625462aa928eec264772c61",
+      "version": "6.0",
+      "scriptName": "QQE Glaz v5",
+      "scriptTitle": "QQE Glaz v5",
+      "modified": 1681918053,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c748587178af48d4ab9353f88deb07b2",
+      "version": "142.0",
+      "scriptName": "Qullamaggie Breakout",
+      "scriptTitle": "Qullamaggie Breakout Fixed",
+      "modified": 1652905776,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7b45099bd65e49e3bf1560fbddf76c87",
+      "version": "1.0",
+      "scriptName": "Range Filter",
+      "scriptTitle": "Range Filter",
+      "modified": 1674999907,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;5038252938884ee2b5b579712e287d1a",
+      "version": "1.0",
+      "scriptName": "Rising/bars/30/sec/buy/rsi/sma/vwma/exit/rsi/one/trade/per/day/8-3-22",
+      "scriptTitle": "Rising/bars/30/sec/buy/rsi/sma/vwma/exit/rsi/one/trade/per/day/8-3-22",
+      "modified": 1659979458,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;3881a97481a248298c37e0d861737761",
+      "version": "8.0",
+      "scriptName": "RSI Strategy Testing",
+      "scriptTitle": "RSI Strategy",
+      "modified": 1644159602,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bd1f7c81dd874665b469ff7d8e75136f",
+      "version": "1.0",
+      "scriptName": "RT_candle_signals_LCBigMoves",
+      "scriptTitle": "RT_candle_signals_LCBigMoves",
+      "modified": 1695682216,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ddb444f7aeec4b20afdcf2aa6c455273",
+      "version": "263.0",
+      "scriptName": "RVOL++",
+      "scriptTitle": "RVOL++",
+      "modified": 1715862061,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8475543b407b4960a5c7bd6b57e4edaa",
+      "version": "9.0",
+      "scriptName": "Sample Levels",
+      "scriptTitle": "Sample Levels",
+      "modified": 1698776297,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;7ace2e3f9b884fd0a74d076066236611",
+      "version": "271.0",
+      "scriptName": "Sandbox",
+      "scriptTitle": "Sandbox",
+      "modified": 1667609455,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3eb0e11145b64998b954b349cbd04356",
+      "version": "10.0",
+      "scriptName": "Saty ATR Levels",
+      "scriptTitle": "Saty ATR Levels + CALL/PUT",
+      "modified": 1675708689,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1fc68dc791544b62a4c4e9a92ad6f4bb",
+      "version": "89.0",
+      "scriptName": "ScarAlgo v1",
+      "scriptTitle": "ScarAlgo v1",
+      "modified": 1672770813,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;f2973de0e7b34b62b4f00ce185ae6db0",
+      "version": "2.0",
+      "scriptName": "[SCL] True Market Structure",
+      "scriptTitle": "[SCL] True Market Structure",
+      "modified": 1654712684,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;43ae8a490a8b4b1cb6f20da5b3d533d8",
+      "version": "162.0",
+      "scriptName": "🧰 Sessions Toolbox",
+      "scriptTitle": "🧰 Sessions Toolbox",
+      "modified": 1651066107,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;926a9c8ecb8048339b35f175d51b4966",
+      "version": "131.0",
+      "scriptName": "Session Wicks",
+      "scriptTitle": "Session Wicks",
+      "modified": 1700682108,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;849ed4c33cb54e30ac588dc092bdef07",
+      "version": "2.0",
+      "scriptName": "SHORT eMACD V08.23.5",
+      "scriptTitle": "SHORT eMACD V08.23.5",
+      "modified": 1693311833,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e004d3439dda4a41ab5c4cd8b2d46ba7",
+      "version": "1.0",
+      "scriptName": "SimpleBot",
+      "scriptTitle": "SimpleBot",
+      "modified": 1678729445,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;db4c827366764a13905ed8669135f42d",
+      "version": "551.0",
+      "scriptName": "Simple Sentiment Indicator",
+      "scriptTitle": "Simple Sentiment",
+      "modified": 1651675106,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6291d3457ee946d7b62b36c66f8abf6d",
+      "version": "123.0",
+      "scriptName": "Simple Sentiment Strategy",
+      "scriptTitle": "Simple Sentiment Strategy",
+      "modified": 1651675093,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;02f7f67d6c8049b286509103c605d9c4",
+      "version": "5.0",
+      "scriptName": "Smoothed Heiken Ashi Candles",
+      "scriptTitle": "Smoothed Heiken Ashi Candles",
+      "modified": 1668804492,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;e2c0a35e131346a4a9b0b7a0bb2e6fd9",
+      "version": "2.0",
+      "scriptName": "SPY Sectors Cheat Sheet",
+      "scriptTitle": "SPY Sectors Cheat Sheet",
+      "modified": 1652386806,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1f21dfda01e94614a469bb5fa7328934",
+      "version": "140.0",
+      "scriptName": "Squeeze Momentum",
+      "scriptTitle": "Squeeze Momentum",
+      "modified": 1677874910,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;2874d2a972834ccfad32856dc3f90b2d",
+      "version": "57.0",
+      "scriptName": "S/R Average",
+      "scriptTitle": "S/R Average",
+      "modified": 1647805206,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;efe219200d274784951fe12723892c48",
+      "version": "19.0",
+      "scriptName": "Stoch Divergence",
+      "scriptTitle": "Stochastic Divergences",
+      "modified": 1668882399,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3533e403c6e54573aa50cb9aae394301",
+      "version": "3.0",
+      "scriptName": "Stoch Slow",
+      "scriptTitle": "Stoch Slow",
+      "modified": 1644009741,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5b85d12b537f4d68ad54dc7e802ee227",
+      "version": "1.0",
+      "scriptName": "Strength of Divergence Across Multiple Indicators",
+      "scriptTitle": "Strength of Divergence Across Multiple Indicators",
+      "modified": 1691578610,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f83e231dd10b4f5f9120b9fc6e4b715f",
+      "version": "36.0",
+      "scriptName": "STRSIBB Indicator",
+      "scriptTitle": "STRSIBB Indicator Middle Upper Lower",
+      "modified": 1659383715,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;57a75522de314b799ace1a79e3f747ad",
+      "version": "7.0",
+      "scriptName": "Supersaiyan Strategy",
+      "scriptTitle": "Supersaiyan Strategy",
+      "modified": 1677184689,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb398e5202bd4d32ba664f866629e8d8",
+      "version": "1.0",
+      "scriptName": "Supertrend Channels",
+      "scriptTitle": "Supertrend Channels",
+      "modified": 1651522434,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;2ef5d4b1907a4cb6900a86f7a5861855",
+      "version": "4.0",
+      "scriptName": "Supertrend Hull",
+      "scriptTitle": "Supertrend",
+      "modified": 1672157597,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;ff1084d0ae6340019b7c278700471b65",
+      "version": "8.0",
+      "scriptName": "Supply/Demand",
+      "scriptTitle": "Supply/Demand",
+      "modified": 1679999061,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;fbec394133184dafbf8d0279289f446c",
+      "version": "1.0",
+      "scriptName": "Support Resistance Zones 🗲",
+      "scriptTitle": "Support Resistance Zones 🗲",
+      "modified": 1650405198,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5680b4d3bf214b3d9a59ec2fed666825",
+      "version": "2.0",
+      "scriptName": "Swing Arm",
+      "scriptTitle": "Swing Arm",
+      "modified": 1645651216,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;05db720a2b254265860827dd809293e6",
+      "version": "7.0",
+      "scriptName": "Take Session High/Low Alert [MsF]",
+      "scriptTitle": "Take Session High/Low Wick",
+      "modified": 1697663076,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;236d51e7867a4524aab5a07119af7f53",
+      "version": "385.0",
+      "scriptName": "TBM Wick Test",
+      "scriptTitle": "TBM Wick Test",
+      "modified": 1771252678,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "is_price_study": true,
+        "stats": {
+          "plot": 5
+        }
+      }
+    },
+    {
+      "scriptIdPart": "USER;94b14fa0851f417cb3bbd405fe75e544",
+      "version": "8.0",
+      "scriptName": "TDI",
+      "scriptTitle": "TDI",
+      "modified": 1673644361,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b4043c0ed9ae4e7ca660d6a52cdc441c",
+      "version": "8.0",
+      "scriptName": "TDI MTF",
+      "scriptTitle": "TDI MTF",
+      "modified": 1673819653,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ae4454570d334df28010632458e88cf7",
+      "version": "3.0",
+      "scriptName": "Team Nasdaq Trader",
+      "scriptTitle": "Team Nasdaq Trader",
+      "modified": 1692703925,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;1622fbeb19be4cb991cffaaaa0a429c4",
+      "version": "1.0",
+      "scriptName": "Test Alert",
+      "scriptTitle": "Untitled Script",
+      "modified": 1643319967,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6b2514b4d6f04d1bac6969072767fffb",
+      "version": "1.0",
+      "scriptName": "Testing Access 1",
+      "scriptTitle": "Testing Access 1",
+      "modified": 1662399137,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d715992da9394d24a259029d259f7b65",
+      "version": "1.0",
+      "scriptName": "Testing Access 2",
+      "scriptTitle": "Testing Access 2",
+      "modified": 1662399185,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8ea5bca285c7475984ea0da308d6684b",
+      "version": "82.0",
+      "scriptName": "Testing LTF, HTF",
+      "scriptTitle": "Testing LTF, HTF",
+      "modified": 1688491447,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d2fec539bef040478f7de43bc95cb8f5",
+      "version": "3.0",
+      "scriptName": "Testing Private Access",
+      "scriptTitle": "Testing Private Access",
+      "modified": 1700005574,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;19b25c9e453441899068b60b69bf3c8b",
+      "version": "96.0",
+      "scriptName": "TICKERS",
+      "scriptTitle": "TICKERS",
+      "modified": 1729869040,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6c46f7c4f42f47ea934686dd0435df4b",
+      "version": "84.0",
+      "scriptName": "Time Alerts",
+      "scriptTitle": "Error: cannot compile script",
+      "modified": 1655117584,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ac2633a4c8274d8ba182b73a9c6dd458",
+      "version": "2.0",
+      "scriptName": "tkawale",
+      "scriptTitle": "Grid Bot Simulator",
+      "modified": 1648470459,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;42bf0ce8bd324a0ab4a480a5e22a5e38",
+      "version": "20.0",
+      "scriptName": "TLM ALGO",
+      "scriptTitle": "TLM ALGO",
+      "modified": 1648038902,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d50508c3be9a488e82d60b0a7fc471b2",
+      "version": "122.0",
+      "scriptName": "TL Starlight Strategy",
+      "scriptTitle": "TL Starlight Strategy",
+      "modified": 1679170908,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9e703a3a5d5946748bce753170f1b3de",
+      "version": "3.0",
+      "scriptName": "TL Starlight Strategyv_v2",
+      "scriptTitle": "TL Starlight Strategyv_v2",
+      "modified": 1685819369,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;5522d1e2a8134369be3faa23d82957c6",
+      "version": "1.0",
+      "scriptName": "TMT Oscillator",
+      "scriptTitle": "TMT Oscillator",
+      "modified": 1672174447,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bfa909aa41e34443b41a32ac45ba902e",
+      "version": "3.0",
+      "scriptName": "TMT Overlay",
+      "scriptTitle": "TMT Overlay",
+      "modified": 1672671329,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;4a92fb66c22e4f8e99ca9aadd52850f7",
+      "version": "16.0",
+      "scriptName": "🔨 Toolbox Multi-Exchange Volume",
+      "scriptTitle": "🔨 Toolbox Crypto-Futures Volume",
+      "modified": 1650061982,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0c8ec68d737341b69b6709eb29f6567d",
+      "version": "31.0",
+      "scriptName": "TraderTactics Directional Color Band",
+      "scriptTitle": "TraderTactics Directional Color Band",
+      "modified": 1675172326,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;aec695189d45452ba0157b3f480deb4e",
+      "version": "27.0",
+      "scriptName": "Trader Tactics MA",
+      "scriptTitle": "Trader Tactics MA",
+      "modified": 1676033963,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 3
+      }
+    },
+    {
+      "scriptIdPart": "USER;25cdbe3300bb4615aa01a4406e44f271",
+      "version": "44.0",
+      "scriptName": "Trader Tactics Symbol Display",
+      "scriptTitle": "Trader Tactics Symbol Display",
+      "modified": 1676032821,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;39d1b1ba4b9d474ea6a3ba86603ef628",
+      "version": "1.0",
+      "scriptName": "Trend Background (AP) by DTT",
+      "scriptTitle": "Trend Background (AP) by DTT",
+      "modified": 1670862688,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;4e6e5a27202c45b79ae77bddfa8d0864",
+      "version": "1.0",
+      "scriptName": "Trender",
+      "scriptTitle": "Trender",
+      "modified": 1670862774,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 7
+      }
+    },
+    {
+      "scriptIdPart": "USER;6387b578ec7b4fbf9d37dcfaedb35547",
+      "version": "16.0",
+      "scriptName": "Trendlines with Breaks [DEMO]",
+      "scriptTitle": "Trendlines with Breaks + EMA",
+      "modified": 1696182973,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;6376ed8be6e54431a6a3f561456765fd",
+      "version": "5.0",
+      "scriptName": "Trendlines with Breaks + EMA",
+      "scriptTitle": "Trendlines with Breaks + EMA",
+      "modified": 1696260281,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ec4691352a64491ba1590ae9a54aea62",
+      "version": "2.0",
+      "scriptName": "Trend Toolbox",
+      "scriptTitle": "Trend Toolbox v1",
+      "modified": 1646578826,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;84e79dd796d14484b4d255c5497f86fa",
+      "version": "1.0",
+      "scriptName": "True Momentum Oscillator from sparkyflary",
+      "scriptTitle": "True Momentum Oscillator",
+      "modified": 1688342809,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b76cd9aa2f874a55adba879c62e56058",
+      "version": "59.0",
+      "scriptName": "TSS v1",
+      "scriptTitle": "TSS v1",
+      "modified": 1779202827,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "is_price_study": false,
+        "stats": {
+          "plot": 3
+        }
+      }
+    },
+    {
+      "scriptIdPart": "USER;953a95c314814d609f219ef5ab3b0e64",
+      "version": "55.0",
+      "scriptName": "TSS v2",
+      "scriptTitle": "TSS v2",
+      "modified": 1779203670,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "is_price_study": true,
+        "stats": {
+          "plotshape": 1
+        }
+      }
+    },
+    {
+      "scriptIdPart": "USER;fcfd9f73f1be4582958bcff84c25c8ff",
+      "version": "88.0",
+      "scriptName": "TSS v3",
+      "scriptTitle": "Daily High Levels",
+      "modified": 1779908403,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0,
+        "is_price_study": true,
+        "stats": {
+          "plot": 2
+        }
+      }
+    },
+    {
+      "scriptIdPart": "USER;6275c1cfa28843a1afe3c38d2d29e7ce",
+      "version": "27.0",
+      "scriptName": "Twin Range + BG",
+      "scriptTitle": "Twin Range + BG",
+      "modified": 1682342704,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;7144cc308e3f42d7a18c67b715aef5d1",
+      "version": "200.0",
+      "scriptName": "TWO MA Extended Lines",
+      "scriptTitle": "TWO MA Extended Lines",
+      "modified": 1683136831,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;3814756415944a7dbb7b664fcdda7b0b",
+      "version": "33.0",
+      "scriptName": "Two MA Indicator",
+      "scriptTitle": "Two MA Indicator",
+      "modified": 1682635161,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;aa5692ac42324bcf8f9d685d58e56b81",
+      "version": "356.0",
+      "scriptName": "Two MA Strategy",
+      "scriptTitle": "Two MA Strategy",
+      "modified": 1682635074,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;b081cd9835744e46bbaf8a5b4bbd2f2f",
+      "version": "60.0",
+      "scriptName": "Upper Forecast",
+      "scriptTitle": "Upper Forecast",
+      "modified": 1661461678,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;56eddfdda6c34072bfa10c649e9976b7",
+      "version": "78.0",
+      "scriptName": "U.S. Futures Limits",
+      "scriptTitle": "U.S. Futures Price Limits (Deprecated)",
+      "modified": 1700146288,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;cb242c3a373645fcb85635663701ef54",
+      "version": "3.0",
+      "scriptName": "UT Bot Alerts",
+      "scriptTitle": "UT Bot Alerts",
+      "modified": 1683148945,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;892d9e9245c844f394bbd187953bc34a",
+      "version": "21.0",
+      "scriptName": "Valueworth Heatmap",
+      "scriptTitle": "Valueworth Heatmap",
+      "modified": 1653584039,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;125b84e62b3543cfadaaf74d669357f4",
+      "version": "3.0",
+      "scriptName": "VARIP Test",
+      "scriptTitle": "VARIP Test",
+      "modified": 1676490884,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ddb156cbc7664a80bf1f4aa7ba4e020e",
+      "version": "3.0",
+      "scriptName": "vbhandari74 valueworth indicator",
+      "scriptTitle": "vbhandari74 valueworth indicator",
+      "modified": 1653606638,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c2215acc4a4043d891f579bc9c6753a3",
+      "version": "17.0",
+      "scriptName": "Vision",
+      "scriptTitle": "Vision",
+      "modified": 1678734674,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;6c2ba59ab9c845d8b8a7c488e030e8b4",
+      "version": "12.0",
+      "scriptName": "VIX Inverse Indicator",
+      "scriptTitle": "Vix Inverse Indicator",
+      "modified": 1668880371,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;74c3a83c959e4a07b8e72981bc1e5aa7",
+      "version": "2.0",
+      "scriptName": "VIX Structure / Reversal",
+      "scriptTitle": "VIX Structure / Reversal",
+      "modified": 1642891274,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;8ac86bb2012c48caa10ee1218671c014",
+      "version": "24.0",
+      "scriptName": "VMC Cipher",
+      "scriptTitle": "VMC Cipher",
+      "modified": 1686843744,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;cda4cdc6cd0a4b67b610a7f5134ff7a0",
+      "version": "259.0",
+      "scriptName": "VMC Cipher Lower",
+      "scriptTitle": "VMC Cipher Lower",
+      "modified": 1693433511,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 2
+      }
+    },
+    {
+      "scriptIdPart": "USER;94340788bb754479b9ec324f3aef171d",
+      "version": "23.0",
+      "scriptName": "Volume Rewrite",
+      "scriptTitle": "Volume Rewrite",
+      "modified": 1682127125,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;375846e455e845fbb1abb1372ae48dfb",
+      "version": "23.0",
+      "scriptName": "Volume Spike Candles",
+      "scriptTitle": "Volume Spike Candles",
+      "modified": 1716167964,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f527e9e60d054017a4665c37a12118f0",
+      "version": "2.0",
+      "scriptName": "Volume Spike Zones",
+      "scriptTitle": "Volume Spike Zones",
+      "modified": 1716044270,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;56770e3556e042c78703cbafabd0cec3",
+      "version": "16.0",
+      "scriptName": "Volume Strike 013023",
+      "scriptTitle": "Volume Strike 013023",
+      "modified": 1675817312,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;a147332c4da74bc4a3a74c2986c31044",
+      "version": "7.0",
+      "scriptName": "Volume Strike 013023 Strategy",
+      "scriptTitle": "Volume Strike 013023 Strategy",
+      "modified": 1675909048,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;bf2f9d1c524a472187c5bd93f980aa98",
+      "version": "128.0",
+      "scriptName": "Volume Toolbox",
+      "scriptTitle": "🧰 Volume Toolbox",
+      "modified": 1650413605,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9d0b5f94cd584095bfd837ad2fd2e830",
+      "version": "1.0",
+      "scriptName": "VOLUME WEIGHTED MACD V2",
+      "scriptTitle": "VOLUME WEIGHTED MACD V2",
+      "modified": 1663672308,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;1376bf2d5b8041dfa2ce4b2c2e6a38b2",
+      "version": "182.0",
+      "scriptName": "VP",
+      "scriptTitle": "VP",
+      "modified": 1680816611,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;d646ece5d5494283828464fbce8f5fc7",
+      "version": "3.0",
+      "scriptName": "VuManChu B Divergences",
+      "scriptTitle": "VuManChu B Divergences",
+      "modified": 1661819439,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;5630e6b72d7d40c687db3002ea6794c0",
+      "version": "15.0",
+      "scriptName": "VWAP Bars",
+      "scriptTitle": "VWAP Bars",
+      "modified": 1691108677,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1,
+        "isMTFResolution": true
+      }
+    },
+    {
+      "scriptIdPart": "USER;d412ae318a2b4baeacaf9eb0a07995e8",
+      "version": "19.0",
+      "scriptName": "VWAP Stripped Down",
+      "scriptTitle": "VWAP Stripped Down",
+      "modified": 1650716105,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;3fe33c87b145442e8394ef2b64393298",
+      "version": "7.0",
+      "scriptName": "vwap-test 11-30-22",
+      "scriptTitle": "vwap-test 11-30-22",
+      "modified": 1670866942,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "strategy",
+        "sourceInputsCount": 4
+      }
+    },
+    {
+      "scriptIdPart": "USER;e0ca8f05c847402badf634d5cbf6022d",
+      "version": "5.0",
+      "scriptName": "Wilder's MACD",
+      "scriptTitle": "Wilder&#039;s MACD",
+      "modified": 1700564566,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 1
+      }
+    },
+    {
+      "scriptIdPart": "USER;04f73ff32a104c8b8ab4968fb39ab74b",
+      "version": "55.0",
+      "scriptName": "Xact Breakout Scanner - PREMIUM",
+      "scriptTitle": "Xact Breakout Scanner",
+      "modified": 1684360841,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;ce210819519c4ec68c940a64a996efcc",
+      "version": "290.0",
+      "scriptName": "Xact Breakout Signals - PREMIUM",
+      "scriptTitle": "Xact Breakout Signals",
+      "modified": 1684285052,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;8cb646b6d2c74ed8be2e7167fd9fabcd",
+      "version": "195.0",
+      "scriptName": "Xact Indicators - PREMIUM",
+      "scriptTitle": "Xact Indicators",
+      "modified": 1682615982,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1a6fd38dbd7b4ab688396ea64f476554",
+      "version": "72.0",
+      "scriptName": "Xact Institutional Levels",
+      "scriptTitle": "Xact Institutional Levels",
+      "modified": 1684360337,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;9ef5a5cab97a416c895d31e94c9beea7",
+      "version": "105.0",
+      "scriptName": "Xact Market Internals",
+      "scriptTitle": "Xact Internals",
+      "modified": 1684372476,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b67160a1caff416e987a0dc5e56d46d5",
+      "version": "11.0",
+      "scriptName": "Xact Momentum Signals",
+      "scriptTitle": "Xact Momentum Signals",
+      "modified": 1682282345,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;f717f030564f455fb841fb82ebaa4f1e",
+      "version": "180.0",
+      "scriptName": "Xact ORB - PREMIUM",
+      "scriptTitle": "Xact ORB",
+      "modified": 1683917116,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b876465e9de842d99a6c548062a45c72",
+      "version": "305.0",
+      "scriptName": "Xact Panel - PREMIUM",
+      "scriptTitle": "Xact Panel",
+      "modified": 1695637392,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;97673df1503a41318fb0d17d4545ebef",
+      "version": "269.0",
+      "scriptName": "Xact Reversal Signals - PREMIUM",
+      "scriptTitle": "Xact Reversal Signals",
+      "modified": 1684285151,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;75d19dcdbc384810bfcb5fe3d4be8261",
+      "version": "285.0",
+      "scriptName": "Xact Sessions - PREMIUM",
+      "scriptTitle": "Xact Sessions - PREMIUM",
+      "modified": 1684360665,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;30811f1bf65140d9801f9f9cbb0d813a",
+      "version": "205.0",
+      "scriptName": "Xact Smart-Money-Concepts - PREMIUM",
+      "scriptTitle": "Xact Smart-Money-Concepts",
+      "modified": 1683911547,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;1dd250b2135d4e82983963a50fd282fa",
+      "version": "7.0",
+      "scriptName": "Xact Supply/Demand+ [BETA]",
+      "scriptTitle": "Xact Supply/Demand + [BETA]",
+      "modified": 1670266615,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c6f86991268c4e1f843410761c69cdb8",
+      "version": "88.0",
+      "scriptName": "Xact Supply/Demand ++ - PREMIUM",
+      "scriptTitle": "Xact Supply/Demand ++",
+      "modified": 1683911365,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;c84d2345f749412db94a688b6708aa7d",
+      "version": "43.0",
+      "scriptName": "Xact Technical-Analysis - PREMIUM",
+      "scriptTitle": "Xact Technical-Analysis",
+      "modified": 1682282636,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;b38627335bd142f79ff3cc4a852a79f9",
+      "version": "2.0",
+      "scriptName": "Zig Zag %",
+      "scriptTitle": "Zig Zag %",
+      "modified": 1658746731,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;26f9ec13e8ff4890b5511dfbca43d990",
+      "version": "7.0",
+      "scriptName": "Zig Zag % - rooney",
+      "scriptTitle": "Zig Zag % - rooney",
+      "modified": 1690414537,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;455699f24b6e4dd2a9d4e3750fb25e2a",
+      "version": "3.0",
+      "scriptName": "Zig Zag Simple",
+      "scriptTitle": "Zig Zag Simple",
+      "modified": 1664906141,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    },
+    {
+      "scriptIdPart": "USER;0f60ed8953324e7d9e6d77ecf5ff0436",
+      "version": "21.0",
+      "scriptName": "Zig Zag % Trimmed",
+      "scriptTitle": "Zig Zag % Trimmed",
+      "modified": 1658771301,
+      "scriptSource": "",
+      "isTVScriptBuiltIn": false,
+      "extra": {
+        "kind": "study",
+        "sourceInputsCount": 0
+      }
+    }
+  ]
+}
