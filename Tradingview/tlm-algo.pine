@@ -1,0 +1,136 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+
+//@version=4
+study("TLM ALGO", overlay=true)
+
+// @keywords: tlm-algo, supertrend, ema-filter, buy-sell-signals, stop-loss, take-profit, trailing-stop, trend-flip, position-tracking, bar-coloring, alert-conditions, atr-supertrend, long-short, entry-marker, exit-marker, ema-trend, super-trend-atr, sl-tp-markers, trend-reversal, signal-alerts
+
+// Colors
+col1 	= #00FF00
+col2 	= #FF0000
+
+//Mode
+Factor = input(title="Super Trend", defval=2, minval=1, maxval=100, group="Supertrend Settings")
+ATR = input(title="ATR", defval=21, minval=1, maxval=100, group="Supertrend Settings")
+
+//Super Trend ATR
+Up = hl2 - Factor * atr(ATR)
+Dn = hl2 + Factor * atr(ATR)
+TUp = 0.0
+TDown = 0.0
+Trend = 0.0
+TUp := close[1] > TUp[1] ? max(Up, TUp[1]) : Up
+TDown := close[1] < TDown[1] ? min(Dn, TDown[1]) : Dn
+Trend := close > TDown[1] ? 1 : close < TUp[1] ? -1 : nz(Trend[1], 1)
+Tsl = Trend == 1 ? TUp : TDown
+
+// linecolor = Trend == 1 ? color.green : color.red
+// plot(Tsl, color=linecolor, style=plot.style_stepline, linewidth=2, title="SuperTrend ATR")
+
+emalen = input(200, title="EMA Length")
+ema200 = ema(close, emalen)
+//plot(ema200, linewidth=2, title="EMA")
+
+long = Trend == 1 and Trend[1]!= 1 and close>ema200
+short= Trend ==-1 and Trend[1]!=-1 and close<ema200
+
+// Position Management Tools
+pos = 0.0
+pos:= long? 1 : short? -1 : pos[1]
+
+longCond  = long  and (pos[1]!= 1 or na(pos[1]))
+shortCond = short and (pos[1]!=-1 or na(pos[1]))
+
+// EXIT FUNCTIONS //
+i_sl  = input(0.0, title="Stop Loss %", minval=0)
+i_tp  = input(0.0, title="Take Profit %", minval=0)
+i_tsl = input(0.0, title="Trailing Stop Loss %", minval=0)
+
+sl  = i_sl >0? i_sl /100 : 99999
+tp  = i_tp >0? i_tp /100 : 99999
+tsl = i_tsl>0? i_tsl/100 : 99999
+
+long_entry  = valuewhen(longCond , close, 0)
+short_entry = valuewhen(shortCond, close, 0)
+
+// Trailing Stop Loss
+trail_long = 0.0, trail_short = 0.0
+trail_long  := longCond? high : high>trail_long[1]? high : pos<1 ? 0  : trail_long[1]
+trail_short := shortCond? low : low<trail_short[1]? low : pos>-1 ? 99999  : trail_short[1]
+trail_long_final   = trail_long  * (1-tsl)
+trail_short_final  = trail_short * (1+tsl)
+
+// Simple Stop Loss + 2 Take Profits
+sl_long0   = long_entry * (1 - sl)
+sl_short0  = short_entry * (1 + sl)
+
+tp_long  = long_entry * (1 + tp)
+tp_short = short_entry * (1 - tp)
+
+sl_long  = max(sl_long0, trail_long_final)
+sl_short = min(sl_short0, trail_short_final)
+
+// Position Adjustment
+long_sl  = low <sl_long[1]  and pos[1]==1
+short_sl = high>sl_short[1] and pos[1]==-1
+
+final_long_tp  = high>tp_long[1]  and pos[1]==1
+final_short_tp = low <tp_short[1] and pos[1]==-1
+
+if long_sl or short_sl or final_long_tp or final_short_tp
+    pos:=0
+    
+long_exit = Trend ==-1 and Trend[1]!=-1  and pos[1]== 1 and not shortCond
+short_exit= Trend == 1 and Trend[1]== 1  and pos[1]==-1 and not longCond
+
+if long_exit or short_exit
+	pos:=0
+
+
+barcolor(pos==1?color.green:color.red)
+
+
+// Chart Plot & Alerts
+plotshape(longCond,  color=color.lime, style=shape.triangleup, text="Buy" , location=location.belowbar,  offset=0, size=size.small)
+plotshape(shortCond, color=color.red, style=shape.triangledown, text="Sell", location=location.abovebar,  offset=0, size=size.small)
+alertcondition(longCond , title="BUY Alert" )
+alertcondition(shortCond, title="SELL Alert")
+alertcondition(longCond or shortCond, title="BUY or SELL Alert" )
+
+// plotshape(long_exit,  color=color.purple, style=shape.circle, text="Long Exit", location=location.abovebar,  offset=0, size=size.tiny)
+// plotshape(short_exit, color=color.purple, style=shape.circle, text="Short Exit", location=location.belowbar,  offset=0, size=size.tiny)
+// alertcondition(long_exit , title="Long Exit" )
+// alertcondition(short_exit, title="Short Exit")
+
+plotshape(long_sl  or final_long_tp , color=color.purple, style=shape.circle, text="Long SL/TP" , location=location.abovebar,  offset=0, size=size.tiny)
+plotshape(short_sl or final_short_tp, color=color.purple, style=shape.circle, text="Short SL/TP", location=location.belowbar,  offset=0, size=size.tiny)
+alertcondition(long_sl  or final_long_tp , title="Long SL/TP" )
+alertcondition(short_sl or final_short_tp, title="Short SL/TP")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

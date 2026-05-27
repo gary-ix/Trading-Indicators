@@ -1,0 +1,18 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Trend Strength Oscillator", overlay = false)
+
+// @keywords: ema50-trend-bg, rsi-of-ema-strength, normalized-strength-plot, binary-trend-state, separate-pane-oscillator, green-red-background, trend-strength-metric, rsi14-on-ema, zero-one-scale-plot, simple-trend-gauge, hl2-vs-ema-trend, strength-line-white, trend-regime-panel, ema-distance-proxy, momentum-strength-index, overlay-false-pane, minimal-oscillator, trend-bias-meter, rsi-smoothed-trend, no-trade-signals
+
+
+trend = hl2 > ta.ema(close,50)
+bgcolor(trend == true ? color.green : color.red)
+
+trend_strength = ta.rsi(ta.ema(close,50),14) / 100
+
+plot(trend_strength, color = color.white)
+
+

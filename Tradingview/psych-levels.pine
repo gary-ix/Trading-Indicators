@@ -1,0 +1,138 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Psych. Levels", overlay = true, max_boxes_count = 500)
+
+// @keywords: psychological-levels, psych-levels, rounding-zones, singles-zone, tens-zone, hundreds-zone, thousands-zone, price-rounding, baseline-levels, zone-boxes, mintick-detection, decimal-length, support-resistance, level-boxes, auto-rounding, zone-groups, price-structure, horizontal-zones, extend-levels, round-numbers
+
+// inputs
+var group1_singlesle_box = array.new_box(50, na)
+var group1_tens_box = array.new_box(50, na)
+var group1_hundreds_box = array.new_box(50, na)
+var group1_thousands_box = array.new_box(50, na)
+
+
+group1_singles = input.bool(false, title = "Zone 1", group = 'Group 1', inline = '1')
+group1_singlescolor = input.color(color.new(color.white, 80), title = '', group = 'Group 1', inline = '1')
+
+group1_tens = input.bool(true, title = "Zone 2", group = 'Group 1', inline = '2')
+group1_tenscolor = input.color(color.new(color.white, 90), title = '', group = 'Group 1', inline = '2')
+
+group1_hundreds = input.bool(false, title = "Zone 3", group = 'Group 1', inline = '3')
+group1_hundredscolor = input.color(color.new(color.white, 93), title = '', group = 'Group 1', inline = '3')
+
+group1_thousands = input.bool(false, title = "Zone 4", group = 'Group 1', inline = '4')
+group1_thousandscolor = input.color(color.new(color.white, 97), title = '', group = 'Group 1', inline = '4')
+
+
+
+// extract price length
+len = str.length(str.tostring(math.round(close,0)))
+
+priceString         = str.tostring(math.round_to_mintick(close[1]))
+minTickString       = str.tostring(syminfo.mintick)
+splitPriceString    = str.split(priceString, ".")
+splitTickString     = str.split(minTickString, ".")
+
+beforeDecimalLength = str.length(array.first(splitPriceString))
+afterDecimalLength  = str.length(array.last(splitPriceString))
+totalLength         = beforeDecimalLength + afterDecimalLength
+
+priceDecimals       = str.tonumber(array.last(splitPriceString))
+tickAfterDecimalLength  = str.length(array.last(splitTickString))
+
+
+
+
+// set rounding
+var float rounding_singles      = na
+var float rounding_tens         = na
+var float rounding_hundreds     = na
+var float rounding_thousands    = na
+
+var float baseline_singles      = na
+var float baseline_tens         = na
+var float baseline_hundreds     = na
+var float baseline_thousands    = na
+
+
+barcolor(beforeDecimalLength <= 1 ? color.yellow : na)
+if barstate.isconfirmed
+    if beforeDecimalLength <= 1
+        rounding_singles    := 100 * (syminfo.mintick * close[1])
+
+
+
+        rounding_tens       := tickAfterDecimalLength == 5 ? .010 : tickAfterDecimalLength == 4 ? .1 : tickAfterDecimalLength >= 3 ? 0.01 : 0.01
+        rounding_hundreds   := tickAfterDecimalLength == 5 ? .10 : tickAfterDecimalLength == 4 ? .01 : tickAfterDecimalLength >= 3 ? 0.01 : 0.01
+        baseline_thousands  := tickAfterDecimalLength == 5 ? .10 : tickAfterDecimalLength == 4 ? .01 : tickAfterDecimalLength >= 3 ? 0.01 : 0.01
+
+
+        baseline_singles    := math.round_to_mintick( close / rounding_singles) * rounding_singles
+        baseline_tens       := math.round_to_mintick( close / rounding_tens) * rounding_tens
+        baseline_hundreds   := math.round_to_mintick( close / rounding_hundreds) * rounding_hundreds
+        baseline_thousands  := math.round_to_mintick( close / rounding_thousands) * rounding_thousands
+
+    else
+        rounding_singles    := beforeDecimalLength == 5 ? 10 : beforeDecimalLength == 4 ? 1 : beforeDecimalLength >= 3 ? 0.1 : 0.01
+        rounding_tens       := beforeDecimalLength == 5 ? 100 : beforeDecimalLength == 4 ? 10 : beforeDecimalLength >= 3 ? 1 : 0.1
+        rounding_hundreds   := beforeDecimalLength == 5 ? 1000 : beforeDecimalLength == 4 ? 100 : beforeDecimalLength >= 3 ? 10 : 1
+        rounding_thousands  := beforeDecimalLength == 5 ? 10000 : beforeDecimalLength == 4 ? 1000 : beforeDecimalLength >= 3 ? 100 : 10
+
+        baseline_singles    := math.round( close / rounding_singles) * rounding_singles
+        baseline_tens       := math.round( close / rounding_tens) * rounding_tens
+        baseline_hundreds   := math.round( close / rounding_hundreds) * rounding_hundreds
+        baseline_thousands  := math.round( close / rounding_thousands) * rounding_thousands
+
+
+    if barstate.islastconfirmedhistory
+        log.info("Zone 1= " + str.tostring(rounding_singles))
+        log.info("Zone 2= " + str.tostring(rounding_tens))
+        log.info("Zone 3= " + str.tostring(rounding_hundreds))
+        log.info("Zone 4= " + str.tostring(rounding_thousands))
+
+// plot(baseline_singles)
+if barstate.islastconfirmedhistory
+    label.new(bar_index+30, close[1], text=str.tostring(syminfo.mintick))
+    label.new(bar_index+60, close[1], text=str.tostring(tickAfterDecimalLength))
+    // label.new(bar_index+200, close[1], text=str.tostring(syminfo.pricescale))
+
+
+
+// plot(baseline_singles)
+
+
+
+
+
+
+
+f_draw_box(boxes, baseline, round, mult_top, mult_bottom, color) =>    
+    array_size = array.size(boxes) 
+    if array_size > 0
+        for i = 0 to array_size- 1
+            box.delete(array.get(boxes, i))
+        array.clear(boxes)
+
+
+    for i = 0 to 49
+        array.unshift(boxes, box.new(left = time[1], top = baseline+(i*round) + (round/10*mult_top), right = time, bottom = baseline+(i*round) + (round/10*mult_bottom), extend = extend.both, xloc = xloc.bar_time, bgcolor = color, border_color = color.new(color.white, 100)))
+        array.unshift(boxes, box.new(left = time[1], top = baseline-((i+1)*round) + (round/10*mult_top), right = time, bottom = baseline-((i+1)*round) + (round/10*mult_bottom), extend = extend.both, xloc = xloc.bar_time, bgcolor = color, border_color = color.new(color.white, 100)))
+
+
+
+// draw levels
+if barstate.islastconfirmedhistory or (barstate.islast and barstate.isconfirmed)
+    if group1_singles
+        f_draw_box(group1_singlesle_box, baseline_singles, rounding_singles, 1, 0, group1_singlescolor)
+    if group1_tens
+        f_draw_box(group1_tens_box, baseline_tens, rounding_tens, 1, 0, group1_tenscolor)
+    if group1_hundreds
+        f_draw_box(group1_hundreds_box, baseline_hundreds, rounding_hundreds, 1, 0, group1_hundredscolor)
+    if group1_thousands
+        f_draw_box(group1_thousands_box, baseline_thousands, rounding_thousands, 1, 0, group1_thousandscolor)
+
+
+

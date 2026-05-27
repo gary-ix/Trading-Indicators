@@ -1,0 +1,274 @@
+// © goodgains
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 : at https://mozilla.org/MPL/2.0/
+
+// v58
+
+//@version=5
+indicator("TBM Wick Test", overlay = true, max_labels_count = 500)
+
+// @keywords: wick-candle-detection, push-candle-filter, fibonacci-entry-stop, minimum-wick-percent, push-pullback-percent, range-expansion-candle, history-debug-modes, label-entry-stop, fib-100-target, fib-1618-target, fib-2618-target, relative-wick-location, bar-pattern-scan, intraday-setup, push-candle-size, wick-to-body-ratio, setup-labels, pattern-history, new-only-mode, debug-overlay
+
+mode            = input.string("History", title = 'Mode', options = ['Only New', 'History', 'Debug'], group = 'Settings')
+show_debug      = mode == 'Debug'
+show_history    = mode != 'Only New'
+
+
+
+// wick candle inputs
+useMinWickSize  = input.bool(true, title = 'Minimum Wick %', group = 'Wick Candle Settings', inline = '1')
+minWickPCT      = input.float(10.00, step = 5.00, title = '', minval = 0.01, maxval = 99.99, group = 'Wick Candle Settings', inline = '1')
+
+useWickLocation = input.bool(true, title = 'Wick Relative to Push Candle %', group = 'Wick Candle Settings', inline = '2')
+wickLocationPCT = input.float(30.00, title = '', step = 5.00, minval = 0.01, maxval = 99.99, group = 'Wick Candle Settings', inline = '2')
+
+
+
+// push candle inputs
+minPushCandleSize       = input.float(200.00, step = 25.00, title = 'Minimum Candle Range %', minval = 0.01, group = 'Push Candle Settings', inline = '1')
+maxPushCandlePullback   = input.float(20.00, step = 5.00, title = 'Maximum Pullback %', minval = 0.01, maxval = 99.99, group = 'Push Candle Settings', inline = '2')
+// usePushCandlePush       = input.bool(true, title = 'BULL: HLC3 > High[1] & BEAR: HLC3 < Low[1]', group = 'Push Candle Settings', inline = '3')
+// usePushCandleLLHH       = input.bool(false, title = 'BULL: is not LL & BEAR: is not HH', group = 'Push Candle Settings', inline = '4')
+usePushCandlePush       = true
+usePushCandleLLHH       = false
+
+
+
+// visual settings
+entry_css       = input.color(color.blue, title = 'Entry', group = 'Strategy', inline = 'entry')
+stop_css        = input.color(color.red, title = 'Stop', group = 'Strategy', inline = 'stop') 
+
+use_tp1         = input.bool(true, title = 'TP 1', group = 'Strategy', inline = 'tp1') 
+tp1_css         = input.color(color.lime, title = '', group = 'Strategy', inline = 'tp1') 
+tp1_amount      = input.float(1.00, title = '', minval=0.01, maxval = 10.00, step = 0.25, group = 'Strategy', inline = 'tp1') 
+
+use_tp2         = input.bool(false, title = 'TP 2', group = 'Strategy', inline = 'tp2') 
+tp2_css         = input.color(color.yellow, title = '', group = 'Strategy', inline = 'tp2') 
+tp2_amount      = input.float(1.618, title = '', minval=0.01, maxval = 10.00, step = 0.25,  group = 'Strategy', inline = 'tp2') 
+
+use_tp3         = input.bool(false, title = 'TP 3', group = 'Strategy', inline = 'tp3') 
+tp3_css         = input.color(color.orange, title = '', group = 'Strategy', inline = 'tp3') 
+tp3_amount      = input.float(2.00, title = '', minval=0.01, maxval = 10.00, step = 0.25,  group = 'Strategy', inline = 'tp3') 
+
+
+
+// alert symbol settings
+use_alerts      = input.bool(true, title = 'Use Alerts', group = 'Alert Settings', inline = '0')
+
+use_sym1        = input.bool(true, title = 'Symbol 1', group = 'Alert Settings', inline = '1')
+sym1_ticker     = input.symbol('CME_MINI:ES1!', title = '', group = 'Alert Settings', inline = '1')
+
+use_sym2        = input.bool(true, title = 'Symbol 2', group = 'Alert Settings', inline = '2')
+sym2_ticker     = input.symbol('CME_MINI:NQ1!', title = '', group = 'Alert Settings', inline = '2')
+
+use_sym3        = input.bool(true, title = 'Symbol 3', group = 'Alert Settings', inline = '3')
+sym3_ticker     = input.symbol('BINANCE:BTCUSDT', title = '', group = 'Alert Settings', inline = '3')
+
+use_sym4        = input.bool(true, title = 'Symbol 4', group = 'Alert Settings', inline = '4')
+sym4_ticker     = input.symbol('NYMEX:CL1!', title = '', group = 'Alert Settings', inline = '4')
+
+use_sym5        = input.bool(false, title = 'Symbol 5', group = 'Alert Settings', inline = '5')
+sym5_ticker     = input.symbol('CME_MINI:ES1!', title = '', group = 'Alert Settings', inline = '5')
+
+// wick test
+f_wick_test(calculate) =>
+    var float candleSize    = 0.00
+    var float avgCandleSize = 0.00
+    var float candleSizePCT = 0.00
+
+    var float wickTop       = 0.00
+    var float bodyTop       = 0.00
+    var float bodyBottom    = 0.00
+    var float wickBottom    = 0.00
+
+    var float topWickPCT    = 0.00
+    var float botWickPCT    = 0.00
+
+    var bool isPushCandleMinSize        = na
+    var bool bullPushCandle             = na
+    var bool bearPushCandle             = na
+
+    var bool bullWickSizeCond           = na
+    var bool bearWickSizeCond           = na
+    var bool bullWickTest               = na
+    var bool bearWickTest               = na
+
+    var bool bullPush                   = na
+    var bool bearPush                   = na
+    var bool notLL                      = na
+    var bool notHH                      = na
+    var bool isBullWickRelativeToPush   = na
+    var bool isBearWickRelativeToPush   = na
+
+    var float pushCandleBullLvl         = na
+    var float pushCandleBearLvl         = na
+
+    var float entry     = na
+    var float stop      = na
+    var float risk      = na
+
+    var float tp1       = na
+    var float tp2       = na
+    var float tp3       = na
+    var float tp4       = na
+
+
+    // calculate candle vars
+    candleSize      := high-low
+    avgCandleSize   := ta.sma(candleSize[1], 500)
+    candleSizePCT   := math.round(candleSize / avgCandleSize * 100, 0)
+
+    bodyTop         := math.max(close,open)
+    bodyBottom      := math.min(close,open)
+    wickTop         := high - bodyTop
+    wickBottom      := bodyBottom - low
+
+    topWickPCT      := math.round(wickTop / candleSize * 100, 0)
+    botWickPCT      := math.round(wickBottom / candleSize * 100, 0)
+
+    if calculate
+        // calculate push candles
+        isPushCandleMinSize   := (candleSizePCT >= minPushCandleSize)
+        bullPush              := (hlc3 > high[1]) or (not usePushCandlePush)
+        bearPush              := (hlc3 < low[1]) or (not usePushCandlePush)
+        notHH                 := (high < high[1]) or (not usePushCandleLLHH)
+        notLL                 := (low > low[1]) or (not usePushCandleLLHH) 
+
+        bullPushCandle := isPushCandleMinSize 
+         and (close > open and close[1] <= open[1]) 
+         and (topWickPCT <= maxPushCandlePullback)
+         and (bullPush)
+         and (notLL)
+
+        bearPushCandle := isPushCandleMinSize 
+         and (close < open and close[1] >= open[1]) 
+         and (botWickPCT <= maxPushCandlePullback)
+         and (bearPush)
+         and (notHH)
+
+
+        // calculate wick candles
+        bullWickSizeCond    := (topWickPCT >= minWickPCT) or (not useMinWickSize)
+        bearWickSizeCond    := (botWickPCT >= minWickPCT) or (not useMinWickSize)
+
+        pushCandleBullLvl        := (low + (candleSize*(wickLocationPCT/100)))
+        pushCandleBearLvl        := (high - (candleSize*(wickLocationPCT/100)))
+        isBullWickRelativeToPush := (high[1] >= pushCandleBullLvl) or not useWickLocation
+        isBearWickRelativeToPush := (low[1] <= pushCandleBearLvl) or not useWickLocation
+
+        bullWickTest        := bullPushCandle and bullWickSizeCond[1] and isBullWickRelativeToPush
+        bearWickTest        := bearPushCandle and bearWickSizeCond[1] and isBearWickRelativeToPush
+
+        entry       := bullWickTest ? high[1] : bearWickTest ? low[1] : na
+        stop        := bullWickTest ? low : bearWickTest ? high : na
+        risk        := math.abs(entry-stop)
+
+        tp1         := bullWickTest ? entry + (risk*tp1_amount) : bearWickTest ? entry - (risk*tp1_amount) : na
+        tp2         := bullWickTest ? entry + (risk*tp2_amount) : bearWickTest ? entry - (risk*tp2_amount) : na
+        tp3         := bullWickTest ? entry + (risk*tp3_amount) : bearWickTest ? entry - (risk*tp3_amount) : na
+
+    [bullPush, bearPush, topWickPCT, botWickPCT, bullWickSizeCond, bearWickSizeCond, notLL, notHH,
+     isBullWickRelativeToPush, isBearWickRelativeToPush, bullPushCandle, bearPushCandle, bullWickTest, bearWickTest,
+     entry, stop, risk, tp1, tp2, tp3]
+
+
+
+// calculate current TF
+[bullPush, bearPush, topWickPCT, botWickPCT, bullWickSizeCond, bearWickSizeCond, notLL, notHH,
+     isBullWickRelativeToPush, isBearWickRelativeToPush, bullPushCandle, bearPushCandle, bullWickTest, bearWickTest,
+     entry, stop, risk, tp1, tp2, tp3] = 
+ f_wick_test(true)
+
+
+lineDisplay = display.all
+
+p_entry     = plot(entry, title = 'Entry', color = entry_css, style = plot.style_steplinebr,
+ display = lineDisplay, linewidth = 3, editable = true, offset = 1)
+
+p_stop      = plot(stop, title = 'Stop', color = stop_css, style = plot.style_steplinebr,
+ display = lineDisplay, linewidth = 3, editable = true, offset = 1)
+
+p_tp1       = plot(tp1, title = '1.00', color = tp1_css, style = plot.style_steplinebr,
+ display = use_tp1 ? lineDisplay : display.none, linewidth = 3, editable = true, offset = 1)
+
+p_tp2       = plot(tp2, title = '1.618', color = tp2_css, style = plot.style_steplinebr,
+ show_last = na, display = use_tp2 ? lineDisplay : display.none, linewidth = 3, editable = true, offset = 1)
+
+p_tp3       = plot(tp3, title = '2.618', color = tp3_css, style = plot.style_steplinebr,
+ show_last = na, display = use_tp3 ? lineDisplay : display.none, linewidth = 3, editable = true, offset = 1)
+
+barcolor(not show_debug ? na : bullWickTest ? color.new(tp1_css, 0) : bearWickTest ? color.new(stop_css, 0) : color.rgb(54, 58, 69, 100),
+ title = 'Wick Test Confirmed', editable = false)
+
+bgcolor(not show_debug ? na : bullPushCandle ? color.new(tp1_css, 80) : bearPushCandle ? color.new(stop_css, 80) : na,
+ title = 'Push Candle Background', editable = false)
+
+
+
+// draw extending lines
+var line entry_line = na
+var line stop_line = na
+
+var line tp1_line = na
+var line tp2_line = na
+var line tp3_line = na
+
+if barstate.islast
+
+    line.delete(entry_line[1])
+    line.delete(stop_line[1])
+    line.delete(tp1_line[1])
+    line.delete(tp2_line[1])
+    line.delete(tp3_line[1])
+    
+    if bullWickTest[1] or bearWickTest[1]
+        entry_line := line.new(x1=bar_index, y1=entry[1], x2=bar_index+1, y2=entry[1], extend = extend.right,
+         color = color.blue, style = line.style_solid, width=2)
+
+        stop_line := line.new(x1=bar_index, y1=stop[1], x2=bar_index+1, y2=stop[1], extend = extend.right,
+         color = color.red, style = line.style_solid, width=2)
+
+
+        if use_tp1
+            tp1_line := line.new(x1=bar_index, y1=tp1[1], x2=bar_index+1, y2=tp1[1], extend = extend.right,
+             color = color.lime, style = line.style_solid, width=2)
+
+        if use_tp2
+            tp2_line := line.new(x1=bar_index, y1=tp2[1], x2=bar_index+1, y2=tp2[1], extend = extend.right,
+             color = color.new(#dfd923, 0), style = line.style_solid, width=2)
+
+        if use_tp3
+            tp3_line := line.new(x1=bar_index, y1=tp3[1], x2=bar_index+1, y2=tp3[1], extend = extend.right,
+             color = color.new(#dca524, 0), style = line.style_solid, width=2)
+
+
+
+// debug
+var string labelTxt = na
+
+if show_debug
+    if bullPushCandle
+        if not bullWickTest
+            labelTxt := "REASON "
+                 + (not bullPush ? "\n*PUSH CANDLE: HLC3 <= High[1]" : "")
+                 + (not (topWickPCT <= maxPushCandlePullback) ? "\n*PUSH CANDLE: Pullback amount is too high" : "")
+                 + (not notLL ? "\n*PUSH CANDLE: Low is less than wick candle low" : "")
+                 + (not bullWickSizeCond[1] ? "\n*WICK CANDLE: Upper Wick is too small" : "")
+                 + (not isBullWickRelativeToPush ? "\n*WICK CANDLE: Wick location is not high enough" : "")
+
+            label.new(x=bar_index, y = low, color = color.black, textcolor = color.white,
+             size = size.small, style = label.style_label_up, text = labelTxt, tooltip = labelTxt)
+
+    if bearPushCandle
+        if not bearWickTest
+            labelTxt := "REASON "
+                 + (not bearPush ? "\n*PUSH CANDLE: HLC3 >= High[1]" : "")
+                 + (not (botWickPCT <= maxPushCandlePullback) ? "\n*PUSH CANDLE: Pullback amount is too high" : "")
+                 + (not notHH ? "\n*PUSH CANDLE: High is greater than wick candle high" : "")
+                 + (not bearWickSizeCond[1] ? "\n*WICK CANDLE: Lower Wick is too small" : "")
+                 + (not isBearWickRelativeToPush ? "\n*WICK CANDLE: Wick location is not low enough" : "")
+
+            label.new(x=bar_index, y = high, color = color.black, textcolor = color.white,
+             size = size.small, style = label.style_label_down, text = labelTxt, tooltip = labelTxt)
+
+

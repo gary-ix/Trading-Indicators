@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles", overlay = true)
+
+// @keywords: price-action-candles-v13, price-action-candles, version-13, overlay-low-plot, candle-structure, action-candles-series, swing-structure, breakout-reversal, pivot-swing-levels, momentum-volatility, support-resistance, overbought-oversold, minimal-stub-plot, price-action-framework, v13-candles, low-price-plot, action-candle-labels, trend-structure, candle-pattern-base, version-thirteen
+
+plot(low)
+
+

@@ -1,0 +1,53 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Historical Vol MA Band Indicator",overlay=true)
+
+// @keywords: historical-volatility, vol-ma-band, sma, upper-band, lower-band, middle-band, band-fill, standard-deviation, std-dev-multiplier, 52-week-high, 52-week-low, weekly-timeframe, request-security, stop-loss, bar-coloring, paint-bars, dashboard, ta-highest, ta-lowest, price-bands
+
+//INPUTS
+paintBars = input(true,title="Paint Bars")
+showDashboard = input(true,title="Show Dashboard")
+showStop = input(true,title="Show Stop Loss Value")
+maPeriod = input(100,title="SMA Period")
+stdMultip = input.float(1.0,step=0.1,title="Std Dev Multiplier")
+decimalSize = input.int(2,title="Decimal Size")
+
+//CALCS
+middle = ta.sma(close,maPeriod)
+
+hHigh = request.security(syminfo.tickerid, "1W", ta.highest(high,52))
+lLow = request.security(syminfo.tickerid, "1W", ta.lowest(low,52))
+
+hv = (hHigh - lLow) / ((hHigh + lLow)/2)
+em = (close * hv * (math.sqrt(5)/math.sqrt(252)))*stdMultip
+sd = (middle * hv * (math.sqrt(5)/math.sqrt(252)))*stdMultip
+
+upper = middle + sd
+lower = middle - sd
+
+stopValue = close > upper ? close - em : close < lower ? close + em : na 
+
+//Bar coloring
+setBarColor = close > upper ? color.lime : close < lower ? color.red : color.black
+
+//PLOTS
+p1 = plot(upper,color=color.teal,linewidth=2,title="Upper Band")
+plot(middle,color=color.gray,linewidth=2, title="Middle Band")
+p3 = plot(lower,color=color.maroon,linewidth=2, title="Lower Band")
+
+plot(showStop ? stopValue : na ,color=color.orange, title="Stop Value",linewidth=2, style=plot.style_linebr)
+
+fill(p1,p3,color=color.new(color.yellow,70),title="Band Fill")
+barcolor(paintBars ? setBarColor : na)
+
+//TABLE
+var table nameDisplay = table.new(position.top_right, 1, 5, bgcolor = color.white, frame_width = 2, frame_color = color.black)
+if barstate.islast and showDashboard
+    table.cell(nameDisplay, 0, 0, "Dashboard",text_color=color.white,bgcolor=color.green,text_halign=text.align_center)
+    table.cell(nameDisplay, 0, 1, "SD Value: "+str.tostring(math.round(sd,decimalSize)),text_color=color.black,bgcolor=color.white,text_halign=text.align_left)
+    table.cell(nameDisplay, 0, 2, "SD/Close: "+str.tostring( math.round( (sd/close)*100 ,decimalSize))+"%",text_color=color.black,bgcolor=color.white,text_halign=text.align_left)
+    table.cell(nameDisplay, 0, 3, "SD Away Value: "+str.tostring( math.round( (middle - close)/sd ,decimalSize)),text_color=color.black,bgcolor=color.white,text_halign=text.align_left)
+

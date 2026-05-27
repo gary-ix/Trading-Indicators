@@ -1,0 +1,13 @@
+// © goodgains
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=5
+indicator("Price Action Candles")
+
+// @keywords: price-action-candles, close-plot-only, minimal-indicator, placeholder-v10, single-line-plot, stub-script, version-ten, basic-overlay, close-price-line, undeveloped-candles, example-stub, no-custom-candles, simple-plot, v10-placeholder, minimal-logic, indicator-shell, one-plot-output, no-signals, no-alerts, scaffold-file
+
+
+plot(close)
+
+

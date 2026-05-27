@@ -1,0 +1,276 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator('TMT Overlay', overlay=true)
+
+// @keywords: tmt-overlay, reversal-zones, reversal-cluster, trend-ribbon, market-structure, bollinger-deviation, implied-volatility, atr-bands, bos-labels, support-resistance, pivot-structure, cluster-alerts, ribbon-fill, structure-break, zone-bands, multi-deviation, oversold-overbought, shape-alerts, overlay-smc, trend-change
+
+
+//Groups//
+
+gr1 = '1. Reversal Zones'
+gr2 = '2. Alerts'
+gr3 = '3. Trend Ribbon'
+gr4 = '4. Market Structure'
+
+//Colors//
+
+red = color.new(color.red, 0)
+lime = color.new(color.lime, 0)
+
+blue = color.new(color.blue, 0)
+orange = color.new(color.orange, 0)
+
+teal = color.new(color.teal, 0)
+fuchsia = color.new(color.fuchsia, 0)
+
+yellow = color.new(color.yellow, 0)
+purple = color.new(color.purple, 0)
+
+white = color.new(color.white, 0)
+
+//Reversal Zone//
+
+showrz = input.bool(defval=true, title='Reversal Zone', group=gr1)
+showrzc = input.bool(defval=true, title='Reversal Zone Cluster', group=gr1)
+
+length = input.int(defval=42, title='Reversal Zone Width', minval=1, group=gr1)
+source = close
+
+mult = 2
+basis = ta.sma(source, length)
+
+dev1 = mult * ta.stdev(source, length)
+dev2 = (mult + 1) * ta.stdev(source, length)
+dev3 = (mult + 2) * ta.stdev(source, length)
+
+upper1 = basis + dev1
+lower1 = basis - dev1
+
+upper2 = basis + dev2
+lower2 = basis - dev2
+
+upper3 = basis + dev3
+lower3 = basis - dev3
+
+p1 = plot(showrz ? upper1 : na, editable=false, color=color.new(fuchsia, 100))
+p2 = plot(showrz ? lower1 : na, editable=false, color=color.new(teal, 100))
+p3 = plot(showrz ? upper2 : na, editable=false, color=color.new(fuchsia, 100))
+p4 = plot(showrz ? lower2 : na, editable=false, color=color.new(teal, 100))
+p5 = plot(showrz ? upper3 : na, editable=false, color=color.new(fuchsia, 100))
+p6 = plot(showrz ? lower3 : na, editable=false, color=color.new(teal, 100))
+
+fill(p1, p3, color.new(#e91e63, 90), title='RZ Fill')
+fill(p3, p5, color.new(#e91e63, 80), title='RZ Fill')
+
+fill(p2, p4, color.new(teal, 90), title='RZ Fill')
+fill(p4, p6, color.new(teal, 80), title='RZ Fill')
+
+oscluster = close < lower1
+obcluster = close > upper1
+
+plotshape(showrzc ? oscluster : na, title='Oversold Cluster', style=shape.circle, location=location.belowbar, size=size.auto, color=color.new(blue, 0))
+plotshape(showrzc ? obcluster : na, title='Overbought Cluster', style=shape.circle, location=location.abovebar, size=size.auto, color=color.new(red, 0))
+
+alertcondition(oscluster, title='Oversold Cluster', message='{{exchange}}:{{ticker}}, price = {{close}}')
+alertcondition(obcluster, title='Overbought Cluster', message='{{exchange}}:{{ticker}}, price = {{close}}')
+
+//Alerts//
+
+showtp = input.bool(defval=true, title='Take Profit', group=gr2)
+showsignals = input.bool(defval=true, title='Buy/Sell Signals', group=gr2)
+
+obtrigger = 53
+ostrigger = -53
+
+n1 = 9
+n2 = 13
+
+ap = hlc3
+esa = ta.ema(ap, n1)
+d = ta.ema(math.abs(ap - esa), n1)
+ci = (ap - esa) / (0.015 * d)
+tci = ta.ema(ci, n2)
+
+momx = tci
+momy = ta.sma(momx, 4)
+momz = momx - momy
+
+long = ta.crossover(momx, momy)
+short = ta.crossunder(momx, momy)
+
+cond1 = momy < ostrigger
+cond2 = momy > obtrigger
+
+tpshort = long and cond1
+tplong = short and cond2
+
+
+plotshape(showtp ? tpshort : na, title='Take Your Short Profits', style=shape.square, location=location.belowbar, color=color.new(lime, 0), size=size.tiny)
+plotshape(showtp ? tplong : na, title='Take Your Long Profits', style=shape.flag, location=location.abovebar, color=color.new(yellow, 30), size=size.small)
+
+alertcondition(tpshort, title='Take Your Short Profits', message='{{exchange}}:{{ticker}}, price = {{close}}')
+alertcondition(tplong, title='Take Your Long Profits', message='{{exchange}}:{{ticker}}, price = {{close}}')
+
+src = hl2
+Multiplier = 3.0
+Periods = input.int(title='Signal Filter', defval=6, group=gr2)
+
+atr = ta.atr(Periods)
+up = src - Multiplier * atr
+up1 = nz(up[1], up)
+up := close[1] > up1 ? math.max(up, up1) : up
+dn = src + Multiplier * atr
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? math.min(dn, dn1) : dn
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+
+buySignal = trend == 1 and trend[1] == -1
+plotshape(buySignal and showsignals ? up : na, title='Buy', text='Buy', location=location.belowbar, style=shape.labelup, size=size.small, color=color.new(lime, 50), textcolor=white)
+
+sellSignal = trend == -1 and trend[1] == 1
+plotshape(sellSignal and showsignals ? dn : na, title='Sell', text='Sell', location=location.abovebar, style=shape.labeldown, size=size.small, color=color.new(red, 50), textcolor=white)
+
+alertcondition(buySignal, title='Buy Signal', message='{{exchange}}:{{ticker}}, price = {{close}}')
+alertcondition(sellSignal, title='Sell Signal', message='{{exchange}}:{{ticker}}, price = {{close}}')
+
+///Trend Ribbon//
+
+showribbon = input.bool(defval=false, title='Trend Ribbon', group=gr3)
+ribbonsignal = input.bool(defval=false, title='Ribbon Signals', group=gr3)
+
+ema1 = 5
+ema2 = 11
+ema3 = 15
+ema4 = 18
+ema5 = 21
+ema6 = 24
+ema7 = 28
+ema8 = 34
+
+ema1_ = ta.ema(close, ema1)
+ema2_ = ta.ema(close, ema2)
+ema3_ = ta.ema(close, ema3)
+ema4_ = ta.ema(close, ema4)
+ema5_ = ta.ema(close, ema5)
+ema6_ = ta.ema(close, ema6)
+ema7_ = ta.ema(close, ema7)
+ema8_ = ta.ema(close, ema8)
+
+C1 = ema1_ > ema8_ ? #c8e6c9 : #ffcdd2
+C2 = ema1_ > ema8_ ? #a5d6a7 : #ef9a9a
+C3 = ema1_ > ema8_ ? #81c784 : #e57373
+C4 = ema1_ > ema8_ ? #66bb6a : #ef5350
+C5 = ema1_ > ema8_ ? #388e3c : #d32f2f
+C6 = ema1_ > ema8_ ? #1b5e20 : #b71c1c
+C7 = ema1_ > ema8_ ? #00796b : #c2185b
+C8 = ema1_ > ema8_ ? #004d40 : #880e4f
+
+p7 = plot(showribbon ? ema1_ : na, color=C1, linewidth=1, style=plot.style_circles, title='Ribbon I')
+p8 = plot(showribbon ? ema2_ : na, color=C2, linewidth=1, style=plot.style_circles, title='Ribbon II')
+p9 = plot(showribbon ? ema3_ : na, color=C3, linewidth=1, style=plot.style_circles, title='Ribbon III')
+p10 = plot(showribbon ? ema4_ : na, color=C4, linewidth=1, style=plot.style_circles, title='Ribbon IV')
+p11 = plot(showribbon ? ema5_ : na, color=C5, linewidth=1, style=plot.style_circles, title='Ribbon V')
+p12 = plot(showribbon ? ema6_ : na, color=C6, linewidth=1, style=plot.style_circles, title='Ribbon VI')
+p13 = plot(showribbon ? ema7_ : na, color=C7, linewidth=1, style=plot.style_circles, title='Ribbon VII')
+p14 = plot(showribbon ? ema8_ : na, color=C8, linewidth=1, style=plot.style_circles, title='Ribbon VIII')
+
+fill(p7, p14, color=C1, title='Ribbon Fill', transp=90)
+
+longema = ta.crossover(ema2_, ema8_)
+shortema = ta.crossunder(ema2_, ema8_)
+
+plotshape(ribbonsignal ? longema : na, style=shape.circle, color=lime, location=location.abovebar, size=size.tiny, title='Ribbon is Long')
+plotshape(ribbonsignal ? shortema : na, style=shape.circle, color=red, location=location.abovebar, size=size.tiny, title='Ribbon is Short')
+
+alertcondition(longema, title='Ribbon Change Long Signal', message='{{exchange}}:{{ticker}}, price = {{close}}')
+alertcondition(shortema, title='Ribbon Change Short Signal', message='{{exchange}}:{{ticker}}, price = {{close}}')
+
+// MARKET STRUCTURE //
+
+
+ShowHHLL = input.bool(true, title='Show Market Structure Markers', group=gr4)
+ShowPrice = input.bool(true, title='Show Martet Structure Price', group=gr4)
+ShowSRLevels = input.bool(true, title='Show S/R Level Extensions', group=gr4)
+ShowFB = input.bool(true, title='Show Break of Structure', inline='BOS', group=gr4)
+maxLvlLen = 0
+
+srcH = input.source(high, title='High\'s', inline='High', group=gr4)
+leftLenH = input.int(title='L', defval=20, minval=1, inline='High', group=gr4)
+rightLenH = input.int(title='R', defval=20, minval=1, inline='High', group=gr4)
+srcL = input.source(low, title='Low\'s', inline='Low', group=gr4)
+leftLenL = input.int(title='L', defval=20, minval=1, inline='Low', group=gr4)
+rightLenL = input.int(title='R', defval=20, minval=1, inline='Low', group=gr4)
+
+colorH = color.new(#089981, 0)
+colorHT = color.new(color.white, 0)
+colorLR = color.new(#e91e63, 0)
+colorL = color.new(#e91e63, 0)
+colorLT = color.new(color.white, 0)
+colorHS = color.new(#089981, 0)
+
+ph = ta.pivothigh(srcH, leftLenH, rightLenH)
+pl = ta.pivotlow(srcL, leftLenL, rightLenL)
+
+
+valuewhen_1 = ta.valuewhen(ph, srcH[rightLenH], 1)
+valuewhen_2 = ta.valuewhen(ph, srcH[rightLenH], 0)
+higherhigh = na(ph) ? na : valuewhen_1 < valuewhen_2 ? ph : na
+valuewhen_3 = ta.valuewhen(ph, srcH[rightLenH], 1)
+valuewhen_4 = ta.valuewhen(ph, srcH[rightLenH], 0)
+lowerhigh = na(ph) ? na : valuewhen_3 > valuewhen_4 ? ph : na
+valuewhen_5 = ta.valuewhen(pl, srcL[rightLenL], 1)
+valuewhen_6 = ta.valuewhen(pl, srcL[rightLenL], 0)
+higherlow = na(pl) ? na : valuewhen_5 < valuewhen_6 ? pl : na
+valuewhen_7 = ta.valuewhen(pl, srcL[rightLenL], 1)
+valuewhen_8 = ta.valuewhen(pl, srcL[rightLenL], 0)
+lowerlow = na(pl) ? na : valuewhen_7 > valuewhen_8 ? pl : na
+
+
+drawLabel(_offset, _pivot, _style, _yloc, _color, _text) =>
+    if not na(_pivot)
+        label.new(bar_index[_offset], _pivot, text=_text + str.tostring(_pivot, format.mintick) + '', style=_style, yloc=_yloc, color=_color, textcolor=_color)
+
+drawLabel(rightLenH, ShowPrice ? higherhigh : na, label.style_none, yloc.abovebar, colorHT, '')
+drawLabel(rightLenH, ShowPrice ? higherlow : na, label.style_none, yloc.belowbar, colorLT, '')
+drawLabel(rightLenH, ShowPrice ? lowerhigh : na, label.style_none, yloc.abovebar, colorHT, '')
+drawLabel(rightLenH, ShowPrice ? lowerlow : na, label.style_none, yloc.belowbar, colorLT, '')
+
+plotshape(ShowHHLL ? higherhigh : na, title='HH', style=shape.triangledown, location=location.abovebar, color=colorHS, text='HH', textcolor=colorHT, offset=-rightLenH)
+plotshape(ShowHHLL ? higherlow : na, title='HL', style=shape.triangleup, location=location.belowbar, color=colorHS, text='HL', textcolor=colorLT, offset=-rightLenH)
+plotshape(ShowHHLL ? lowerhigh : na, title='LH', style=shape.triangledown, location=location.abovebar, color=colorLR, text='LH', textcolor=colorHT, offset=-rightLenL)
+plotshape(ShowHHLL ? lowerlow : na, title='LL', style=shape.triangleup, location=location.belowbar, color=colorLR, text='LL', textcolor=colorLT, offset=-rightLenL)
+
+countH = 0
+countL = 0
+countH := na(ph) ? nz(countH[1]) + 1 : 0
+countL := na(pl) ? nz(countL[1]) + 1 : 0
+
+pvtH = 0.0
+pvtL = 0.0
+pvtH := na(ph) ? pvtH[1] : srcH[rightLenH]
+pvtL := na(pl) ? pvtL[1] : srcL[rightLenL]
+
+HpC = pvtH != pvtH[1] ? na : colorLR
+LpC = pvtL != pvtL[1] ? na : colorHS
+
+plot(ShowSRLevels and (maxLvlLen == 0 or countH < maxLvlLen) ? pvtH : na, color=HpC, offset=-rightLenH, title='Top Levels HH,LH', style=plot.style_circles)
+plot(ShowSRLevels and (maxLvlLen == 0 or countL < maxLvlLen) ? pvtL : na, color=LpC, offset=-rightLenL, title='Bottom Levels LL,HL', style=plot.style_circles)
+
+buy = false
+sell = false
+buy := close > pvtH and open <= pvtH
+sell := close < pvtL and open >= pvtL
+
+plotshape(ShowFB and buy ? 1 : na, title='BOS', text='⤬', style=shape.triangleup, location=location.belowbar, color=color.new(#ff3bf4, 0), textcolor=color.new(#ff3bf4, 0), size=size.auto, editable=true)
+plotshape(ShowFB and sell ? -1 : na, title='BOS', text='⤬', style=shape.triangledown, location=location.abovebar, color=color.new(#ff3bf4, 0), textcolor=color.new(#ff3bf4, 0), size=size.auto, editable=true)
+
+alertcondition(buy, title='BOS Long', message='{{exchange}}:{{ticker}}, price = {{close}}')
+alertcondition(sell, title='BOS Short', message='{{exchange}}:{{ticker}}, price = {{close}}')
+
+
+

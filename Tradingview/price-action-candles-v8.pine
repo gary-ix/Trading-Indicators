@@ -1,0 +1,16 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles", overlay = true)
+
+// @keywords: inside-bar, range-containment, double-inside, bar-highlight, engulfing-range, nested-bars, price-action, consolidation, range-compression, yellow-highlight, high-low-compare, pause-bar, coiled-range, parent-bar, inside-pattern, bar-flag, compression-signal, narrow-range, overlap-bars, version-eight
+
+cond = high >= high[1] and low <= low[1]
+
+cond2 = cond and cond[1]
+
+bgcolor(cond2 ? color.yellow : na)
+
+

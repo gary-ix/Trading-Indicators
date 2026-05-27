@@ -1,0 +1,16 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("SPY Sectors Cheat Sheet", overlay = true)
+
+// @keywords: spy-sectors, cheat-sheet, close-plot, placeholder, minimal-indicator, sector-reference, empty-script, basic-price, overlay-chart, stub-indicator, first-bar, price-line, sector-tool, template, unimplemented, simple-plot, sector-map, reference-sheet, spy-tool, basic-overlay
+
+plot(close)
+
+
+
+if barstate.isfirst
+    true
+    

@@ -1,0 +1,197 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Horizontal Line Bands", overlay = true, max_lines_count = 500)
+
+// @keywords: horizontal-bands, mintick-bands, anchor-price, dual-band, line-recolor, breach-detection, keep-old-lines, bar-coloring, plotchar-marker, extended-lines, band-width, line-style, midline, upper-band, lower-band, price-breakout, band-switch, time-anchor, confirmed-bar, level-bands
+
+line1_amount = input.int(2, minval = 1, title = 'Line One', group = 'Settings', inline ='1')
+line1_color = input.color(color.new(color.yellow,0), title = '', group = 'Settings', inline ='1')
+line1_style = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Settings', inline ='1')
+line1_width = input.int(1, title = '', minval = 1, maxval = 5, group = 'Settings', inline ='1')
+
+line2_amount = input.int(6, minval = 1, title = 'Line Two', group = 'Settings', inline ='2')
+line2_color = input.color(color.new(color.green,0), title = '', group = 'Settings', inline ='2')
+line2_style = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Settings', inline ='2')
+line2_width = input.int(1, title = '', minval = 1, maxval = 5, group = 'Settings', inline ='2')
+
+midline_color = input.color(color.new(#b2b5be,0), title = 'Line Close', group = 'Settings', inline ='3')
+midline_style = input.string('Dashed', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Settings', inline ='3')
+midline_width = input.int(1, title = '', minval = 1, maxval = 5, group = 'Settings', inline ='3')
+
+keep_old_lines = input.bool(true, title = 'Keep Old Lines', group = 'Settings', inline ='4')
+color_to_switch = input.color(color.blue, title = 'Switching Color', group = 'Settings', inline ='5')
+
+
+varip float last_confirmed_time = na
+last_confirmed_time := barstate.islastconfirmedhistory ? time : last_confirmed_time[1]
+plotchar(time == last_confirmed_time ? true : false, title = 'Start Calculating', char = 'x', color = color.white)
+
+
+var line_mid = array.new_line(100,na)
+var line1_upper = array.new_line(100,na)
+var line1_lower = array.new_line(100,na)
+var line2_upper = array.new_line(100,na)
+var line2_lower = array.new_line(100,na)
+
+varip float line_mid_value = na
+varip float line1_upper_value = na
+varip float line1_lower_value = na
+varip float line2_upper_value = na
+varip float line2_lower_value = na
+
+
+// function to draw lines
+f_drawlines(line_mid, line1_upper, line1_lower, line2_upper, line2_lower, anchor) =>
+
+    array.unshift(line_mid, line.new(x1 = time, y1 = anchor, x2 = time+1, y2 = anchor, xloc = xloc.bar_time,
+         extend = extend.right, color = midline_color, width = midline_width,
+         style = (midline_style == 'Solid' ? line.style_solid : midline_style == 'Dashed' ? line.style_dashed : midline_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+    array.unshift(line1_upper, line.new(x1 = time, y1 = anchor + syminfo.mintick*line1_amount, x2 = time+1, y2 = anchor + syminfo.mintick*line1_amount, xloc = xloc.bar_time,
+         extend = extend.right, color = line1_color, width = line1_width,
+         style = (line1_style == 'Solid' ? line.style_solid : line1_style == 'Dashed' ? line.style_dashed : line1_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+    array.unshift(line1_lower, line.new(x1 = time, y1 = anchor - syminfo.mintick*line1_amount, x2 = time+1, y2 = anchor - syminfo.mintick*line1_amount, xloc = xloc.bar_time,
+         extend = extend.right, color = line1_color, width = line1_width,
+         style = (line1_style == 'Solid' ? line.style_solid : line1_style == 'Dashed' ? line.style_dashed : line1_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+    array.unshift(line2_upper, line.new(x1 = time, y1 = anchor + syminfo.mintick*line2_amount, x2 = time+1, y2 = anchor + syminfo.mintick*line2_amount, xloc = xloc.bar_time,
+         extend = extend.right, color = line2_color, width = line2_width,
+         style = (line2_style == 'Solid' ? line.style_solid : line2_style == 'Dashed' ? line.style_dashed : line2_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+    array.unshift(line2_lower, line.new(x1 = time, y1 = anchor - syminfo.mintick*line2_amount, x2 = time+1, y2 = anchor - syminfo.mintick*line2_amount, xloc = xloc.bar_time,
+         extend = extend.right, color = line2_color, width = line2_width,
+         style = (line2_style == 'Solid' ? line.style_solid : line2_style == 'Dashed' ? line.style_dashed : line2_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+
+
+f_recolor(line_array) =>
+    line.set_color(array.first(line_array), color_to_switch)
+
+
+ // first time line
+if time == last_confirmed_time
+    f_drawlines(line_mid, line1_upper, line1_lower, line2_upper, line2_lower, close) 
+
+
+
+varip bool past_confirmed_time = false
+past_confirmed_time := time > last_confirmed_time ? true : false
+
+
+varip bool high_greater_than_line1 = false
+varip bool low_less_than_line1 = false
+high_greater_than_line1 := high >= line1_upper_value and past_confirmed_time ? true : false
+low_less_than_line1 := low <= line1_lower_value and past_confirmed_time ? true : false
+
+
+varip bool high_greater_than_line2 = false
+varip bool low_less_than_line2 = false
+high_greater_than_line2 := high >= line2_upper_value and past_confirmed_time ? true : false
+low_less_than_line2 := low <= line2_lower_value and past_confirmed_time ? true : false
+
+
+
+
+// get line values
+line_mid_value := past_confirmed_time ? line.get_y1(array.first(line_mid)) : line_mid_value[1]
+line1_upper_value := past_confirmed_time ? line.get_y1(array.first(line1_upper)) : line1_upper_value[1]
+line1_lower_value := past_confirmed_time ? line.get_y1(array.first(line1_lower)) : line1_lower_value[1]
+line2_upper_value := past_confirmed_time ? line.get_y1(array.first(line2_upper)) : line2_upper_value[1]
+line2_lower_value := past_confirmed_time ? line.get_y1(array.first(line2_lower)) : line2_lower_value[1]
+
+
+// extend x2 to current bar's time
+if past_confirmed_time
+    line.set_x2(array.first(line_mid), time)
+    line.set_x2(array.first(line1_upper), time)
+    line.set_x2(array.first(line1_lower), time)
+    line.set_x2(array.first(line2_upper), time)
+    line.set_x2(array.first(line2_lower), time)
+
+
+// replace colors
+line.set_color(array.first(line1_upper), high_greater_than_line2 or high_greater_than_line1 or low_less_than_line2 ? color_to_switch : line1_color)
+line.set_color(array.first(line1_lower), low_less_than_line2 or low_less_than_line1 or high_greater_than_line2 ? color_to_switch : line1_color)
+line.set_color(array.first(line2_upper), high_greater_than_line2 or low_less_than_line2 ? color_to_switch : line2_color)
+line.set_color(array.first(line2_lower), low_less_than_line2 or high_greater_than_line2 ? color_to_switch : line2_color)
+line.set_color(array.first(line_mid), low_less_than_line2 or high_greater_than_line2 ? color_to_switch : midline_color)
+
+
+
+
+// // past confirmed time
+// if past_confirmed_time
+
+//     // get line values
+//     line_mid_value := line.get_y1(array.first(line_mid))
+//     line1_upper_value := line.get_y1(array.first(line1_upper))
+//     line1_lower_value := line.get_y1(array.first(line1_lower))
+//     line2_upper_value := line.get_y1(array.first(line2_upper))
+//     line2_lower_value := line.get_y1(array.first(line2_lower))
+
+//     // // extend x2 to current bar's time
+//     line.set_x2(array.first(line_mid), time)
+//     line.set_x2(array.first(line1_upper), time)
+//     line.set_x2(array.first(line1_lower), time)
+//     line.set_x2(array.first(line2_upper), time)
+//     line.set_x2(array.first(line2_lower), time)
+
+//     // replace colors line 1
+//     if high_greater_than_line1
+//         line.set_color(array.first(line1_upper), color_to_switch)
+//     if low_less_than_line1
+//         line.set_color(array.first(line1_lower), color_to_switch)
+
+
+//     // check for intrabar redraw
+//     if (high_greater_than_line2 and not low_less_than_line2) or (low_less_than_line2 and not high_greater_than_line2)
+
+//         anchor = high_greater_than_line2 ? line2_upper_value : line2_lower_value
+//         line.set_color(array.first(line_mid), color_to_switch)
+//         line.set_color(array.first(line1_upper), color_to_switch)
+//         line.set_color(array.first(line1_lower), color_to_switch)
+//         line.set_color(array.first(line2_upper), color_to_switch)
+//         line.set_color(array.first(line2_lower), color_to_switch)
+
+//         if not keep_old_lines
+//             line.delete(array.first(line_mid))
+//             line.delete(array.first(line1_upper))
+//             line.delete(array.first(line1_lower))
+//             line.delete(array.first(line2_upper))
+//             line.delete(array.first(line2_lower))
+
+//         // end extension since lines aren't being deleted
+//         line.set_extend(array.first(line_mid), extend.none)
+//         line.set_extend(array.first(line1_upper), extend.none)
+//         line.set_extend(array.first(line1_lower), extend.none)
+//         line.set_extend(array.first(line2_upper), extend.none)
+//         line.set_extend(array.first(line2_lower), extend.none)
+        
+//         // draw new lines
+//         f_drawlines(line_mid, line1_upper, line1_lower, line2_upper, line2_lower, anchor) 
+
+//         // reset line values
+//         line_mid_value := line.get_y1(array.first(line_mid))
+//         line1_upper_value := line.get_y1(array.first(line1_upper))
+//         line1_lower_value := line.get_y1(array.first(line1_lower))
+//         line2_upper_value := line.get_y1(array.first(line2_upper))
+//         line2_lower_value := line.get_y1(array.first(line2_lower))
+
+
+
+var label testlabel = na
+var label testlabel2 = na
+if barstate.islast
+    testlabel := label.new(x = bar_index, y = 4065, text = "High:  " + str.tostring(high_greater_than_line2), color = color.white)
+    testlabel2 := label.new(x = bar_index, y = 4062, text = "Low:  " + str.tostring(low_less_than_line2), color = color.white)
+
+barcolor(high >= line2_upper_value ? color.teal : low <= line2_lower_value ? color.fuchsia : high >= line1_upper_value and low <= line1_lower_value ? color.yellow : high >= line1_upper_value ? color.green : low <= line1_lower_value ? color.red : na)
+
+
+
+
+// might be when lines get redrawn and overlap with high/low they dont trigger to switch the line color

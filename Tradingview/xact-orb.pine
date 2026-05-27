@@ -1,0 +1,405 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Xact ORB", overlay = true)
+
+// @keywords: xact-orb, opening-range, opening-range-high, opening-range-low, opening-range-mid, range-extensions, breakout-candles, custom-candles, extension-targets, orb-session, remainder-session, orh-orl-lines, target-multiples, intraday-breakout, candle-regime, instructions-table, est-session, momentum-breakout, price-targets, range-breakdown
+
+// instructions
+var instructions_tooltip = "BE SURE TO TURN OFF THE DEFAULT TRADINGVIEW CANDLESTICKS THROUGH THE CHART MENU UP BY THE SYMBOL
+     \nAT THE TOP LEFT OF YOUR CHART IF YOU WANT TO USE THE ORB CANDLES.
+     \n\nThe Xact ORB, Opening Range Breakout/Breakdown, is a tool used by many intraday traders to take advantage of intraday momentum. 
+     \nThe opening range is defined by either the first 30 or 60 minutes of a new trading day. During that time the opening ranges are set. 
+     \nIf the opening range is over and we start to break above the Opening Range High that is a good indication that a Trend
+     \nDay to the upside could be forming. When a stock takes out the opening range high from the first 30 or 60 minutes this is called an Opening Range Breakout. 
+     \n\nYou can see the ORH and ORL (Opening Range) lines on the chart. The other lines are extension lines from the Opening Range. 
+     \nThese are used as price targets for the end of Opening Range breakouts. 
+     \n\nThe candles are colored as follows. 
+     \nIf we are above the ORH then we use Bull Color 1. 
+     \nIf we are below the ORL then we use Bull Color 2. 
+     \nIf we are above the ORM, Opening Range Mid or the halfway point between the ORH and the ORL, we color Bull Color 2. 
+     \nIf we are below the ORM then we color Bear Color 2. 
+     \nIf the current time is still within the Opening Range then we color the Opening Range Color."
+
+instructions = input.bool(title='Show Instructions', defval=false, inline='1', tooltip = instructions_tooltip)
+var table instruction_label = table.new(position.middle_center, 1, 1,
+ frame_color=color.new(color.black, 0), frame_width=0, 
+ border_color=color.new(color.black,100), border_width=0)
+if barstate.islast and instructions
+    table.cell(instruction_label, 0, 0, text=instructions_tooltip, width=0, 
+     bgcolor=color.black, text_color=color.white, text_size=size.normal, text_halign=text.align_left)
+
+
+
+// orb settings
+input_or = input.session('0930-1000', title='Opening Range Time (EST)',
+ tooltip='The time period in which the opening range is. Note - 
+ the start time needs to be before the end time or you will get unwanted results!',
+ group = 'Opening Range Settings', inline = '1')
+
+input_orend = input.session('1000-1600', title='Remainder of Day (EST)',
+ tooltip='The time period in which we take trades off the opening range. Note - 
+ the start time needs to be the same as the opening ranges end time or you will get unwanted results!',
+ group = 'Opening Range Settings', inline = '2')
+
+show_or_ext = input.bool(true, title = 'Opening Range Targets',
+ tooltip='Extensions are multiples of the opening range and act as intraday price targets.',
+ group = 'Opening Range Settings', inline = '3')
+
+ext1 = input.float(0.5, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '4')
+ext2 = input.float(1.0, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '4')
+ext3 = input.float(1.5, title = '', minval = 0.1, step = 0.1, group = 'Opening Range Settings', inline = '4')
+
+
+
+
+// visual settings
+custom_candles = input.bool(true, title = "ORB Candles", inline = '1', group = 'Visual Settings', 
+ tooltip = 'Be sure to hide the default Tradingview candles if you have this enabled. 
+ \n\nTo hide the default Tradingview candlesset the transparency for the candles to 0. 
+ This can be found where you change the candlestick colors.')
+
+bull_one_color = input.color(color.new(#05cd0e,0), title='Bull Candle Color 1', 
+ inline='3', group='Visual Settings', 
+ tooltip = 'Bull Color 1 is for if we are above the Opening Range High. 
+ \n\nBull Color 2 is for if we are above the Opening Range Mid')
+bull_two_color = input.color(color.new(#1b5e20,0), title='Bull Candle Color 2 ',
+ inline='3', group='Visual Settings')
+bear_one_color = input.color(color.new(#ff4c5b, 0), title='Bear Candle Color 1',
+ inline='4', group='Visual Settings', tooltip = 'Bear Color 1 is for if we are below the Opening Range Low.
+ \n\Bear Color 2 is for if we are below the Opening Range Mid')
+bear_two_color = input.color(color.new(#801922,0), title='Bear Candle Color 2',
+ inline='4', group='Visual Settings')
+not_or_color = input.color(color.new(color.gray,0), title='Opening Range Candle Color', 
+ inline='5', group='Visual Settings', 
+ tooltip = 'This color is for if we are still currently in the Opening Range period.')
+
+show_labels = input.bool(true, title = "Show Labels  | ", inline = '6', group = 'Visual Settings')
+label_color = input.color(#ffffff, title = 'Color', inline='6', group ='Visual Settings')
+
+show_stats = input.bool(true, title = 'Show ORB Stats', inline = '7', group = 'Visual Settings')
+position = input.string(defval='Right Bottom',
+ options=['Right Top', 'Right Middle', 'Right Bottom', 'Center Bottom', 'Center Top', 'Left Bottom', 'Left Middle'],
+ title='', inline = '7', group = 'Visual Settings')
+dashboard_type = input.string('Mobile', title = '', options = ['Desktop', 'Desktop Small', 'Mobile', 'Mobile Small'],
+ inline = '7', group = 'Visual Settings')
+
+
+
+// calculate orb
+or_session = time(timeframe.period, str.format('{0}:1234567', input_or), 'America/New_York')
+or_alertsession = time(timeframe.period, str.format('{0}:1234567', input_orend), 'America/New_York')
+var or_high = 0.0
+var or_low = 0.0
+var or_mid = 0.0
+var or_size = 0.0
+var or_high_ext1 = 0.0
+var or_high_ext2 = 0.0
+var or_high_ext3 = 0.0
+var or_low_ext1 = 0.0
+var or_low_ext2 = 0.0
+var or_low_ext3 = 0.0
+var days_open = 0.0
+
+if or_session
+    if not or_session[1]
+        or_low := low
+        or_high := high
+        days_open := open
+    else 
+        or_low := math.min(low, or_low)
+        or_high := math.max(high, or_high)
+else if not or_alertsession
+    or_low := na
+    or_high := na
+    days_open := na
+
+        
+or_mid := or_low + (or_high - or_low) / 2
+or_size := or_high - or_low
+or_high_ext1 := or_high + (or_size * ext1)
+or_high_ext2 := or_high + (or_size * ext2)
+or_high_ext3 := or_high + (or_size * ext3)
+or_low_ext1 := or_low - (or_size * ext1)
+or_low_ext2 := or_low - (or_size * ext2)
+or_low_ext3 := or_low - (or_size * ext3)
+
+
+f_chartcolor() =>
+    chart_r = color.r(chart.bg_color)
+    chart_g = color.g(chart.bg_color)
+    chart_b = color.b(chart.bg_color)
+
+    lumina = math.sqrt(
+     0.299 * (chart_r * chart_r) +
+     0.587 * (chart_g * chart_g) +
+     0.114 * (chart_b * chart_b)
+     )
+
+    is_dark = lumina < 127.5 ? true : false
+
+// visualize orb lines/bg
+var bool dark_mode = f_chartcolor()
+var color css_or_lines = chart.fg_color
+var int fill_trans = dark_mode ? 95 : 80
+or_high_plot = plot(not or_session ? or_high : na, title='ORH', 
+ color=color.new(css_or_lines, 25), linewidth=2, style=plot.style_linebr)
+or_low_plot = plot(not or_session ? or_low : na, title='ORL', 
+ color=color.new(css_or_lines, 25), linewidth=2, style=plot.style_linebr)
+
+orh_ext1 = plot(show_or_ext and not or_session ? or_high_ext1 : na, title='ORH ext1',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+orl_ext1 = plot(show_or_ext and not or_session ? or_low_ext1 : na, title='ORL ext1',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+
+orh_ext2 = plot(show_or_ext and not or_session ? or_high_ext2 : na, title='ORH ext2',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+orl_ext2 = plot(show_or_ext and not or_session ? or_low_ext2 : na, title='ORL ext2',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+
+orh_ext3 = plot(show_or_ext and not or_session ? or_high_ext3 : na, title='ORH ext3',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+orl_ext3 = plot(show_or_ext and not or_session ? or_low_ext3 : na, title='ORL ext3',
+ color=color.new(css_or_lines, 70), linewidth=1, style=plot.style_linebr)
+
+plot(not or_session ? or_mid : na, title='ORM', color=color.new(color.gray,0), linewidth=1, style=plot.style_linebr)
+fill(or_high_plot, or_low_plot, title='OR Fill', color=color.new(color.gray, fill_trans))
+fill(or_high_plot, orh_ext3, title='OR Breakout Fill', color=color.new(#00ff0c, fill_trans))
+fill(or_low_plot, orl_ext3, title='OR Breakdown Fill', color=color.new(#ff0016, fill_trans))
+
+
+
+// visualize colored candles
+var color candle_color = na
+if or_session or not or_alertsession
+    candle_color := not_or_color
+else if not or_session
+    if close >= or_high 
+        candle_color := bull_one_color
+    else if close >= or_mid
+        candle_color := bull_two_color
+    else if close < or_low
+        candle_color := bear_one_color
+    else if close < or_mid
+        candle_color := bear_two_color
+plotcandle(custom_candles ? open : na,
+ custom_candles ? high : na,
+ custom_candles ? low : na,
+ custom_candles ? close : na,
+ color = candle_color, wickcolor = candle_color, bordercolor = candle_color)
+
+
+
+// orb line labels
+drawLabels(position, custom_text, textcolor) =>
+    label = label.new(bar_index + 3, y = position, text = custom_text,
+     color = color.new(#000000,100), textcolor= textcolor,
+     style = label.style_label_left, size = size.small, textalign = text.align_center)
+    label.delete(label[1])
+
+if barstate.islast and show_labels and not or_session
+    drawLabels(or_high, "ORH", label_color)
+    drawLabels(or_low, "ORL", label_color)
+    drawLabels(or_mid, "ORM", label_color)
+
+    if show_or_ext
+        drawLabels(or_high_ext1, "x " + str.tostring(ext1), label_color)
+        drawLabels(or_high_ext2, "x " + str.tostring(ext2), label_color)
+        drawLabels(or_high_ext3, "x " + str.tostring(ext3), label_color)
+
+        drawLabels(or_low_ext1, "x " + str.tostring(ext1), label_color)
+        drawLabels(or_low_ext2, "x " + str.tostring(ext2), label_color)
+        drawLabels(or_low_ext3, "x" + str.tostring(ext3), label_color)
+
+
+
+// orb stats
+var table_position = position == 'Right Top' ? position.top_right 
+ : position == 'Right Middle' ? position.middle_right 
+ : position == 'Right Bottom' ? position.bottom_right 
+ : position == 'Center Bottom' ? position.bottom_center 
+ : position == 'Center Top' ? position.top_center
+ : position == 'Left Bottom' ? position.bottom_left 
+ : position == 'Left Middle' ? position.middle_left
+ : position.middle_right
+var table_size = dashboard_type == 'Mobile' or dashboard_type == 'Desktop' ? size.small : size.tiny 
+var color table_color = chart.bg_color
+var color table_text = chart.fg_color
+var color bull_text = dark_mode ? bull_one_color : bull_two_color
+var color bear_text = dark_mode ? bear_one_color : bear_two_color
+var table t = table.new(table_position, 5, 11, 
+ frame_color=color.new(table_text, 85), frame_width=1,
+ border_color=color.new(table_text,0), border_width=0)
+
+var int day_count = 0 
+var int or_breakout_count = 0
+var int or_breakdown_count = 0
+
+var int or_breakout_ext1_count = 0
+var int or_breakout_ext2_count = 0
+var int or_breakout_ext3_count = 0
+
+var int or_breakdown_ext1_count = 0
+var int or_breakdown_ext2_count = 0
+var int or_breakdown_ext3_count = 0
+
+var int or_breakout_breakdown_count = 0
+
+
+var bool or_breakout_cond = false
+var bool or_breakdown_cond = false
+
+var bool or_breakout_ext1_cond = false
+var bool or_breakout_ext2_cond = false
+var bool or_breakout_ext3_cond = false
+
+var bool or_breakdown_ext1_cond = false
+var bool or_breakdown_ext2_cond = false
+var bool or_breakdown_ext3_cond = false
+
+var bool or_breakout_breakdown_cond = false
+
+var float or_sum_size = 0.00
+
+
+
+if show_stats
+    // reset vars
+    day_count := or_session and not or_session[1] ? nz(day_count[1],0) + 1 : day_count[1]
+    if day_count != day_count[1]
+        or_breakout_cond := false
+        or_breakdown_cond := false
+        or_breakout_ext1_cond := false
+        or_breakout_ext2_cond := false
+        or_breakout_ext3_cond := false
+        or_breakdown_ext1_cond := false
+        or_breakdown_ext2_cond := false
+        or_breakdown_ext3_cond := false
+        or_breakout_breakdown_cond := false
+    
+    // can look for conditions
+    if or_alertsession
+        // update conditions
+        or_sum_size := not or_alertsession[1] ? or_sum_size[1] + (or_high-or_low) : or_sum_size[1]
+        or_breakout_cond := or_breakout_cond[1] == false and close > or_high ? true : or_breakout_cond[1]
+        or_breakdown_cond := or_breakdown_cond[1] == false and close < or_low ? true : or_breakdown_cond[1]
+
+        or_breakout_ext1_cond := or_breakout_ext1_cond[1] == false and high > or_high_ext1 ? true : or_breakout_ext1_cond[1]
+        or_breakout_ext2_cond := or_breakout_ext2_cond[1] == false and high > or_high_ext2 ? true : or_breakout_ext2_cond[1]
+        or_breakout_ext3_cond := or_breakout_ext3_cond[1] == false and high > or_high_ext3 ? true : or_breakout_ext3_cond[1]
+        
+        or_breakdown_ext1_cond := or_breakdown_ext1_cond[1] == false and low < or_low_ext1 ? true : or_breakdown_ext1_cond[1]
+        or_breakdown_ext2_cond := or_breakdown_ext2_cond[1] == false and low < or_low_ext2 ? true : or_breakdown_ext2_cond[1]
+        or_breakdown_ext3_cond := or_breakdown_ext3_cond[1] == false and low < or_low_ext3 ? true : or_breakdown_ext3_cond[1]
+
+        or_breakout_breakdown_cond := or_breakout_breakdown_cond[1] == false 
+         and (or_breakout_cond == true and or_breakdown_cond == true) ? true : or_breakout_breakdown_cond
+
+        // update counts
+        or_breakout_count := or_breakout_cond and not or_breakout_cond[1] ? or_breakout_count[1] + 1 : or_breakout_count[1]
+        or_breakdown_count := or_breakdown_cond and not or_breakdown_cond[1] ? or_breakdown_count[1] + 1 : or_breakdown_count[1]
+
+        or_breakout_ext1_count := or_breakout_ext1_cond and not or_breakout_ext1_cond[1] ? or_breakout_ext1_count[1] + 1 : or_breakout_ext1_count[1]
+        or_breakout_ext2_count := or_breakout_ext2_cond and not or_breakout_ext2_cond[1] ? or_breakout_ext2_count[1] + 1 : or_breakout_ext2_count[1]
+        or_breakout_ext3_count := or_breakout_ext3_cond and not or_breakout_ext3_cond[1] ? or_breakout_ext3_count[1] + 1 : or_breakout_ext3_count[1]
+        
+        or_breakdown_ext1_count := or_breakdown_ext1_cond and not or_breakdown_ext1_cond[1] ? or_breakdown_ext1_count[1] + 1 : or_breakdown_ext1_count[1]
+        or_breakdown_ext2_count := or_breakdown_ext2_cond and not or_breakdown_ext2_cond[1] ? or_breakdown_ext2_count[1] + 1 : or_breakdown_ext2_count[1]
+        or_breakdown_ext3_count := or_breakdown_ext3_cond and not or_breakdown_ext3_cond[1] ? or_breakdown_ext3_count[1] + 1 : or_breakdown_ext3_count[1]
+
+        or_breakout_breakdown_count := or_breakout_breakdown_cond and not or_breakout_breakdown_cond[1] ?
+         or_breakout_breakdown_count[1] + 1 
+         : or_breakout_breakdown_count[1]
+
+    // create table
+    if barstate.islast
+
+        table.clear(t, 0, 0, 4, 10)
+
+        if dashboard_type == 'Desktop' or dashboard_type == 'Desktop Small'
+            table.cell(t, 0, 0, text='ORB Stats for last ' + str.tostring(day_count) + " days", width=0, bgcolor=table_color,
+             text_color=table_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 0, 1, text='Breakouts: ' + str.tostring(or_breakout_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 1, text='Breakdowns: '+ str.tostring(or_breakdown_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 0, 2, text="TP 1: " + str.tostring(or_breakout_ext1_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 0, 3, text="TP 2: " + str.tostring(or_breakout_ext2_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 0, 4, text="TP 3: " + str.tostring(or_breakout_ext3_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 1, 2, text="TP 1: " + str.tostring(or_breakdown_ext1_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 3, text="TP 2: " + str.tostring(or_breakdown_ext2_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 4, text="TP 3: " + str.tostring(or_breakdown_ext3_count/day_count*100, format.percent),
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 0, 5, text = "Avg OR Range: " + str.tostring(or_sum_size/day_count, format.mintick),
+             width=0, bgcolor=table_color,
+             text_color=table_text, text_size=table_size, text_halign=text.align_center, text_valign = text.align_center)
+
+            table.merge_cells(table_id = t, start_column = 0, start_row = 0, end_column = 1, end_row = 0)
+            table.merge_cells(table_id = t, start_column = 0, start_row = 5, end_column = 1, end_row = 5)
+        else
+            table.cell(t, 0, 0, text= "Last " + str.tostring(day_count) + " days", width=0, bgcolor=table_color,
+             text_color=table_text, text_size=size.small, text_halign=text.align_center)
+
+            table.cell(t, 0, 1, text='🔼 ' + str.tostring(math.round(or_breakout_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 1, text='🔽 '+ str.tostring(math.round(or_breakdown_count/day_count*100)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 0, 2, text="TP1 " + str.tostring(math.round(or_breakout_ext1_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 0, 3, text="TP2 " + str.tostring(math.round(or_breakout_ext2_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 0, 4, text="TP3 " + str.tostring(math.round(or_breakout_ext3_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bull_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 1, 2, text="TP1 " + str.tostring(math.round(or_breakdown_ext1_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 3, text="TP2 " + str.tostring(math.round(or_breakdown_ext2_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+            table.cell(t, 1, 4, text="TP3 " + str.tostring(math.round(or_breakdown_ext3_count/day_count*100,0)) + "%",
+             width=0, bgcolor=table_color,
+             text_color=bear_text, text_size=table_size, text_halign=text.align_center)
+
+            table.cell(t, 0, 5, text = "Avg OR " + str.tostring(or_sum_size/day_count, format.mintick),
+             width=0, bgcolor=table_color,
+             text_color=table_text, text_size=table_size, text_halign=text.align_center, text_valign = text.align_center)
+
+            table.merge_cells(table_id = t, start_column = 0, start_row = 0, end_column = 1, end_row = 0)
+            table.merge_cells(table_id = t, start_column = 0, start_row = 5, end_column = 1, end_row = 5) 
+
+
+
+// orb alerts
+alertcondition(not or_session and ta.crossover(close,or_high) and barstate.isconfirmed, "OR Breakout","OR Breakout")
+alertcondition(not or_session and ta.crossunder(close,or_low) and barstate.isconfirmed, "OR Breakdown","OR Breakdown")
+
+
+
+
+

@@ -1,0 +1,168 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("🧰 Sessions Toolbox", overlay = true, max_lines_count = 500)
+
+// @keywords: sessions-toolbox, asia-session, euro-session, usa-session, session-vwap, session-high, session-low, session-open, session-close, session-background, full-day-vwap, vwap-bands, session-markers, intraday-sessions, session-ohlc, timezone-est, session-divider, vwap-deviation, open-close-dots, session-toolbox
+
+if timeframe.isdwm or (timeframe.multiplier > 30)
+    runtime.error('The Sessions Toolbox is designed to only work on intraday charts of 30 minutes or less.')
+
+//
+//SESSION SETTINGS
+//
+default_color = input.color(color.new(#9598a1,0), title = 'Default Color', group = 'Session Settings', inline = '4')
+asia_color = input.color(color.new(#ff0014,0), title = 'Asia Session', group = 'Session Settings', inline = '5')
+asia_time = input.session("2000-0259", title = '', group = 'Session Settings', inline = '5')
+euro_color = input.color(color.new(#ffe500,0), title = 'Euro Session', group = 'Session Settings', inline = '6')
+euro_time = input.session("0300-0929", title = '', group = 'Session Settings', inline = '6')
+usa_color = input.color(color.new(#005eff,0), title = 'USA Session', group = 'Session Settings', inline = '7')
+usa_time = input.session("0930-1959", title = '', group = 'Session Settings', inline = '7')
+
+is_asia = time(timeframe.period, asia_time, "America/New_York")
+is_euro = time(timeframe.period, euro_time, "America/New_York")
+is_usa = time(timeframe.period, usa_time, "America/New_York")
+
+day_change = ta.change(time("D"))
+asia_change = is_asia and not is_asia[1]
+euro_change = is_euro and not is_euro[1]
+usa_change = is_usa and not is_usa[1]
+
+//
+//SESSION HIGH-LOW
+//
+color_session_bg = input.bool(true, title = 'Color Session Background', group = 'OHLC Settings', inline = '1')
+show_open_close = input.bool(true, title = 'Show Open/Close Plots', group = 'OHLC Settings', inline = '2')
+show_asia = input.bool(true, title = 'Show Asia', group = 'OHLC Settings', inline = '3')
+show_euro = input.bool(true, title = 'Show Euro', group = 'OHLC Settings', inline = '4')
+show_usa = input.bool(true, title = 'Show USA', group = 'OHLC Settings', inline = '5')
+
+//OPENS
+plotchar(show_open_close and asia_change ? open : na, title = 'Asia Open', char = '●' , color = asia_color, location = location.absolute, size = size.tiny, editable = false)
+plotchar(show_open_close and euro_change ? open : na, title = 'Euro Open', char = '●' , color = euro_color, location = location.absolute, size = size.tiny, editable = false)
+plotchar(show_open_close and usa_change ? open : na, title = 'USA Open', char = '●' , color = usa_color, location = location.absolute, size = size.tiny, editable = false)
+
+//CLOSES
+plotchar(show_open_close and not is_asia and is_asia[1] ? close[1] : na, title = 'Asia Open', char = '●' , color = asia_color, location = location.absolute, size = size.tiny, editable = false, offset = -1)
+plotchar(show_open_close and not is_euro and is_euro[1] ? close[1] : na, title = 'Euro Open', char = '●' , color = euro_color, location = location.absolute, size = size.tiny, editable = false, offset = -1)
+plotchar(show_open_close and not is_usa and is_usa[1] ? close[1] : na, title = 'USA Open', char = '●' , color = usa_color, location = location.absolute, size = size.tiny, editable = false, offset = -1)
+
+draw_lines(show_lines, is_session, change, linecolor) =>
+
+    var start_bn = 0
+    start_bn := change ? bar_index : start_bn[1]    
+
+    var high_value = 0.00
+    high_value := change ? high : is_session and high > high_value[1] ? high : high_value[1]
+    
+    var low_value = 0.00
+    low_value := change ? low : is_session and low < low_value[1] ? low : low_value[1]
+
+    if is_session and show_lines
+        high_line = line.new(start_bn, high_value, bar_index, high_value, xloc = xloc.bar_index, extend = extend.none, color = linecolor, style = line.style_solid, width = 1 )
+        low_line = line.new(start_bn, low_value, bar_index, low_value, xloc = xloc.bar_index, extend = extend.none, color = linecolor, style = line.style_solid, width = 1 )
+        line_fill = linefill.new(high_line, low_line, color = color_session_bg ? color.new(linecolor,90) : na)
+        
+        if not change
+            line.delete(high_line[1])
+            line.delete(low_line[1])
+
+draw_lines(show_asia, is_asia, asia_change, asia_color)
+draw_lines(show_euro, is_euro, euro_change, euro_color)
+draw_lines(show_usa, is_usa, usa_change, usa_color)
+
+
+//
+//VWAP
+//
+//VWAP FUNCTION
+vwap_function(src, isNewPeriod, stDevMult_1, stDevMult_2) =>
+	var float sumSrcVol = na
+	var float sumVol = na
+    var float sumSrcSrcVol = na
+    
+	sumSrcVol := isNewPeriod ? src * volume : src * volume + sumSrcVol[1]
+	sumVol := isNewPeriod ? volume : volume + sumVol[1]
+	sumSrcSrcVol := isNewPeriod ? volume * math.pow(src, 2) : volume * math.pow(src, 2) + sumSrcSrcVol[1]
+	_vwap = sumSrcVol / sumVol
+	
+	variance = sumSrcSrcVol / sumVol - math.pow(_vwap, 2)
+	variance := variance < 0 ? 0 : variance
+	stDev = math.sqrt(variance)
+
+	lowerBand = _vwap - stDev * stDevMult_1
+	upperBand = _vwap + stDev * stDevMult_1
+	
+	lowerBand2 = _vwap - stDev * stDevMult_2
+	upperBand2 = _vwap + stDev * stDevMult_2
+
+	[_vwap, lowerBand, upperBand, lowerBand2, upperBand2]
+	
+	
+show_full_day_vwap = input.bool(false, title = 'Show Day     |     ', group = 'VWAP Settings', inline = '1')
+show_full_day_bands = input.bool(false, title = 'Bands', group = 'VWAP Settings', inline = '1')
+
+show_asia_vwap = input.bool(true, title = 'Show Asia     |     ', group = 'VWAP Settings', inline = '2')
+show_asia_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '2')
+show_extended_asia = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '2')
+asia_extension_cond = (show_extended_asia or not show_extended_asia and is_asia)
+
+show_euro_vwap = input.bool(true, title = 'Show Euro     |     ', group = 'VWAP Settings', inline = '3')
+show_euro_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '3')
+show_extended_euro = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '3')
+euro_extension_cond = (show_extended_euro or not show_extended_euro and is_euro)
+
+show_usa_vwap = input.bool(true, title = 'Show USA     |     ', group = 'VWAP Settings', inline = '4')
+show_usa_bands = input.bool(false, title = 'Bands     |     ', group = 'VWAP Settings', inline = '4')
+show_extended_usa = input.bool(false, title = 'Extend', group = 'VWAP Settings', inline = '4')
+usa_extension_cond = (show_extended_usa or not show_extended_usa and is_usa)
+
+std_dev1 = input.float(2.5, title = 'Deviations', group = 'VWAP Settings', inline = '99')
+std_dev2 = input.float(3.0, title = '', group = 'VWAP Settings', inline = '99')
+
+[_vwap, _lb, _ub, _lb2, _ub2] = vwap_function(hlc3, day_change, std_dev1, std_dev2)
+[asia_vwap, asia_lb, asia_ub, asia_lb2, asia_ub2] = vwap_function(hlc3, asia_change, std_dev1, std_dev2)
+[euro_vwap, euro_lb, euro_ub, euro_lb2, euro_ub2] = vwap_function(hlc3, euro_change, std_dev1, std_dev2)
+[usa_vwap, usa_lb, usa_ub, usa_lb2, usa_ub2] = vwap_function(hlc3, usa_change, std_dev1, std_dev2)
+
+_vwap_plot = plot(show_full_day_vwap ? _vwap : na, title = 'Full Day VWAP', color = day_change ? color.new(default_color,100) : default_color, editable = false)
+_ub_plot = plot(show_full_day_vwap and show_full_day_bands ? _ub : na, title = 'Full Day UB', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_ub2_plot = plot(show_full_day_vwap and show_full_day_bands ? _ub2 : na, title = 'Full Day UB2', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_lb_plot = plot(show_full_day_vwap and show_full_day_bands  ? _lb : na, title = 'Full Day LB', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+_lb2_plot = plot(show_full_day_vwap and show_full_day_bands  ? _lb2 : na, title = 'Full Day LB2', color = color.new(default_color,50), editable = false, style = plot.style_linebr)
+fill(_ub_plot, _ub2_plot, color = day_change ? color.new(default_color,100) : color.new(default_color,80), editable = false)
+fill(_lb_plot, _lb2_plot, color = day_change ? color.new(default_color,100) : color.new(default_color,80), editable = false)
+
+asia_vwap_plot = plot(show_asia_vwap and asia_extension_cond ? asia_vwap : na, title = 'Asia VWAP', color = asia_change ? color.new(asia_color,100) : asia_color, editable = false)
+asia_ub_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_ub : na, title = 'Asia UB', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_ub2_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_ub2 : na, title = 'Asia UB2', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_lb_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_lb : na, title = 'Asia LB', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+asia_lb2_plot = plot(show_asia_vwap and show_asia_bands and asia_extension_cond ? asia_lb2 : na, title = 'Asia LB2', color = color.new(asia_color,50), editable = false, style = plot.style_linebr)
+fill(asia_ub_plot, asia_ub2_plot, color = asia_change ? color.new(asia_color,100) : color.new(asia_color,80), editable = false)
+fill(asia_lb_plot, asia_lb2_plot, color = asia_change ? color.new(asia_color,100) : color.new(asia_color,80), editable = false)
+
+euro_vwap_plot = plot(show_euro_vwap and euro_extension_cond ? euro_vwap : na, title = 'Euro VWAP', color = euro_change ? color.new(euro_color,100) : euro_color, editable = false)
+euro_ub_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_ub : na, title = 'Euro UB', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_ub2_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_ub2 : na, title = 'Euro UB2', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_lb_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_lb : na, title = 'Euro LB', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+euro_lb2_plot = plot(show_euro_vwap and show_euro_bands and euro_extension_cond ? euro_lb2 : na, title = 'Euro LB2', color = color.new(euro_color,50), editable = false, style = plot.style_linebr)
+fill(euro_ub_plot, euro_ub2_plot, color = euro_change ? color.new(euro_color,100) : color.new(euro_color,80), editable = false)
+fill(euro_lb_plot, euro_lb2_plot, color = euro_change ? color.new(euro_color,100) : color.new(euro_color,80), editable = false)
+
+usa_vwap_plot = plot(show_usa_vwap and usa_extension_cond ? usa_vwap : na, title = 'USA VWAP', color = usa_change ? color.new(usa_color,100) : usa_color, editable = false)
+usa_ub_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_ub : na, title = 'USA UB', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_ub2_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_ub2 : na, title = 'USA UB2', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_lb_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_lb : na, title = 'USA LB', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+usa_lb2_plot = plot(show_usa_vwap and show_usa_bands and usa_extension_cond ? usa_lb2 : na, title = 'USA LB2', color = color.new(usa_color,50), editable = false, style = plot.style_linebr)
+fill(usa_ub_plot, usa_ub2_plot, color = usa_change ? color.new(usa_color,100) : color.new(usa_color,80), editable = false)
+fill(usa_lb_plot, usa_lb2_plot, color = usa_change ? color.new(usa_color,100) : color.new(usa_color,80), editable = false)
+
+
+
+
+
+
+
+

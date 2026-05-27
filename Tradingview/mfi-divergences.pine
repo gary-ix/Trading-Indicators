@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("MFI Divergences", overlay = true)
+
+// @keywords: mfi-divergences, money-flow-index, mfi-divergence, bullish-divergence, bearish-divergence, regular-divergence, hidden-divergence, price-mfi-divergence, pivot-high, pivot-low, swing-pivots, divergence-lines, overbought-oversold, buy-signal, sell-signal, momentum-divergence, trend-reversal, bars-between-pivots, mfi-zone-filter, divergence-markers
+
+plot(close)
+
+

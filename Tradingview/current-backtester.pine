@@ -1,0 +1,184 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("Current Backtester", overlay=true, default_qty_value = 100)
+
+// @keywords: current-backtester, atr-bands, sma-middle-line, six-band-channel, gradient-band-fill, mean-reversion-entries, long-entry-signal, short-entry-signal, trim-signal, exit-signal, trailing-stop-atr, position-management, band-width-settings, plotshape-labels, buy-sell-trim-exit, stepline-bands, oversold-bounce, overbought-rejection, entry-count-limit, bars-since-filter
+
+//GLOBAL
+show_signals = input.string('Buy, Sell, Trim, Exit', title = 'Show Signals', options = ['Buy, Sell, Trim, Exit', 'Buy, Sell, Exit', 'Buy, Sell', 'None'], inline = '1', group = 'Signal Settings')
+band_length = input.int(title='Band Length Adjuster', defval=10, minval=1, maxval=15, step=1, inline='2', group='Signal Settings', tooltip = "Recommended Settings: \nExtreme Scalping: 1-5 \nScalping: 5-10 \nIntra-day: 10-15 \nSwing: 15+")
+top_band_width = input.float(title='Top Band Width', defval=3.00, minval=1.00, maxval=5.00, step=0.20, inline='3', group='Signal Settings', tooltip = "Recommended Settings: \nExtreme Scalping: 1-5 \nScalping: 5-10 \nIntra-day: 10-15 \nSwing: 15+")
+bottom_band_width = input.float(title='Bottom Band Width', defval=3.00, minval=1.00, maxval=5.00, step=0.20, inline='3', group='Signal Settings', tooltip = "Recommended Settings: \nExtreme Scalping: 1-5 \nScalping: 5-10 \nIntra-day: 10-15 \nSwing: 15+")
+
+stop_adj  = input.float(title='Stop Adjuster', defval=2.5, minval=1.00, maxval=5.00, step=0.5, inline='4', group='Signal Settings')
+show_trailing_stop = input.bool(false, title = 'Show Trailing Stop', inline='4', group='Signal Settings')
+
+buy_color = input.color(#27a69b, title='Buy Color', inline='6', group='Signal Settings')
+sell_color = input.color(#b63632, title='Sell Color', inline='6', group='Signal Settings')
+neutral_color = input.color(color.yellow, title='Neutral Color', inline='6', group='Signal Settings')
+
+color_candles = input.string('Gradient', title = 'Outer Band Color', options = ['Gradient', 'Two-Colors', 'None'], inline = '7', group = 'Signal Settings')
+fill_color = input.color(color.new(#000000,82), title='Inner Color', inline='7', group='Signal Settings')
+band_line_color = input.color(color.new(color.white,60), title='Line Color', inline='7', group='Signal Settings')
+
+stop_color = input.color(color.new(#f06292, 30), title = 'Stop Color', inline='8', group='Signal Settings')
+
+//GLOBAL END
+
+//BANDS
+band_sma = ta.sma(ohlc4, (band_length + 2) * 2)
+band_atr = ta.atr((band_length + 5) * 2)
+
+top_band_mult = (top_band_width + 1.5) / 3
+bottom_band_mult = (bottom_band_width + 1.5) / 3
+
+top3 = band_sma + (band_atr * (4.45 * top_band_mult))
+top2 = band_sma + (band_atr * (3.618 * top_band_mult))
+top1 = band_sma + (band_atr * (2.618 * top_band_mult))
+
+bott3 = band_sma - (band_atr * (4.45 * bottom_band_mult))
+bott2 = band_sma - (band_atr * (3.618 * bottom_band_mult))
+bott1 = band_sma - (band_atr * (2.618 * bottom_band_mult))
+
+t3=plot(top3,title="Upper Line 3",color=band_line_color, style = plot.style_stepline, editable = false)
+t2=plot(top2,title="Upper Line 2",color=band_line_color, style = plot.style_stepline, editable = false)
+t1=plot(top1,title="Upper Line 1",color=band_line_color, style = plot.style_stepline, editable = false)
+b1=plot(bott1,title="Lower Line 1",color=band_line_color, style = plot.style_stepline, editable = false)
+b2=plot(bott2,title="Lower Line 2",color=band_line_color, style = plot.style_stepline, editable = false)
+b3=plot(bott3,title="Lower Line 3",color=band_line_color, style = plot.style_stepline, editable = false)
+plot(band_sma, style = plot.style_line, title="Middle Line",color = color.new(band_line_color,80), linewidth = 3, editable = false)
+
+
+//COLOR BANDS
+band_distance = math.abs(top2 - bott2)
+bull_color = color.from_gradient(band_distance, ta.lowest(band_distance, 100), ta.highest(band_distance, 100), neutral_color, buy_color)
+bear_color = color.from_gradient(band_distance, ta.lowest(band_distance, 100), ta.highest(band_distance, 100), neutral_color, sell_color)
+
+var top_band_color = #000000
+var bot_band_color = #000000
+
+if color_candles == 'Gradient'
+    top_band_color := bear_color
+    bot_band_color := bull_color
+if color_candles == 'Two-Colors'
+    top_band_color := sell_color
+    bot_band_color := buy_color
+
+fill(t3,t1,color_candles == "None" ? color.new(fill_color,70) : color.new(top_band_color,85), editable = false)
+fill(b3,b1,color_candles == "None" ? color.new(fill_color,70) : color.new(bot_band_color,85), editable = false)
+fill(t1,b1,fill_color, editable = false)
+
+
+//ENTRIES
+long_cond = low <= bott1 and close < bott1
+short_cond = high >= top1 and close > top1
+
+var long_entry = false
+var short_entry = false
+
+possible_long = long_cond[1] and not long_cond
+possible_short = short_cond[1] and not short_cond
+
+var bars_since_last_possible_long = 0
+var bars_since_last_possible_short = 0
+
+bars_since_last_possible_long := possible_long ? 1 : bars_since_last_possible_long[1] + 1
+bars_since_last_possible_short := possible_short ? 1 : bars_since_last_possible_short[1] + 1
+
+var long_entry_count = 0
+long_entry_count := possible_long ? long_entry_count[1] + 1 : possible_short or bars_since_last_possible_long > 30 ? 0 : long_entry_count[1]
+
+var short_entry_count = 0 
+short_entry_count := possible_short ? short_entry_count[1] + 1 : possible_long or bars_since_last_possible_short > 30 ? 0 : short_entry_count[1]
+
+long_entry := possible_long and barstate.isconfirmed and long_entry_count <= 3 and bars_since_last_possible_long[1] >= 5
+short_entry := possible_short and barstate.isconfirmed and short_entry_count <= 3 and bars_since_last_possible_short[1] >= 5
+
+//Position Management
+var position = 0
+
+// trim
+var trimmed = false
+trimmed := (position == 1 and ta.crossover(close, band_sma)) or (position == -1 and ta.crossunder(close, band_sma)) and barstate.isconfirmed ? true : (long_entry or short_entry) ? false : trimmed[1]
+
+// exit
+var exit = false
+
+// stop exit
+trail_atr = ta.atr(10)
+trail_mult = stop_adj * 1.5
+
+var trail_longs = 0.00
+trail_longs := long_entry ?  high - trail_atr * trail_mult : math.max(trail_longs[1], high - trail_atr * trail_mult) 
+
+var trail_shorts = 0.00
+trail_shorts := short_entry ?  low + trail_atr * trail_mult : math.min(trail_shorts[1], low + trail_atr * trail_mult) 
+
+exit := (position[1] == 1 and ta.crossover(high, top1)) or (position[1] == -1 and ta.crossunder(low, bott1)) ? true : (position == 1 and low <= trail_longs) or (position == -1 and high >= trail_shorts) ? true : false 
+position := long_entry? 1 : short_entry? -1 : exit ? 0 : position[1]
+
+
+plot(show_trailing_stop and position == 1 ? trail_longs : na, style = plot.style_linebr, linewidth = 3, color = stop_color)
+plot(show_trailing_stop and position == -1 ? trail_shorts : na, style = plot.style_linebr, linewidth = 3, color = stop_color)
+
+//PLOTTING SIGNAL CODE
+var show_buy_sell = false
+var show_exits = false
+var show_trims = false
+if show_signals == 'Buy, Sell, Trim, Exit'
+    show_buy_sell := true
+    show_exits := true
+    show_trims := true
+if show_signals == 'Buy, Sell, Exit'
+    show_buy_sell := true
+    show_exits := true
+    show_trims := false
+if show_signals == 'Buy, Sell'
+    show_buy_sell := true
+    show_exits := false
+    show_trims := false
+if show_signals == 'None'
+    show_buy_sell := false
+    show_exits := false
+    show_trims := false
+    
+//MAIN
+plotshape(show_buy_sell and long_entry ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "BUY", textcolor=color.white, location= location.absolute, color=color.new(buy_color, 30), size=size.tiny)
+plotshape(show_buy_sell and short_entry ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='SELL', textcolor=color.white, location=location.absolute, color=color.new(sell_color, 30), size=size.tiny)
+
+//TRIM
+plotshape(show_trims and position == 1 and trimmed and not trimmed[1] ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='Trim', textcolor=color.white, location=location.absolute, color=color.new(#434651, 60), size=size.tiny)
+plotshape(show_trims and position == -1 and trimmed and not trimmed[1] ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "Trim", textcolor=color.white, location= location.absolute, color=color.new(#434651, 60), size=size.tiny)
+
+//EXIT
+plotshape(show_exits and position[1] == 1 and exit ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='Exit', textcolor=color.white, location=location.absolute, color=color.new(#434651, 40), size=size.tiny)
+plotshape(show_exits and position[1] == -1 and exit ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "Exit", textcolor=color.white, location= location.absolute, color=color.new(#434651, 40), size=size.tiny)
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+

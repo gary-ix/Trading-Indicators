@@ -1,0 +1,164 @@
+// © goodgains
+//@version=4
+//created by Buff DORMEIER
+study("VOLUME WEIGHTED MACD V2", shorttitle="VWMACDV2" , overlay=false)
+
+// @keywords: volume-weighted-macd, vw-macd, t3-smooth, rsx-oscillator, volume-int, bollinger-bands, macd-histogram, momentum-panel, overbought-oversold, volume-factor, triple-smooth, rsx-levels, band-fill, int-sum, dormeier-macd, lower-pane, bb-basis, signal-cross, volume-momentum, multi-oscillator
+
+//III
+length=input(30, "length", minval=1,group="III")
+K1=(2*close-high-low)*volume
+K2=iff(high!=low,high-low,1)
+INT=K1/K2
+INTSUM=sum(INT,length)
+coloff=iff(INTSUM>0,color.green,color.yellow)
+
+//T3
+length1 = input(5, "T3 Length",group="T3")
+a1 = input(0.618, "Volume Factor",group="T3")
+e1 = ema((high + low + 2 * close) / 4, length1)
+e2 = ema(e1, length1)
+e3 = ema(e2, length1)
+e4 = ema(e3, length1)
+e5 = ema(e4, length1)
+e6 = ema(e5, length1)
+c1 = -a1 * a1 * a1
+c2 = 3 * a1 * a1 + 3 * a1 * a1 * a1
+c3 = -6 * a1 * a1 - 3 * a1 - 3 * a1 * a1 * a1
+c4 = 1 + 3 * a1 + a1 * a1 * a1 + 3 * a1 * a1
+T3 = c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3
+col1 = T3 > T3[1]
+col3 = T3 < T3[1]
+color_1 = col1 ? color.orange : col3 ? color.fuchsia : color.yellow
+
+
+
+
+//JRSX
+length11 = input(title="RSXLength", type=input.integer, defval=13,group="RSX")
+src = input(title="RSXSource", type=input.source, defval=hlc3,group="RSX")
+obLevel = input(title="RSXOB Level", type=input.integer, defval=70,group="RSX")
+osLevel = input(title="RSXOS Level", type=input.integer, defval=30,group="RSX")
+
+
+f8 = 100 * src
+f10 = nz(f8[1])
+v8 = f8 - f10
+
+f18 = 3 / (length11 + 2)
+f20 = 1 - f18
+
+f28 = 0.0
+f28 := f20 * nz(f28[1]) + f18 * v8
+
+f30 = 0.0
+f30 := f18 * f28 + f20 * nz(f30[1])
+vC = f28 * 1.5 - f30 * 0.5
+
+f38 = 0.0
+f38 := f20 * nz(f38[1]) + f18 * vC
+
+f40 = 0.0
+f40 := f18 * f38 + f20 * nz(f40[1])
+v10 = f38 * 1.5 - f40 * 0.5
+
+f48 = 0.0
+f48 := f20 * nz(f48[1]) + f18 * v10
+
+f50 = 0.0
+f50 := f18 * f48 + f20 * nz(f50[1])
+v14 = f48 * 1.5 - f50 * 0.5
+
+f58 = 0.0
+f58 := f20 * nz(f58[1]) + f18 * abs(v8)
+
+f60 = 0.0
+f60 := f18 * f58 + f20 * nz(f60[1])
+v18 = f58 * 1.5 - f60 * 0.5
+
+f68 = 0.0
+f68 := f20 * nz(f68[1]) + f18 * v18
+
+f70 = 0.0
+f70 := f18 * f68 + f20 * nz(f70[1])
+v1C = f68 * 1.5 - f70 * 0.5
+
+f78 = 0.0
+f78 := f20 * nz(f78[1]) + f18 * v1C
+
+f80 = 0.0
+f80 := f18 * f78 + f20 * nz(f80[1])
+v20 = f78 * 1.5 - f80 * 0.5
+
+f88_ = 0.0
+f90_ = 0.0
+
+f88 = 0.0
+f90_ := nz(f90_[1]) == 0 ? 1 : nz(f88[1]) <= nz(f90_[1]) ? nz(f88[1]) + 1 : nz(f90_[1]) + 1
+f88 := nz(f90_[1]) == 0 and (length11 - 1 >= 5) ? length11 - 1 : 5
+
+f0 = f88 >= f90_ and f8 != f10 ? 1 : 0
+f90 = f88 == f90_ and f0 == 0 ? 0 : f90_
+
+v4_ = f88 < f90 and v20 > 0 ? (v14 / v20 + 1) * 50 : 50
+rsx = v4_ > 100 ? 100 : v4_ < 0 ? 0 : v4_
+
+rsxColor = rsx > obLevel ? color.purple : rsx < osLevel ? color.orange : color.white
+
+
+
+//VWMACD
+fastperiod = input(13,title="fastperiod",type=input.integer,minval=1,maxval=500,group="VWMACD")
+slowperiod = input(21,title="slowperiod",type=input.integer,minval=1,maxval=500,group="VWMACD")
+signalperiod = input(3,title="signalperiod",type=input.integer,minval=1,maxval=500,group="VWMACD")
+fastMA = ema(volume*close, fastperiod)/ema(volume, fastperiod)
+slowMA = ema(volume*close, slowperiod)/ema(volume, slowperiod)
+vwmacd = fastMA - slowMA
+signal = ema(vwmacd, signalperiod)
+hist= vwmacd - signal
+plot(vwmacd, color=color.aqua, linewidth=2)
+plot(signal, color=color_1, linewidth=2)
+plot(hist, color=coloff, linewidth=4, style=plot.style_histogram)
+plot(0, color=rsxColor,linewidth=2)
+
+//BB
+bblength = input(20, minval=1, title="BB Length", group="BB")
+bbmult = input(2.0, minval=0.001, maxval=50, title="Multiplier",group="BB")
+bbbasis = vwma(vwmacd, bblength)
+bbdev = bbmult * stdev(vwmacd, bblength)
+bbupper = bbbasis + bbdev
+bblower = bbbasis - bbdev
+plot(bbbasis, color=color.silver, linewidth=1, title="BB Basis")
+p1 = plot(bbupper, color=color.orange, linewidth=1, title="BB Upper Band")
+p2 = plot(bblower, color=color.orange, linewidth=1, title="BB Lower Band")
+fill(p1, p2,color=color.gray,title="BB Fill")
+
+//
+//Volume Based Colored Bars
+length6=input(30, "VBCB Length", minval=1,group="VBCB")
+avrg=sma(volume,length6)
+vold1 = volume > avrg*1.5 and close<open
+vold2 = volume >= avrg*0.5 and volume<=avrg*1.5 and close<open
+vold3 = volume < avrg *0.5 and close<open
+volu1 = volume > avrg*1.5 and close>open
+volu2 = volume >= avrg*0.5 and volume<=avrg*1.5 and close>open
+volu3 = volume< avrg*0.5 and close>open
+cold1=#800000
+cold2=#FF0000
+cold3=#FF7F00
+colu1=#008000
+colu2=color.lime
+colu3=#7FFFD4
+color = vold1 ? cold1 : vold2 ? cold2 : vold3 ? cold3 : volu1 ? colu1 : volu2 ? colu2 : volu3 ? colu3 : na
+
+barcolor(color)
+
+
+buy = barssince(rsx < osLevel) <=1 and (vwmacd>signal) and col1
+sell = barssince(rsx > obLevel) <=1 and (vwmacd<signal) and col3
+
+//bgcolor( buy ? aqua : na, transp=95)
+//bgcolor( sell ? purple : na, transp=95)
+
+
+

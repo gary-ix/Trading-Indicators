@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles", overlay = true)
+
+// @keywords: price-action-candles, close-plot, minimal-overlay, price-line, single-plot, overlay-indicator, basic-price, chart-close, simple-display, passthrough-price, development-test, no-signals, no-filters, bare-minimum, price-tracker, hidden-display, stub-script, one-line-plot, placeholder-v2, price-overlay
+
+plot(close)
+
+

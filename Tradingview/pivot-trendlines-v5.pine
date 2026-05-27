@@ -1,0 +1,561 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("Pivot Trendlines", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500)
+
+// @keywords: pivot-trendlines, swing-pivots, trendline-breaks, strategy-entries, ma-filter, inverse-signals, take-profit, stop-loss, pivot-bars, three-move-pattern, day-of-week-filter, position-lines, trendline-draw, breakout-signals, swing-lookback, trade-to-trade, long-short-lock, rma-wma-vwma, overlay-strategy, pivot-signals
+
+// settings
+swing_look          = input.int(3, title = 'Pivot Bars', group = 'Settings', inline = '0', minval = 3)
+bars_back           = input.int(20, title = 'Bars Back', group = 'Settings', inline = '1')
+inverse_settings    = input.bool(false, title = 'Inverse Signals', group = 'Settings', inline = '2')
+long_to_short_lock  = input.bool(true, title = 'Next Trade Cant Be Same Way', group = 'Settings', inline = 'lock')
+finish_trades       = input.bool(true, title = 'Trade to Trade', group = 'Settings', inline = '3')
+_tp                 = input.bool(true, title = 'Use TP %', group = 'Settings', inline = 'tp')
+_tp_amount          = input.float(5.00, title = '', group = 'Settings', inline = 'tp')
+_sl                 = input.bool(true, title = 'Use SL %', group = 'Settings', inline = 'sl')
+_sl_amount          = input.float(5.00, title = '', group = 'Settings', inline = 'sl')
+
+use_ma              = input.bool(title='MA Filter', defval=true, group='Settings', inline = 'ma')
+ma_type             = input.string(title=' ', defval='SMA', options=['SMA', 'EMA', 'SMMA (RMA)', 'WMA', 'VWMA'],  group='Settings', inline = 'ma')
+ma_source           = input.source(title=' ', defval=close, group='Settings', inline = 'ma')
+ma_length           = input.int(defval=50, title=' ', minval=1,  group='Settings', inline = 'ma')
+
+
+// buy settings
+buy_1st             = input.float(1.50, title = '1st Move', group = 'Buy Settings', inline = '2', step = 0.1)
+buy_2nd             = input.float(-1.50, title = '2nd Move', group = 'Buy Settings', inline = '3', step = 0.1)
+buy_3rd             = input.float(1.50, title = '3rd Move', group = 'Buy Settings', inline = '4', step = 0.1)
+
+
+// sell settings
+sell_1st             = input.float(-1.50, title = '1st Move', group = 'Sell Settings', inline = '2', step = 0.1)
+sell_2nd             = input.float(1.50, title = '2nd Move', group = 'Sell Settings', inline = '3', step = 0.1)
+sell_3rd             = input.float(-1.50, title = '3rd Move', group = 'Sell Settings', inline = '4', step = 0.1)
+
+
+// time toggles
+trade_monday    = input.bool(true, "Trade Mondays", group = 'Time Settings', inline = '1')
+trade_tuesday   = input.bool(true, "Trade Tuesdays", group = 'Time Settings', inline = '2')
+trade_wednesday = input.bool(true, "Trade Wednesdays", group = 'Time Settings', inline = '3')
+trade_thursday  = input.bool(true, "Trade Thursdays", group = 'Time Settings', inline = '4')
+trade_friday    = input.bool(true, "Trade Fridays", group = 'Time Settings', inline = '5')
+trade_saturday  = input.bool(true, "Trade Saturdays", group = 'Time Settings', inline = '6')
+trade_sunday    = input.bool(true, "Trade Sundays", group = 'Time Settings', inline = '7')
+
+
+// position lines
+line_showing = input.string('Current & Past', title = 'Position Tool', options = ['None', 'Current', 'Current & Past'], group = 'Position Line Settings', inline = '1')
+css_targetline = input.color(color.new(color.green,80), title = 'Profit', group = 'Position Line Settings', inline = '2')
+css_stopline = input.color(color.new(color.red,80), title = 'Loss', group = 'Position Line Settings', inline = '2')
+css_toolcolor = input.color(color.white, title = 'Text', group = 'Position Line Settings', inline = '2')
+
+
+
+f_array_add_pop(array, new_value_to_add) =>
+    array.shift(array)
+    array.push(array, new_value_to_add)
+
+
+
+f_filter_array(bn_array, value_array) =>
+    for i = 0 to array.size(bn_array) - 1
+        arr_bar_index = array.get(bn_array, i)
+        if bar_index - arr_bar_index >= bars_back
+            array.set(bn_array, i, na)
+            array.set(value_array, i, na)
+
+
+
+f_look_for_buy(first, second, third, array_sh, array_sl, array_sh_bn, array_sl_bn) =>
+    var int sh_size     = 0
+    var int sl_size     = 0
+
+    var bool step1      = false
+    var bool step2      = false
+    var bool step3      = false
+
+    var float step1_pct = 0.00
+    var float step2_pct = 0.00
+    var float step3_pct = 0.00
+
+    var int step1_lows_i    = na
+    var int step1_highs_i   = na
+
+    var int step2_lows_i    = na
+
+    // reset vars
+    sh_size := array.size(array_sh)
+    sl_size := array.size(array_sh)
+
+    step1 := false
+    step2 := false
+    step3 := false
+
+    step1_pct := 0.00
+    step2_pct := 0.00
+    step3_pct := 0.00
+
+    // from start of index or oldest low - loop through highs to see if we find step 1
+    // if step 1 is found begin to loop from new index through...also using new low index. look for step 2
+    // if step 2 is found compare that low to the current price
+    // if step 3 is found return signal 
+
+    temp_step1_low  = 0.00
+    temp_step1_high = 0.00
+
+    temp_step2_high = 0.00
+    temp_step2_low  = 0.00
+
+    temp_step3_high = 0.00
+
+    // step 1
+    for step1_lows = 0 to sl_size - 1
+        step1_min_bar_index     = array.get(array_sl_bn, step1_lows)
+        step1_old               = array.get(array_sl, step1_lows)
+
+        // make sure high bar index is greater than low bar index
+        for step1_highs = 0 to sh_size - 1
+            if array.get(array_sh_bn, step1_highs) <= step1_min_bar_index
+                continue
+            else
+                step1_new = array.get(array_sh, step1_highs)
+                step1_pct := (step1_new-step1_old) / step1_old * 100
+                step1 := step1_pct >= first ? true : false
+
+                if step1
+                    step1_lows_i    := step1_lows
+                    step1_highs_i   := step1_highs
+                    temp_step1_low  := step1_old
+                    temp_step1_high  := step1_new
+                    break
+
+        if step1
+            break
+
+
+    // step 2
+    if step1
+        step2_min_bar_index = array.get(array_sh_bn, step1_highs_i)
+        step2_old           = array.get(array_sh, step1_highs_i)
+
+        // make sure low bar index is greater than high bar index
+        for step2_lows = step1_lows_i to sl_size - 1
+            if array.get(array_sl_bn, step2_lows) <= step2_min_bar_index
+                continue
+            else
+                step2_new = array.get(array_sl, step2_lows)
+                step2_pct := (step2_new-step2_old) / step2_old * 100
+                step2 := step2_pct <= second ? true : false
+
+                if step2
+                    step2_lows_i    := step2_lows
+                    temp_step2_high := temp_step1_high
+                    temp_step2_low  := step2_new
+                    break
+
+
+    // step 3 
+    if step2 
+        step3_min_bar_index = array.get(array_sl_bn, step2_lows_i)
+        step3_old           = array.get(array_sl, step2_lows_i)
+
+        step3_pct := (close-step3_old) / step3_old * 100
+        step3 := step3_pct >= third ? true : false
+
+        if step3
+            temp_step3_high := close
+
+    [step3, temp_step1_low, temp_step1_high, temp_step2_high, temp_step2_low, temp_step3_high]
+
+
+
+
+f_look_for_sell(first, second, third, array_sh, array_sl, array_sh_bn, array_sl_bn) =>
+    var int sh_size     = 0
+    var int sl_size     = 0
+
+    var bool step1      = false
+    var bool step2      = false
+    var bool step3      = false
+
+    var float step1_pct = 0.00
+    var float step2_pct = 0.00
+    var float step3_pct = 0.00
+
+    var int step1_lows_i    = na
+    var int step1_highs_i   = na
+
+    var int step2_highs_i    = na
+
+    // reset vars
+    sh_size := array.size(array_sh)
+    sl_size := array.size(array_sh)
+
+    step1 := false
+    step2 := false
+    step3 := false
+
+    step1_pct := 0.00
+    step2_pct := 0.00
+    step3_pct := 0.00
+
+    temp_step1_high = 0.00
+    temp_step1_low  = 0.00
+
+    temp_step2_low  = 0.00
+    temp_step2_high = 0.00
+
+    temp_step3_low = 0.00
+
+    // step 1
+    for step1_highs = 0 to sh_size - 1
+        step1_min_bar_index     = array.get(array_sh_bn, step1_highs)
+        step1_old               = array.get(array_sh, step1_highs)
+
+        // make sure low bar index is greater than high bar index
+        for step1_lows = 0 to sl_size - 1
+            if array.get(array_sl_bn, step1_lows) <= step1_min_bar_index
+                continue
+            else
+                step1_new = array.get(array_sl, step1_lows)
+                step1_pct := (step1_new-step1_old) / step1_old * 100
+                step1 := step1_pct <= first ? true : false
+
+                if step1
+                    step1_highs_i   := step1_highs
+                    step1_lows_i    := step1_lows
+                    temp_step1_high := step1_old
+                    temp_step1_low  := step1_new
+                    break
+
+        if step1
+            break
+
+
+    // step 2
+    if step1
+        step2_min_bar_index = array.get(array_sl_bn, step1_lows_i)
+        step2_old           = array.get(array_sl, step1_lows_i)
+
+        // make sure high bar index is greater than low bar index
+        for step2_highs = step1_highs_i to sl_size - 1
+            if array.get(array_sh_bn, step2_highs) <= step2_min_bar_index
+                continue
+            else
+                step2_new = array.get(array_sh, step2_highs)
+                step2_pct := (step2_new-step2_old) / step2_old * 100
+                step2 := step2_pct >= second ? true : false
+
+                if step2
+                    step2_highs_i   := step2_highs
+                    temp_step2_low  := temp_step1_low
+                    temp_step2_high := step2_new
+                    break
+
+
+    // step 3 
+    if step2 
+        step3_min_bar_index = array.get(array_sh_bn, step2_highs_i)
+        step3_old           = array.get(array_sh, step2_highs_i)
+
+        step3_pct := (close-step3_old) / step3_old * 100
+        step3 := step3_pct <= third ? true : false
+
+        if step3
+            temp_step3_low := close
+
+    [step3, temp_step1_low, temp_step1_high, temp_step2_high, temp_step2_low, temp_step3_low]
+
+
+
+// hold swing highs/lows and bar indexes
+var bool swing_high     = false
+var bool swing_low      = false
+
+var swing_highs     = array.new_float(50, na)
+var swing_lows      = array.new_float(50, na)
+
+var swing_highs_bn  = array.new_float(50, na)
+var swing_lows_bn   = array.new_float(50, na)
+
+
+swing_high  := ta.pivothigh(high, swing_look, swing_look)
+swing_low   := ta.pivotlow(low, swing_look, swing_look)
+
+if swing_high
+    f_array_add_pop(swing_highs, high[swing_look])
+    f_array_add_pop(swing_highs_bn, bar_index[swing_look])
+
+if swing_low
+    f_array_add_pop(swing_lows, low[swing_look])
+    f_array_add_pop(swing_lows_bn, bar_index[swing_look])
+
+
+
+// filter out values that happened too many bars ago
+f_filter_array(swing_highs_bn, swing_highs)
+f_filter_array(swing_lows_bn, swing_lows)
+
+
+
+// call functions to look for signals
+[buy_cond, buy_step1_low, buy_step1_high, buy_step2_high, buy_step2_low, buy_step3_high]        = f_look_for_buy(buy_1st, buy_2nd, buy_3rd, swing_highs, swing_lows, swing_highs_bn, swing_lows_bn)
+[sell_cond, sell_step1_low, sell_step1_high, sell_step2_high, sell_step2_low, sell_step3_low]   = f_look_for_sell(sell_1st, sell_2nd, sell_3rd, swing_highs, swing_lows, swing_highs_bn, swing_lows_bn)
+
+
+// bgcolor(buy_cond and sell_cond ? color.rgb(255, 235, 59, 60)
+//  : buy_cond ? color.rgb(76, 175, 79, 66) 
+//  : sell_cond ? color.rgb(255, 82, 82, 70) 
+//  : na)
+
+
+// if buy_cond
+//     // label.new(bar_index, high, color = color.white,
+//     //  text= str.tostring(array.max(swing_highs)))
+
+//     label.new(bar_index, 4000, color = color.white, style = label.style_label_up,
+//      text = str.tostring(buy_step1_low) + '\n' + 
+//      str.tostring(buy_step1_high) + '\n' + 
+//      str.tostring(buy_step2_high) + '\n' + 
+//      str.tostring(buy_step2_low) + '\n' + 
+//      str.tostring(buy_step3_high))
+
+    // label.new(bar_index, close, text = str.tostring(array.first(swing_lows)))
+
+
+
+
+// plot visual swing markers
+plotshape(swing_high, title = 'Swing High', style = shape.circle, location = location.abovebar,
+ color = color.new(chart.fg_color,90), size = size.tiny, offset = -swing_look)
+
+plotshape(swing_low, title = 'Swing Low', style = shape.circle, location = location.belowbar,
+ color = color.new(chart.fg_color,90), size = size.tiny, offset = -swing_look)
+
+
+
+
+
+//  define vars
+var bool in_trade = false
+var int trade_side = 0
+var int last_trade = na
+
+var float target = 99999999.99
+var float stop = 0.000000
+var float entry_price = 0.00
+
+var bool long_entry = false
+var bool short_entry = false
+
+var bool tgt_hit = false
+var bool stop_hit = false
+
+var bool long_exit = false
+var bool short_exit = false
+
+
+
+
+// day filter
+current_day = dayofweek(time)
+is_tradeable_day = (trade_monday and current_day == dayofweek.monday)
+ or (trade_tuesday and current_day == dayofweek.tuesday)
+ or (trade_wednesday and current_day == dayofweek.wednesday)
+ or (trade_thursday and current_day == dayofweek.thursday)
+ or (trade_friday and current_day == dayofweek.friday)
+ or (trade_saturday and current_day == dayofweek.saturday)
+ or (trade_sunday and current_day == dayofweek.sunday)
+
+
+
+// ma filter
+ma(source, length, type) =>
+    type == 'SMA' ? ta.sma(source, length) : type == 'EMA' ? ta.ema(source, length) : type == 'SMMA (RMA)' ? ta.rma(source, length) : type == 'WMA' ? ta.wma(source, length) : type == 'VWMA' ? ta.vwma(source, length) : na
+ma = ma(ma_source, ma_length, ma_type)
+plot(use_ma ? ma : na, color=color.yellow, title='Filter MA')
+
+ma_long = use_ma ? close > ma : true
+ma_short = use_ma ? close < ma : true
+
+
+
+
+// define entry
+long_trade_side = long_to_short_lock ? (last_trade == -1 or na(last_trade)) : trade_side != 1 
+short_trade_side = long_to_short_lock ? (last_trade == 1 or na(last_trade)) : trade_side != -1 
+
+trade_to_trade_cond = (finish_trades and not in_trade) or not finish_trades
+
+long_conditions  = buy_cond and is_tradeable_day and ma_long and trade_to_trade_cond
+short_conditions = sell_cond and is_tradeable_day and ma_short and trade_to_trade_cond
+long_entry  := (inverse_settings ? short_conditions : long_conditions) and long_trade_side and not long_entry[1]
+short_entry := (inverse_settings ? long_conditions : short_conditions) and short_trade_side and not short_entry[1]
+
+
+
+// define position
+entry_price := long_entry[1] or short_entry[1] ? open :  in_trade == true ? entry_price[1] : na
+trade_side  := long_entry[1] ? 1 : short_entry[1] ? -1 : in_trade == false ? 0 : trade_side[1]
+last_trade  := (trade_side != 0 and trade_side != trade_side[1]) ? trade_side : last_trade[1]
+
+
+
+// define targets and stops
+if _tp
+    target := trade_side == 1 ? (true ? (entry_price + (entry_price * (_tp_amount/100))) : entry_price + _tp_amount ) 
+     : trade_side == -1 ? (true ? (entry_price - (entry_price * (_tp_amount/100))) : entry_price - _tp_amount ) : na
+else
+    target := na
+    
+if _sl    
+    stop := trade_side == 1 ?  (true ? (entry_price - (entry_price * (_sl_amount/100))) : entry_price - _sl_amount ) : trade_side == -1 ? (true ? (entry_price + (entry_price * (_sl_amount/100))) : entry_price + _sl_amount) : na
+else    
+    stop := na
+
+
+ 
+// update position management
+tgt_hit := trade_side == 1 and high >= target or trade_side == -1 and low <= target
+stop_hit := trade_side == 1 and low <= stop or trade_side == -1 and high >= stop
+
+long_exit := ( (tgt_hit or stop_hit) ) and in_trade[1] == true and trade_side[1] == 1
+short_exit := ( (tgt_hit or stop_hit) ) and in_trade[1] == true and trade_side[1] == -1   
+
+in_trade := long_entry or short_entry ? true : long_exit or short_exit ?  false : in_trade[1]
+
+
+
+// --PLOT SIGNALS-- //
+// plotshape(long_entry[1] , style = shape.triangleup, location = location.belowbar, color=color.new(color.green, 30), size=size.small, title = 'Long Entry')
+// plotshape(short_entry[1] , style = shape.triangledown, location = location.abovebar, color=color.new(color.red, 30), size=size.small, title = 'SS Entry')
+
+// plotshape(short_exit, style = shape.triangleup, location = location.belowbar, color=color.new(color.gray, 30), size=size.small, title = 'SS Exit')
+// plotshape(long_exit, style = shape.triangledown, location = location.abovebar, color=color.new(color.gray, 30), size=size.small, title = 'Long Exit')
+// --PLOT SIGNALS-- //
+
+
+
+//  calculate variables for text
+profit_pct = math.round(math.abs((target - entry_price) / target * 100),2)
+stop_pct = math.round(math.abs((stop - entry_price) / stop * 100),2)
+
+target_text = 'TGT: ' + str.tostring(math.round_to_mintick(target)) + ' (' + str.tostring(profit_pct) + '%)'
+stoploss_text = 'SL: ' + str.tostring(math.round_to_mintick(stop)) + ' (' + str.tostring(stop_pct) + '%)'
+
+
+
+// --TRADE POSIITION LINES-- //
+var line current_entryline = na
+var line current_targetline = na
+var line current_stopline = na
+
+previous_entrylines = array.new_line(50, na)
+previous_targetlines = array.new_line(50, na)
+previous_stoplines = array.new_line(50, na)
+
+var box profit_box = na
+var box loss_box = na
+
+previous_profit_box = array.new_box(50,na)
+previous_loss_box = array.new_box(50,na)
+
+show_position_tool = line_showing != 'None' 
+show_previous = line_showing == 'Past' or line_showing == 'Current & Past'
+
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+f_copy_n_store(current_line, storing_array) =>
+
+    if show_previous
+        copied_line = line.copy(current_line)
+        line.set_extend(copied_line, extend.none)
+        line.set_x2(copied_line, bar_index)
+        f_array_add_pop(storing_array, copied_line)
+
+    line.delete(current_line)
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+
+
+// --FUNCTION TO COPY BOX TO STORED ARRAY-- //
+f_copy_n_storebox(current_box, storing_array, box_type, valign_type) =>
+
+    if show_previous
+        copied_box = box.copy(current_box)
+        box.set_extend(copied_box, extend.none)
+        box.set_right(copied_box, bar_index)
+        box.set_text(copied_box, box_type == 1 ? target_text : stoploss_text)
+        box.set_text_color(copied_box, css_toolcolor)
+        box.set_text_size(copied_box, size.small)
+        box.set_text_valign(copied_box, valign_type == 1 ? text.align_top : text.align_bottom)
+    
+        f_array_add_pop(storing_array, copied_box)
+
+    box.delete(current_box)
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+
+
+
+// new lines
+if long_entry[1] or short_entry[1] and show_position_tool
+
+    // if we were in a trade and flipped side
+    if entry_price[1] != 0
+
+        f_copy_n_storebox(profit_box, previous_profit_box, 1,long_entry[1] ? 1 : -1)
+        f_copy_n_storebox(loss_box, previous_loss_box, -1, long_entry[1] ? -1 : 1)
+
+    profit_box := box.new(left = bar_index, top = target, right = bar_index + 1, bottom = entry_price, border_color = color.new(css_targetline, 50), border_width = 1, border_style = line.style_solid,
+     extend = extend.right, bgcolor = css_targetline, text = target_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign = long_entry[1] ? text.align_top : text.align_bottom)
+    
+    loss_box := box.new(left = bar_index, top = entry_price, right = bar_index + 1, bottom = stop, border_color = color.new(css_stopline, 50), border_width = 1, border_style = line.style_solid,
+     extend = extend.right, bgcolor = css_stopline, text = stoploss_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign =  long_entry[1] ?text.align_bottom : text.align_top)
+    
+
+
+// manage lines
+if long_exit or short_exit
+
+    f_copy_n_storebox(profit_box, previous_profit_box, 1, long_exit ? 1 : -1)
+    f_copy_n_storebox(loss_box, previous_loss_box, -1, long_exit ? -1 : 1)
+else
+    box.set_right(profit_box, bar_index)
+    box.set_right(loss_box, bar_index)
+
+// --TRADE POSIITION LINES-- //
+
+
+
+// --ALERTS-- //
+// alertcondition(long_entry, title = 'Long Entry', message = 'Long Entry')
+// alertcondition(short_entry, title = 'Short Entry', message = 'Short Entry')
+// alertcondition(long_exit, title = 'Long Exit', message = 'Long Exit')
+// alertcondition(short_exit, title = 'Short Exit', message = 'Short Exit')
+// --ALERTS-- //
+
+
+
+// --ORDERS-- //
+// if not is_trade_sess
+//     strategy.close_all(comment = 'EOD', immediately = true)
+
+if (strategy.position_size > 0)
+    strategy.exit(id="LE", limit=target, stop=stop , comment = "TP/SL")
+if (strategy.position_size < 0)
+    strategy.exit(id="SS_E", limit=target, stop=stop , comment = "TP/SL")
+
+if long_exit
+    strategy.close("LE", comment = "LX")
+else if short_exit
+    strategy.close("SS_E", comment = "SS_X")
+
+if long_entry 
+    strategy.entry("LE", strategy.long)
+else if short_entry 
+    strategy.entry("SS_E", strategy.short)
+
+
+// --ORDERS-- //
+

@@ -1,0 +1,36 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("Messing with Alerts & Calc Every Tick", overlay=true, margin_long=100, margin_short=100, calc_on_every_tick=true)
+
+// @keywords: sma-crossover, calc-every-tick, json-alerts, daily-trade-limit, long-short-entry, alert-message, simple-ma, crossover-crossunder, trades-per-day, strategy-test, background-signal, order-alerts, webhook-json, ma-10-20, entry-conditions, tick-calculation, dayofmonth-reset, strategy-demo, alert-testing, margin-settings
+
+use_number_of_trades_per_day = input.bool(true, title = ' ', group = "Additional Trade Settings", inline = '7')
+max_number_of_trades_per_day = input.int(1, title = "Number of Trades per Day", group = "Additional Trade Settings", inline = '7')
+
+var int start_of_day_trades = 0
+start_of_day_trades := dayofmonth != dayofmonth[1] ? strategy.closedtrades : start_of_day_trades[1]
+max_number_of_trades_for_day = start_of_day_trades + max_number_of_trades_per_day
+
+number_of_trades_cond = (use_number_of_trades_per_day and strategy.closedtrades < max_number_of_trades_for_day) or not use_number_of_trades_per_day ? true : false
+
+
+
+ma1 = ta.sma(close,10)
+ma2 = ta.sma(close,20)
+
+plot(ma1, color = color.yellow)
+plot(ma2, color = color.aqua)
+
+longCondition = ta.crossover(ma1, ma2)
+if (longCondition and number_of_trades_cond)
+    strategy.entry("My Long Entry Id", strategy.long, alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}')
+
+shortCondition = ta.crossunder(ma1, ma2)
+if (shortCondition and number_of_trades_cond)
+    strategy.entry("My Short Entry Id", strategy.short, alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}')
+
+bgcolor(longCondition ? color.green : shortCondition ? color.red : na)
+

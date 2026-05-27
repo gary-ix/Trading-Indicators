@@ -1,0 +1,208 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("🧰 Time Alerts", overlay = true)
+
+// @keywords: scheduled-time-alerts, sixteen-time-slots, background-time-highlight, custom-period-labels, hour-minute-inputs, alert-on-time-hit, multi-period-scheduler, intraday-time-markers, overlay-time-reminder, configurable-time-text, enable-per-slot, repeating-time-bg, session-milestone-alerts, clock-based-alerts, time-of-day-trigger, period-name-labels, visual-time-divider, trading-schedule-alerts, multi-window-highlight, time-alert-toolkit
+
+
+use_time_1 = input.bool(true, title = 'Time 1  ' , group = 'Settings', inline = '1')
+time_1 = input.int(defval = 0930, title = ' ', minval = 0, maxval = 2400, group = 'Settings', inline = '1')
+time_1_text = input.string('a Period', title = ' ', group = 'Settings', inline = '1')
+
+use_time_2 = input.bool(true, title = 'Time 2  ' , group = 'Settings', inline = '2')
+time_2 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 2400, group = 'Settings', inline = '2')
+time_2_text = input.string('b Period', title = ' ', group = 'Settings', inline = '2')
+
+use_time_3 = input.bool(true, title = 'Time 3  ' , group = 'Settings', inline = '3')
+time_3 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 3400, group = 'Settings', inline = '3')
+time_3_text = input.string('c Period', title = ' ', group = 'Settings', inline = '3')
+
+use_time_4 = input.bool(true, title = 'Time 4  ' , group = 'Settings', inline = '4')
+time_4 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 4400, group = 'Settings', inline = '4')
+time_4_text = input.string('d Period', title = ' ', group = 'Settings', inline = '4')
+
+use_time_5 = input.bool(true, title = 'Time 5  ' , group = 'Settings', inline = '5')
+time_5 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 5500, group = 'Settings', inline = '5')
+time_5_text = input.string('e Period', title = ' ', group = 'Settings', inline = '5')
+
+use_time_6 = input.bool(true, title = 'Time 6  ' , group = 'Settings', inline = '6')
+time_6 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 6600, group = 'Settings', inline = '6')
+time_6_text = input.string('f Period', title = ' ', group = 'Settings', inline = '6')
+
+use_time_7 = input.bool(true, title = 'Time 7  ' , group = 'Settings', inline = '7')
+time_7 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 7700, group = 'Settings', inline = '7')
+time_7_text = input.string('g Period', title = ' ', group = 'Settings', inline = '7')
+
+use_time_8 = input.bool(true, title = 'Time 8  ' , group = 'Settings', inline = '8')
+time_8 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 8800, group = 'Settings', inline = '8')
+time_8_text = input.string('h Period', title = ' ', group = 'Settings', inline = '8')
+
+use_time_9 = input.bool(true, title = 'Time 9  ' , group = 'Settings', inline = '9')
+time_9 = input.int(defval = 0900, title = ' ', minval = 0, maxval = 9900, group = 'Settings', inline = '9')
+time_9_text = input.string('i Period', title = ' ', group = 'Settings', inline = '9')
+
+use_time_10 = input.bool(true, title = 'Time 10' , group = 'Settings', inline = '10')
+time_10 = input.int(defval = 01000, title = ' ', minval = 0, maxval = 101000, group = 'Settings', inline = '10')
+time_10_text = input.string('j Period', title = ' ', group = 'Settings', inline = '10')
+
+use_time_11 = input.bool(true, title = 'Time 11' , group = 'Settings', inline = '11')
+time_11 = input.int(defval = 01100, title = ' ', minval = 0, maxval = 111100, group = 'Settings', inline = '11')
+time_11_text = input.string('k Period', title = ' ', group = 'Settings', inline = '11')
+
+use_time_12 = input.bool(true, title = 'Time 12' , group = 'Settings', inline = '12')
+time_12 = input.int(defval = 01200, title = ' ', minval = 0, maxval = 121200, group = 'Settings', inline = '12')
+time_12_text = input.string('l Period', title = ' ', group = 'Settings', inline = '12')
+
+use_time_13 = input.bool(true, title = 'Time 13' , group = 'Settings', inline = '13')
+time_13 = input.int(defval = 01300, title = ' ', minval = 0, maxval = 131300, group = 'Settings', inline = '13')
+time_13_text = input.string('m Period', title = ' ', group = 'Settings', inline = '13')
+
+use_time_14 = input.bool(true, title = 'Time 14' , group = 'Settings', inline = '14')
+time_14 = input.int(defval = 01400, title = ' ', minval = 0, maxval = 141400, group = 'Settings', inline = '14')
+time_14_text = input.string('n Period', title = ' ', group = 'Settings', inline = '14')
+
+use_time_15 = input.bool(true, title = 'Time 15' , group = 'Settings', inline = '15')
+time_15 = input.int(defval = 01500, title = ' ', minval = 0, maxval = 151500, group = 'Settings', inline = '15')
+time_15_text = input.string('o Period', title = ' ', group = 'Settings', inline = '15')
+
+use_time_16 = input.bool(true, title = 'Time 16' , group = 'Settings', inline = '16')
+time_16 = input.int(defval = 01600, title = ' ', minval = 0, maxval = 161600, group = 'Settings', inline = '16')
+time_16_text = input.string('p Period', title = ' ', group = 'Settings', inline = '16')
+
+use_time_17 = input.bool(true, title = 'Time 17' , group = 'Settings', inline = '17')
+time_17 = input.int(defval = 01700, title = ' ', minval = 0, maxval = 171700, group = 'Settings', inline = '17')
+time_17_text = input.string('q Period', title = ' ', group = 'Settings', inline = '17')
+
+use_time_18 = input.bool(true, title = 'Time 18' , group = 'Settings', inline = '18')
+time_18 = input.int(defval = 01800, title = ' ', minval = 0, maxval = 181800, group = 'Settings', inline = '18')
+time_18_text = input.string('r Period', title = ' ', group = 'Settings', inline = '18')
+
+use_time_19 = input.bool(true, title = 'Time 19' , group = 'Settings', inline = '19')
+time_19 = input.int(defval = 01900, title = ' ', minval = 0, maxval = 191900, group = 'Settings', inline = '19')
+time_19_text = input.string('s Period', title = ' ', group = 'Settings', inline = '19')
+
+use_time_20 = input.bool(true, title = 'Time 20' , group = 'Settings', inline = '20')
+time_20 = input.int(defval = 02000, title = ' ', minval = 0, maxval = 202000, group = 'Settings', inline = '20')
+time_20_text = input.string('t Period', title = ' ', group = 'Settings', inline = '20')
+
+
+convert_time_input(time_input) =>
+    true
+
+
+
+// ————— Function returning a string representation of a numeric `_val` using a special `_fmt` string allowing all strings to be of the same width, to help align columns of values.
+f_tostringPad(_val, _fmt) =>
+    // float  _val: string to separate.
+    // string _fmt: formatting string similar to those used in the `tostring()` format string, with "?" used to indicate padding, 
+    //              e.g., "??0.00" to ensure that numbers always contain three characters left of the decimal point.
+    //              WARNING: A minus sign MUST begin the format ("-??0.00") if negative values are to be handled, otherwise negative values will have no minus sign.
+
+    // Character used to pad numbers: Unicode figure space (U+2007).
+    var string FIGURE_SPACE = ' '
+    // Character used to pad minus signs: Unicode punctuation space (U+2008).
+    var string PUNCTUATION_SPACE = ' '
+    // Preliminary conversion of the value to a string.
+    string _formattedVal = str.tostring(_val, _fmt)
+    // Remove minus sign from format string.
+    _formattedVal := str.replace_all(_formattedVal, '-', '')
+    // Split value and format string into characters.
+    string[] _chars = str.split(_formattedVal, '')
+    string[] _charsFmt = str.split(_fmt, '')
+
+    // Detect if we need to handle negative values, and if so, remove the minus sign from format.
+    bool _handleNegs = array.get(_charsFmt, 0) == '-'
+    if _handleNegs
+        array.shift(_charsFmt)
+
+    // Detect if value or format string are without a decimal point and if so, add a temporary one for our logic, which we'll remove later.
+    int _pointPos = array.indexof(_chars, '.')
+    int _pointPosFmt = array.indexof(_charsFmt, '.')
+    bool _noPoint = _pointPos == -1
+    bool _noPointFmt = _pointPosFmt == -1
+    if _noPoint
+        array.push(_chars, '.')
+        _pointPos := array.indexof(_chars, '.')
+        _pointPos
+    if _noPointFmt
+        array.push(_charsFmt, '.')
+        _pointPosFmt := array.indexof(_charsFmt, '.')
+        _pointPosFmt
+
+    // Remove extra instances of "?" in front of value.
+    _extraChars = _pointPos - _pointPosFmt
+    if _extraChars > 0
+        for _i = 0 to _extraChars - 1 by 1
+            array.shift(_chars)
+    // Add minus sign or space if needed.
+    if _handleNegs
+        // Format accounts for negative values; insert minus sign or space.
+        array.unshift(_chars, _val < 0 ? '-' : PUNCTUATION_SPACE)
+    // Remove temporary decimal point if needed.
+    if _noPointFmt or _noPoint
+        array.pop(_chars)
+    // Rejoin our array and replace the "?" chars left in our result with figure space padding.
+    string _return = array.join(_chars, '')
+    _return := str.replace_all(_return, '?', FIGURE_SPACE)
+    _return
+
+alert_function(new_period, period_name) =>
+    if new_period
+        alert(period_name,alert.freq_once_per_bar )
+
+if barstate.islast
+    time1_fixed = f_tostringPad(time_1,"?0000")
+    var label1 = label.new(bar_index + 5, close, text=time1_fixed, style=label.style_label_center, size = size.large)
+    a_period_alert = time(timeframe.period, str.format('{0}:1234567', time1_fixed + "-" + str.tostring(0931)), 'America/New_York')
+    alert_function(a_period_alert, 'a Period')
+
+b_period_alert = time(timeframe.period, str.format('{0}:1234567', '1000-1001'), 'America/New_York')
+c_period_alert = time(timeframe.period, str.format('{0}:1234567', '1030-1031'), 'America/New_York')
+d_period_alert = time(timeframe.period, str.format('{0}:1234567', '1100-1101'), 'America/New_York')
+e_period_alert = time(timeframe.period, str.format('{0}:1234567', '1130-1131'), 'America/New_York')
+f_period_alert = time(timeframe.period, str.format('{0}:1234567', '1200-1201'), 'America/New_York')
+g_period_alert = time(timeframe.period, str.format('{0}:1234567', '1230-1231'), 'America/New_York')
+h_period_alert = time(timeframe.period, str.format('{0}:1234567', '1300-1301'), 'America/New_York')
+i_period_alert = time(timeframe.period, str.format('{0}:1234567', '1330-1331'), 'America/New_York')
+j_period_alert = time(timeframe.period, str.format('{0}:1234567', '1400-1401'), 'America/New_York')
+k_period_alert = time(timeframe.period, str.format('{0}:1234567', '1430-1431'), 'America/New_York')
+l_period_alert = time(timeframe.period, str.format('{0}:1234567', '1500-1501'), 'America/New_York')
+m_period_alert = time(timeframe.period, str.format('{0}:1234567', '1530-1531'), 'America/New_York')
+
+
+
+alert_function(b_period_alert, 'b Period')
+alert_function(c_period_alert, 'c Period')
+alert_function(d_period_alert, 'd Period')
+alert_function(e_period_alert, 'e Period')
+alert_function(f_period_alert, 'f Period')
+alert_function(g_period_alert, 'g Period')
+alert_function(h_period_alert, 'h Period')
+alert_function(i_period_alert, 'i Period')
+alert_function(j_period_alert, 'j Period')
+alert_function(k_period_alert, 'k Period')
+alert_function(l_period_alert, 'l Period')
+alert_function(m_period_alert, 'm Period')
+
+
+
+
+
+
+
+
+
+
+
+
+bgcolor(a_period_alert ? color.white : na)
+
+
+
+
+
+
+

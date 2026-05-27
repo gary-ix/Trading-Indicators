@@ -1,0 +1,125 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Pivot Trendlines", overlay = true, max_labels_count = 500)
+
+// @keywords: pivot-trendlines, swing-pivot-high, swing-pivot-low, large-pivot-high, large-pivot-low, trendline-draw, sph-label, spl-label, lph-label, lpl-label, pivot-length, swing-structure, trendline-connect, pivot-labels, structure-markers, high-low-pivots, overlay-trendlines, pivot-detection, market-structure, small-large-pivots
+
+// sph
+pivot_length = input.int(2, title = 'Length', minval=1)
+use_sph = input.bool(true, title = 'SPH⠀⠀⠀', inline = '1', group = 'Settings')
+sph_color = input.color(color.rgb(0, 0, 0), title = '', inline = '1', group = 'Settings')
+
+var int sph_redcount = na
+
+sph = ta.pivothigh(high,pivot_length,pivot_length)
+// sph_red
+
+
+// bgcolor(not na(sph) ? color.black : na)
+// plot(sph_redcount)
+
+
+// spl
+use_spl = input.bool(true, title = 'SPL⠀⠀⠀', inline = '2', group = 'Settings')
+spl = ta.pivotlow(low,pivot_length,pivot_length)
+spl_color = input.color(color.rgb(0, 0, 0), title = '', inline = '2', group = 'Settings')
+
+
+f_drawsp(value, array_labels, type) =>
+
+    if type == 1
+        array.unshift(array_labels, label.new(x=bar_index-2, y=value, text='sph', xloc=xloc.bar_index,
+         yloc=yloc.abovebar, style=label.style_none, size = size.small, textalign=text.align_center,
+         color = sph_color, textcolor = use_sph ? sph_color : color.new(sph_color,100)))
+    else if type == -1 and use_spl
+        array.unshift(array_labels, label.new(x=bar_index-2, y=value, text='spl', xloc=xloc.bar_index,
+         yloc=yloc.belowbar, style=label.style_none, size = size.small, textalign=text.align_center,
+         color = sph_color, textcolor = use_spl ? spl_color : color.new(spl_color,100)))
+
+var sphs = array.new_float(200, na)
+var spls = array.new_float(200, na)
+
+var sphs_labels = array.new_label(500,na)
+var spls_labels = array.new_label(500,na)
+
+var int last_small_signal = na 
+last_small_signal := not na(sph) ? 1 : not na(spl) ? -1 : last_small_signal[1]
+
+if not na(sph)
+    if last_small_signal[1] == -1
+        array.unshift(sphs,sph)
+        f_drawsp(sph, sphs_labels, 1)
+    else if sph >= array.get(sphs,0)
+        label.set_y(array.first(sphs_labels), sph)
+        label.set_x(array.first(sphs_labels), bar_index-2)
+        array.set(sphs, 0, sph)
+
+if not na(spl)
+    if last_small_signal[1] == 1
+        array.unshift(spls,spl)
+        f_drawsp(spl, spls_labels, -1)
+    else if spl <= array.get(spls,0)
+        label.set_y(array.first(spls_labels), spl)
+        label.set_x(array.first(spls_labels), bar_index-2)
+        array.set(spls, 0, spl)
+
+
+// to mark LPH we need to break most recent spl
+var bool taken_out_spl = false
+var bool taken_out_sph = false
+
+var bool LPL = na
+var bool LPH = na
+
+var int last_large_signal = 0
+
+taken_out_spl := not na(spl) ? false : low <= array.first(spls) ? true : taken_out_spl[1]
+taken_out_sph := not na(sph) ? false : high >= array.first(sphs) ? true : taken_out_sph[1]
+
+LPL := (taken_out_sph and not taken_out_sph[1]) and last_large_signal[1] != -1
+LPH := (taken_out_spl and not taken_out_spl[1]) and last_large_signal[1] != 1
+last_large_signal := nz(LPL,false) ? -1 : nz(LPH,false) ? 1 : nz(last_large_signal[1],0)
+// barcolor(LPL ? color.green : LPH ? color.red : na)
+// barcolor(last_large_signal == 1 ? color.green : last_large_signal == -1 ? color.red : na)
+
+
+var float track_temp_LPL = na
+var int   track_temp_LPL_bn = na
+
+var float track_temp_LPH = na
+var int   track_temp_LPH_bn = na
+
+use_lph = input.bool(true, title = 'LPH⠀⠀⠀', inline = '3', group = 'Settings')
+lph_color = input.color(color.blue, title = '', inline = '3', group = 'Settings')
+
+use_lpl = input.bool(true, title = 'LPL⠀⠀⠀', inline = '4', group = 'Settings')
+lpl_color = input.color(color.blue, title = '', inline = '4', group = 'Settings')
+
+if LPH
+    track_temp_LPL := low
+    track_temp_LPL_bn := bar_index
+    label.new(x=track_temp_LPH_bn[1], y=track_temp_LPH[1], text = 'LPH', style = label.style_label_center,
+     yloc=yloc.abovebar, color = use_lph ? lph_color : color.new(lph_color,100), textcolor = use_lph ? sph_color : color.new(sph_color,100),
+     size = size.small)
+
+
+if LPL
+    track_temp_LPH := high
+    track_temp_LPH_bn := bar_index
+    label.new(x=track_temp_LPL_bn[1], y=track_temp_LPL[1], text = 'LPL', style = label.style_label_center,
+     yloc=yloc.belowbar, color = use_lpl ? lpl_color : color.new(lpl_color,100), textcolor = use_lpl ? spl_color : color.new(spl_color,100),
+     size = size.small)
+
+
+
+if low <= track_temp_LPL[1]
+    track_temp_LPL := low
+    track_temp_LPL_bn := bar_index
+
+if high >= track_temp_LPH[1]
+    track_temp_LPH := high
+    track_temp_LPH_bn := bar_index
+

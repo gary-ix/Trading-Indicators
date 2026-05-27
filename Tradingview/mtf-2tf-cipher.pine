@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("MTF 2TF Cipher", overlay = true)
+
+// @keywords: close-price-plot, placeholder-indicator, overlay-close, minimal-output, cipher-stub, two-timeframe, mtf-placeholder, price-line, basic-overlay, unfinished-cipher, single-plot, chart-close, development-stub, no-oscillator, passthrough-close, indicator-shell, export-only, future-cipher, baseline-plot, close-tracker
+
+plot(close)
+
+

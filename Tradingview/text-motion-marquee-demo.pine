@@ -1,0 +1,62 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Text Motion Marquee Demo")
+
+// @keywords: animated-text-label, marquee-transition, slide-in-out, motion-library-demo, interval-steps, max-loop-control, left-to-right-scroll, whitespace-padding, substring-slice, play-pause-toggle, table-cell-text, transition-effects, scrolling-banner, label-animation, demo-indicator, text-motion, periodic-update, character-crawl, ui-animation-sample, placeholder-string
+
+import cryptolinx/Motion/8
+//  ▪ EXAMPLE ────
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+// ———— User Input {
+// 
+var string __FX = input.string('marquee', 'Transition', options = ['marquee', 'slide_in_left', 'slide_in_right', 'slide_out_left', 'slide_out_right'])
+var string __TEXT = input.string('ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', 'Example Text')
+var int __INTV = input.int(0, title = 'Interval', step = 1, minval = 0, maxval = 100)
+var int __STEP = input.int(1, title = 'Steps Per Interval', step = 1, minval = 1, maxval = 20)
+var int __MAX_LOOPS = input.int(0, title = 'Max. Loops', step = 1, minval = 0, maxval = 100, tooltip = '0 = disabled')
+var bool __PLAY = input.bool(true, 'Play')
+var bool __LTR = input.bool(false, title = 'Left To Right', group = 'ONLY MARQUEE')
+var int __WS = input.int(5, title = 'White Space', step = 1, minval = 0, maxval = 10, group = 'ONLY MARQUEE')
+var bool __REFILL = input.bool(true, 'Placeholder String', group = 'ONLY SLIDE', tooltip = 'default = true')
+var int __SUBSTART = input.int(0, title = 'Substring Start', step = 1, minval = 0, maxval = 20, group = 'EXTRA')
+var int __SUBLEN = input.int(0, title = 'Substring Length', step = 1, minval = 0, maxval = 20, group = 'EXTRA')
+// }
+
+// ———— Motion 🪄 {
+//
+varip motionKf = keyframe.new(__TEXT, __WS, __INTV, __STEP, execution = __PLAY)
+string transitionString = transition(motionKf, __FX, __MAX_LOOPS, __SUBLEN, __SUBSTART, __LTR, __PLAY, __REFILL)
+// }
+
+// ————  Label {
+//
+var label select = label.new(bar_index, 750, text = 'Double click, to select a transition effect from input:', textcolor = color.white, color = #ffffff0b, size = size.normal, style = label.style_label_center)
+var label fx = label.new(bar_index, 700, text = __FX, textcolor = #AAFF00, color = #ffffff0b, size = size.normal, style = label.style_label_center, textalign = text.align_center, text_font_family = font.family_default)
+var label example = label.new(bar_index, 600, text = '', textcolor = color.white, color = #ffffff0b, size = size.huge, style = label.style_label_center, textalign = text.align_center, text_font_family = font.family_monospace)
+var label openSource = label.new(bar_index, 300, text = 'open 💙 source', textcolor = color.white, color = #ffffff0b, size = size.normal, style = label.style_label_center)
+// -- updates
+label.set_x(select, bar_index), label.set_x(fx, bar_index), label.set_x(example, bar_index), label.set_x(openSource, bar_index)
+label.set_text(example, transitionString), label.set_text(fx, __FX)
+// }
+
+// } #EOF
+
+plot(motionKf.pointer, 'Current Pointer Position RTL', display = display.data_window)
+plot(motionKf.length - motionKf.pointer,'Current Pointer Position LTR', display = display.data_window)
+plot(motionKf.ltr ? 1 : 0, 'LTR', display = display.data_window)
+plot(motionKf.update_no, 'Update No.', display = display.data_window)
+// plot(motionKf.frame_no, 'Frame No.', display = display.data_window)
+plot(motionKf.frame_no, 'Frame No.', display = display.data_window)
+plot(motionKf.loop_no, 'Loop No.', display = display.data_window)
+plot(motionKf.length, 'Length', display = display.data_window)
+plot(motionKf.sub_length, 'Sub LenGTH', display = display.data_window)
+plot(motionKf.sub_start,'Sub Start', display = display.data_window)
+plot(motionKf.pointer,'Start WIndow', display = display.data_window)
+plot(motionKf.length + motionKf.pointer,'End Window', display = display.data_window)
+plot(motionKf.length + motionKf.pointer,'End Window', display = display.data_window)
+
+

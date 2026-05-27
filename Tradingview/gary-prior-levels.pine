@@ -1,0 +1,79 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("GARY - Prior Levels", overlay= true, max_labels_count = 500, max_boxes_count = 500, max_lines_count = 500, max_bars_back = 5000)
+
+// @keywords: prior-levels, prior-high, prior-low, prior-close, prior-mid, multi-timeframe, day-structure, week-structure, month-structure, horizontal-lines, level-labels, mtf-levels, dashed-lines, price-levels, session-levels, historical-levels, extend-right, reference-levels, structure-lines, gary-levels
+
+//--MTF STRUCTURE INPUTS--//
+mtf_showday = input.bool(true, title = 'Day Structure', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '1')
+mtf_day_css = input.color(color.new(color.white,70), title = '', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '1')
+mtf_showweek = input.bool(false, title = 'Week Structure', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '2')
+mtf_week_css = input.color(color.new(color.white,70), title = '', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '2')
+mtf_showmonth = input.bool(false, title = 'Month Structure', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '3')
+mtf_month_css = input.color(color.new(color.white,70), title = '', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '3')
+mtf_label_css = input.color(color.new(color.white, 60), title = 'Label', group = 'Multi-Timeframe Structure (MTF) Settings', inline = '5')
+//-----INPUTS-----//
+
+
+//--FUNCTION FOR GETTING MTF VALUES AND PLOTTING THEM--//
+f_mtf_values(time_period, bar_start, line_color, label_color, label_text , tooltip_text) =>
+    
+    highs = request.security(syminfo.tickerid,time_period, high[1], lookahead=barmerge.lookahead_on)
+    lows = request.security(syminfo.tickerid,time_period, low[1], lookahead=barmerge.lookahead_on)
+    closes = request.security(syminfo.tickerid,time_period, close[1], lookahead=barmerge.lookahead_on)
+    
+    var prior_high_line = array.new_line(0, na)
+    var prior_high_label = array.new_label(0, na)
+
+    array.insert(prior_high_line, 0, line.new(bar_start, highs, bar_index, y2 = highs, xloc = xloc.bar_index, extend = extend.right, color = 
+     line_color, style = line.style_dashed, width = 1))
+    array.insert(prior_high_label, 0, label.new(x = bar_index + 70, y = highs, text = label_text + "H", style = label.style_none, 
+     size = size.tiny, textcolor = label_color, tooltip = tooltip_text + "High " + str.tostring(highs)))
+
+    var prior_low_line = array.new_line(0, na)
+    var prior_low_label = array.new_label(0, na)
+
+    array.insert(prior_low_line, 0, line.new(bar_start, lows, bar_index, y2 = lows, xloc = xloc.bar_index, extend = extend.right, color = 
+     line_color, style = line.style_dashed, width = 1))
+    array.insert(prior_low_label, 0, label.new(x = bar_index + 70, y = lows, text = label_text + "L", style = label.style_none, 
+     size = size.tiny, textcolor = label_color, tooltip = tooltip_text + "Low " +str.tostring(lows)))
+
+    var prior_close_line = array.new_line(0, na)
+    var prior_close_label = array.new_label(0, na)
+
+    array.insert(prior_close_line, 0, line.new(bar_start, closes, bar_index, y2 = closes, xloc = xloc.bar_index, extend = extend.right, color = 
+     line_color, style = line.style_dashed, width = 1))
+    array.insert(prior_close_label, 0, label.new(x = bar_index + 70, y = closes, text = label_text + "C", style = label.style_none, 
+     size = size.tiny, textcolor = label_color, tooltip = tooltip_text + "Close " +str.tostring(closes)))
+
+    var prior_mid_line = array.new_line(0, na)
+    var prior_mid_label = array.new_label(0, na)
+
+    array.insert(prior_mid_line, 0, line.new(bar_start, (highs + lows) / 2, bar_index, y2 = (highs + lows) / 2, xloc = xloc.bar_index, extend = extend.right, color = 
+     line_color, style = line.style_dashed, width = 1))
+    array.insert(prior_mid_label, 0, label.new(x = bar_index + 70, y = (highs + lows) / 2, text = label_text + "M", style = label.style_none, 
+     size = size.tiny, textcolor = label_color, tooltip = tooltip_text + "Mid " +str.tostring((highs + lows) / 2)))
+//--FUNCTION FOR GETTING MTF VALUES AND PLOTTING THEM--//
+
+
+// time changes for mtf
+var int day_bn_start = 0
+day_bn_start := ta.change(time('D')) ? bar_index : day_bn_start[1]
+
+var int week_bn_start = 0
+week_bn_start := ta.change(time('W')) ? bar_index : day_bn_start[1]
+
+var int month_bn_start = 0
+month_bn_start := ta.change(time('M')) ? bar_index : day_bn_start[1]
+
+if barstate.islastconfirmedhistory
+    if mtf_showday
+        f_mtf_values('D', day_bn_start, mtf_day_css, mtf_label_css, 'PD', 'Prior Days ')
+    if mtf_showweek
+        f_mtf_values('W', week_bn_start, mtf_week_css, mtf_label_css, 'PW', 'Prior Weeks ')
+    if mtf_showmonth
+        f_mtf_values('M', month_bn_start, mtf_month_css, mtf_label_css, 'PM', 'Prior Months ')
+

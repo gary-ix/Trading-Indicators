@@ -1,0 +1,148 @@
+// © goodgains
+//@version=5
+indicator('Valueworth Heatmap', shorttitle='Valueworth Heatmap', overlay=false, precision=6)
+
+// @keywords: valueworth-heatmap, multi-timeframe, atr-channel, trend-detection, heatmap-display, amplitude-pivots, channel-deviation, three-timeframes, up-down-trend, arrow-signals, normalized-heatmap, pivot-amplitude, valueworth-algorithm, overlay-heatmap, trend-flip, high-low-sma, heatmap-zones, mtf-trend, channel-break, background-heatmap
+
+amplitude = input(title="Amplitude", defval=3)
+channelDeviation = input(title="Channel Deviation", defval=3)
+
+res1 = input.timeframe('1', title='First Timeframe')
+res2 = input.timeframe('5', title='Second Timeframe')
+res3 = input.timeframe('15', title='Third Timeframe')
+
+
+ValueWorth(amplitude,channelDeviation)=>
+    var int trend = 0
+    var int nextTrend = 0
+    var float maxLowPrice = nz(low[1], low)
+    var float minHighPrice = nz(high[1], high)
+    
+    var float up = 0.0
+    var float down = 0.0
+    float atrHigh = 0.0
+    float atrLow = 0.0
+    float arrowUp = na
+    float arrowDown = na
+    
+    atr2 = ta.atr(100) / 2
+    dev = channelDeviation * atr2
+    
+    highPrice = high[math.abs(ta.highestbars(amplitude))]
+    lowPrice = low[math.abs(ta.lowestbars(amplitude))]
+    highma = ta.sma(high, amplitude)
+    lowma = ta.sma(low, amplitude)
+    
+    if nextTrend[1] == 1
+    	maxLowPrice := math.max(lowPrice, maxLowPrice)
+    
+    	if highma < maxLowPrice and close < nz(low[1], low)
+    		trend := 1
+    		nextTrend := 0
+    		minHighPrice := highPrice
+    else
+    	minHighPrice := math.min(highPrice, minHighPrice)
+    
+    	if lowma > minHighPrice and close > nz(high[1], high)
+    		trend := 0
+    		nextTrend := 1
+    		maxLowPrice := lowPrice
+    
+    if trend == 0
+    	if not na(trend[1]) and trend[1] != 0
+    		up := na(down[1]) ? down : down[1]
+    		arrowUp := up - atr2
+    	else
+    		up := na(up[1]) ? maxLowPrice : math.max(maxLowPrice, up[1])
+    	atrHigh := up + dev
+    	atrLow := up - dev
+    else
+    	if not na(trend[1]) and trend[1] != 1 
+    		down := na(up[1]) ? up : up[1]
+    		arrowDown := down + atr2
+    	else
+    		down := na(down[1]) ? minHighPrice : math.min(minHighPrice, down[1])
+    	atrHigh := down + dev
+    	atrLow := down - dev
+    
+    ht = trend == 0 ? up : down
+    [down,trend,maxLowPrice]
+    
+[down,ValTrend,test] = ValueWorth(amplitude,channelDeviation)
+
+plot(down)
+// bgcolor(ValTrend == 0 ? color.new(color.green,70) : color.new(color.red,70))
+
+// Security
+ST1_Trend_MTF = request.security(syminfo.tickerid, res1, ValTrend[1], lookahead=barmerge.lookahead_on)
+ST2_Trend_MTF = request.security(syminfo.tickerid, res2, ValTrend[1], lookahead=barmerge.lookahead_on)
+ST3_Trend_MTF = request.security(syminfo.tickerid, res3, ValTrend[1], lookahead=barmerge.lookahead_on)
+
+
+h0 = hline(1, color=color.new(color.black, 10), linewidth=2, linestyle=hline.style_solid)
+h1 = hline(2, color=color.new(color.black, 10), linewidth=2, linestyle=hline.style_solid)
+h2 = hline(3, color=color.new(color.black, 10), linewidth=2, linestyle=hline.style_solid)
+h3 = hline(4, color=color.new(color.black, 10), linewidth=2, linestyle=hline.style_solid)
+
+
+get_bars(Trend) =>
+    since_st_buy = ta.barssince(Trend == 0)
+    since_st_sell = ta.barssince(Trend != 0)
+    [since_st_buy, since_st_sell]
+    
+[since_st_1_buy, since_st_1_sell] = get_bars(ST1_Trend_MTF)
+[since_st_2_buy, since_st_2_sell] = get_bars(ST2_Trend_MTF)
+[since_st_3_buy, since_st_3_sell] = get_bars(ST3_Trend_MTF)
+
+
+// select the right heatmsap color
+heatmap_color(cond1, cond2) =>
+    cond1 ? color.new(color.green, 20) : cond2 ? color.new(color.red, 20) : na    
+
+lapos_x = timenow + math.round(ta.change(time) * 3)
+lapos_y = ta.highest(5)  // + (0.15 * highest(20))
+
+// Displays the timeframe labels at the right    
+f_draw_label(x, y, _text, _textcolor, _size) =>
+    var label Label = na
+    label.delete(Label)
+    Label := label.new(x, y, _text, color=color.new(color.white, 20), textcolor=_textcolor, style=label.style_none, yloc=yloc.price, xloc=xloc.bar_time, size=_size)
+    Label
+
+// Display the labels in a more readable way
+// If timeframe selected is "Same as symbol" displays the timeframe.period string value
+res_to_string(res) =>
+    iff_1 = res == '360' ? 'H3' : timeframe.period
+    iff_2 = res == 'W' ? 'Weekly' : iff_1
+    iff_3 = res == 'D' ? 'Daily' : iff_2
+    iff_4 = res == '480' ? 'H8' : iff_3
+    iff_5 = res == '240' ? 'H4' : iff_4
+    iff_6 = res == '120' ? 'H2' : iff_5
+    iff_7 = res == '60' ? 'H1' : iff_6
+    iff_8 = res == '30' ? 'm30' : iff_7
+    iff_9 = res == '15' ? 'm15' : iff_8
+    iff_10 = res == '5' ? 'm5' : iff_9
+    str = res == '1' ? 'm1' : iff_10
+    str
+
+// draw the TF labels
+f_draw_label(lapos_x, 1, res_to_string(res1), color.black, size.large)
+f_draw_label(lapos_x, 2, res_to_string(res2), color.black, size.large)
+f_draw_label(lapos_x, 3, res_to_string(res3), color.black, size.large)
+
+
+// Draw the green/red heatmap raws
+fill(h0, h1, color=heatmap_color(since_st_1_sell > since_st_1_buy, since_st_1_sell < since_st_1_buy), transp=100)
+fill(h1, h2, color=heatmap_color(since_st_2_sell > since_st_2_buy, since_st_2_sell < since_st_2_buy), transp=100)
+fill(h2, h3, color=heatmap_color(since_st_3_sell > since_st_3_buy, since_st_3_sell < since_st_3_buy), transp=100)
+
+
+//plot(valHt)
+
+var tbl = table.new(position.bottom_left, 2, 3, frame_color=#151715, frame_width=1, border_width=2, border_color=color.new(color.white, 100))
+
+table.cell(tbl, 0, 0, "Daily",    text_halign = text.align_left,   bgcolor = color.gray, text_color = color.white, text_size = size.auto)
+table.cell(tbl, 0, 1, "4 Hours", text_halign = text.align_left,   bgcolor = color.gray, text_color = color.white, text_size = size.auto)
+table.cell(tbl, 0, 2, "1 Hour",    text_halign = text.align_left,   bgcolor = color.gray, text_color = color.white, text_size = size.auto)
+    
+

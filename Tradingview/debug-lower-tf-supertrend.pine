@@ -1,0 +1,44 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("DEBUG Lower TF Supertrend", overlay = true)
+
+// @keywords: supertrend, lower-timeframe, atr-trail, trend-side, hull-ma, background-highlight, debug-tool, one-minute, atr-multiplier, hl2-bands, trend-flip, mtf-debug, trail-line, bullish-bearish, hma-atr, wma-atr, ema-atr, sma-atr, vwma-atr, side-indicator
+
+// plot(close)
+
+// function to calculate supertrend side
+f_mtf_st(st_mult, atr_length, st_type) =>
+
+    float mtf_atr = switch st_type
+        "MA" => ta.sma(ta.tr(false), atr_length)
+        "WMA" => ta.wma(ta.tr(false), atr_length)
+        "VWMA" => ta.vwma(ta.tr(false), atr_length)
+        "EMA" => ta.ema(ta.tr(false), atr_length)
+        "HMA" => ta.hma(ta.tr(false), atr_length)
+
+    mtf_up = hl2 + (st_mult * mtf_atr)
+    mtf_down = hl2 + (-st_mult * mtf_atr)
+    
+    var float mtf_st = na
+    mtf_st := close < mtf_st[1] ? mtf_up : mtf_down
+
+    var int mtf_st_side = na
+    mtf_st_side := close > mtf_st ? 1 : close < mtf_st ? -1 : mtf_st_side[1]
+
+    [mtf_st_side,mtf_st]
+
+
+min1_st_mult = 1.0
+min1_st_atr_length = 4
+min1_st_avgtype = 'HMA'
+min1_st_timeframe = '1'
+
+[min1_st_array, st_value] = f_mtf_st(min1_st_mult, min1_st_atr_length, min1_st_avgtype)
+
+
+bgcolor(min1_st_array == 1 ? color.new(color.green,50) : min1_st_array == -1 ? color.new(color.red,80) : na)
+plot(st_value)
+

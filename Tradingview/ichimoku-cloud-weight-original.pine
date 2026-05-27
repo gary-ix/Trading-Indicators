@@ -1,0 +1,305 @@
+// © goodgains
+//@version=5
+indicator(title="Ichimoku Cloud Weight Original",overlay=false)
+
+// @keywords: ichimoku, cloud-weight, tk-cross, pk-cross, kumo-breakout, senkou-span-cross, chikou-span, quant-weight-score, bullish-bearish-points, kumo-position, reversal-zones, flip-indicator, alma-smooth, price-cloud-placement, signal-scoring, weighted-score, volatility-zone, buy-sell-zones, tenkan-kijun, leading-span
+
+// == inputs ==
+
+conversionPeriods = 9,
+basePeriods = (conversionPeriods*3)-math.round(9/conversionPeriods)
+laggingSpan2Periods = basePeriods*2,
+displacement = basePeriods
+
+// == helpers ==
+
+donchian(len) => math.avg(ta.lowest(len), ta.highest(len))
+
+resolve(src, default) =>
+    if na(src)
+        default
+    else
+        src
+
+// == generate ichimoku data ==
+
+conversionLine = donchian(conversionPeriods)
+baseLine = donchian(basePeriods)
+
+// NOTE: these senkou spans are for signal generation; not for plotting. this is
+//       due to limitations of pinescript
+//
+// i.e. Senkou Span A
+leadLine1 = math.avg(conversionLine, baseLine)[displacement]
+// i.e. Senkou Span B
+leadLine2 = donchian(laggingSpan2Periods)[displacement]
+
+
+// tk_cross_bull = (conversionLine[1] < baseLine[1] and conversionLine >= baseLine)
+// tk_cross_bear = (conversionLine[1] > baseLine[1] and conversionLine <= baseLine)
+tk_cross_bull = ta.crossover(conversionLine, baseLine)
+tk_cross_bear = ta.crossunder(conversionLine, baseLine)
+
+// get true y-coord of the cross
+cross_y = (conversionLine[1] * (baseLine - baseLine[1]) - baseLine[1] * (conversionLine - conversionLine[1])) / ((baseLine - baseLine[1]) - (conversionLine - conversionLine[1]))
+
+tk_cross_below_kumo = cross_y <= leadLine2[1] and cross_y <= leadLine1[1] and cross_y <= leadLine2 and cross_y <= leadLine1
+tk_cross_above_kumo = cross_y >= leadLine2[1] and cross_y >= leadLine1[1] and cross_y >= leadLine2 and cross_y >= leadLine1
+tk_cross_inside_kumo = (not tk_cross_below_kumo) and (not tk_cross_above_kumo)
+tk_cross_score = 0.0
+tk_cross_score := resolve(tk_cross_score[1], 0)
+
+use_tk_cross = true
+tk_cross_weight = 1
+
+tk_cross_weak_bullish_points =  0.5
+tk_cross_neutral_bullish_points = 1
+tk_cross_strong_bullish_points = 2
+
+tk_cross_weak_bearish_points = -0.5
+tk_cross_neutral_bearish_points = -1
+tk_cross_strong_bearish_points = -2
+
+// == TK Cross / weak bullish (below kumo) ==
+tk_cross_score := (tk_cross_bull and tk_cross_below_kumo) ? tk_cross_weak_bullish_points : tk_cross_score
+
+// == TK Cross / neutral bullish (inside kumo) ==
+tk_cross_score := (tk_cross_bull and tk_cross_inside_kumo) ? tk_cross_neutral_bullish_points : tk_cross_score
+
+// == TK Cross / strong bullish (above kumo) ==
+tk_cross_score := (tk_cross_bull and tk_cross_above_kumo) ? tk_cross_strong_bullish_points : tk_cross_score
+
+// == TK Cross / strong bearish (below kumo) ==
+tk_cross_score := (tk_cross_bear and tk_cross_below_kumo) ? tk_cross_strong_bearish_points : tk_cross_score
+
+// == TK Cross / neutral bearish (inside kumo) ==
+tk_cross_score := (tk_cross_bear and tk_cross_inside_kumo) ? tk_cross_neutral_bearish_points : tk_cross_score
+
+// == TK Cross / weak bearish (above kumo) ==
+tk_cross_score := (tk_cross_bear and tk_cross_above_kumo) ? tk_cross_weak_bearish_points : tk_cross_score
+
+
+// == Price and Kijun Sen (standard line) Cross ==
+
+//pk_cross_bull = (close[1] < baseLine[1] and close >= baseLine)
+//pk_cross_bear = (close[1] > baseLine[1] and close <= baseLine)
+pk_cross_bull = ta.crossover(close, baseLine)
+pk_cross_bear = ta.crossunder(close, baseLine)
+
+cross_pk_y = (close[1] * (baseLine - baseLine[1]) - baseLine[1] * (close - close[1])) / ((baseLine - baseLine[1]) - (close - close[1]))
+
+pk_cross_below_kumo = cross_pk_y <= leadLine2[1] and cross_pk_y <= leadLine1[1] and cross_pk_y <= leadLine2 and cross_pk_y <= leadLine1
+pk_cross_above_kumo = cross_pk_y >= leadLine2[1] and cross_pk_y >= leadLine1[1] and cross_pk_y >= leadLine2 and cross_pk_y >= leadLine1
+pk_cross_inside_kumo = (not pk_cross_below_kumo) and (not pk_cross_above_kumo)
+pk_cross_score = 0.0
+pk_cross_score := resolve(pk_cross_score[1], 0)
+
+use_pk_cross = true
+pk_cross_weight = 1
+
+pk_cross_weak_bullish_points = .5
+pk_cross_neutral_bullish_points = 1
+pk_cross_strong_bullish_points = 2
+
+pk_cross_weak_bearish_points = -0.5
+pk_cross_neutral_bearish_points = -1
+pk_cross_strong_bearish_points = -2
+
+// == PK Cross / weak bullish (below kumo) ==
+pk_cross_score := (pk_cross_bull and pk_cross_below_kumo) ? pk_cross_weak_bullish_points : pk_cross_score
+
+// == PK Cross / neutral bullish (inside kumo)
+pk_cross_score := (pk_cross_bull and pk_cross_inside_kumo) ? pk_cross_neutral_bullish_points : pk_cross_score
+
+// == PK Cross / strong bullish (above kumo)
+pk_cross_score := (pk_cross_bull and pk_cross_above_kumo) ? pk_cross_strong_bullish_points : pk_cross_score
+
+// == PK Cross / strong bearish (below kumo)
+pk_cross_score := (pk_cross_bear and pk_cross_below_kumo) ? pk_cross_strong_bearish_points : pk_cross_score
+
+// == PK Cross / neutral bearish (inside kumo)
+pk_cross_score := (pk_cross_bear and pk_cross_inside_kumo) ? pk_cross_neutral_bearish_points : pk_cross_score
+
+// == PK Cross / weak bearish (above kumo)
+pk_cross_score := (pk_cross_bear and pk_cross_above_kumo) ? pk_cross_weak_bearish_points : pk_cross_score
+
+// == Kumo Breakouts ==
+
+kumo_bull = (ta.crossover(close, leadLine1) and leadLine1 > leadLine2) or (ta.crossover(close, leadLine2) and leadLine2 > leadLine1)
+kumo_bear = (ta.crossunder(close, leadLine2) and leadLine1 > leadLine2) or (ta.crossunder(close, leadLine1) and leadLine2 > leadLine1)
+kumo_breakout_score = 0.0
+kumo_breakout_score := resolve(kumo_breakout_score[1], 0)
+
+use_kumo_breakout = true
+kumo_breakout_weight = 1
+
+kumo_breakout_bullish_points = 1
+kumo_breakout_bearish_points = -1
+
+price_below_kumo = (close < leadLine2 and close < leadLine1)
+price_above_kumo = (close > leadLine2 and close > leadLine1)
+price_inside_kumo = (not price_below_kumo) and (not price_above_kumo)
+
+kumo_breakout_score := (kumo_bull and price_above_kumo) ? kumo_breakout_bullish_points : kumo_breakout_score
+kumo_breakout_score := (kumo_bear and price_below_kumo) ? kumo_breakout_bearish_points : kumo_breakout_score
+
+// == Senkou Span Cross ==
+// The Senkou Span Cross signal occurs when the Senkou Span A (1st leading line) crosses the Senkou Span B (2nd leading line).
+// NOTE: this cross occurs ahead of the price, since it's displaced to the right; this displacement must be removed
+
+// i.e. Senkou Span A (no displacement)
+no_dp_leadLine1 = math.avg(conversionLine, baseLine)
+// i.e. Senkou Span B (no displacement)
+no_dp_leadLine2 = donchian(laggingSpan2Periods)
+// TODO: debug;remove
+// plot(no_dp_leadLine1)
+// plot(no_dp_leadLine2)
+
+lead_line_cross_bull = ta.crossover(no_dp_leadLine1, no_dp_leadLine2)
+lead_line_cross_bear = ta.crossunder(no_dp_leadLine1, no_dp_leadLine2)
+price_below_kumo := (close < no_dp_leadLine2 and close < no_dp_leadLine1)
+price_above_kumo := (close > no_dp_leadLine2 and close > no_dp_leadLine1)
+price_inside_kumo := (not price_below_kumo) and (not price_above_kumo)
+// price_inside_kumo = (no_dp_leadLine2 < close and close < no_dp_leadLine1) and (no_dp_leadLine1 < close and close < no_dp_leadLine2)
+span_cross_score = 0.0
+span_cross_score := resolve(span_cross_score[1], 0)
+
+use_span_cross = true
+span_cross_weight = 1
+
+span_cross_weak_bullish_points = 0.5
+span_cross_neutral_bullish_points = 1
+span_cross_strong_bullish_points = 2
+
+span_cross_weak_bearish_points = -0.5
+span_cross_neutral_bearish_points = -1
+span_cross_strong_bearish_points = -2
+
+// == Senkou Span Cross / weak bullish (price below kumo) ==
+span_cross_score := (lead_line_cross_bull and price_below_kumo) ? span_cross_weak_bullish_points : span_cross_score
+
+// == Senkou Span Cross / neutral bullish (price inside kumo) ==
+span_cross_score := (lead_line_cross_bull and price_inside_kumo) ? span_cross_neutral_bullish_points : span_cross_score
+
+// == Senkou Span Cross / strong bullish (price above kumo) ==
+span_cross_score := (lead_line_cross_bull and price_above_kumo) ? span_cross_strong_bullish_points : span_cross_score
+
+// == Senkou Span Cross / weak bearish (price above kumo) ==
+span_cross_score := (lead_line_cross_bear and price_above_kumo) ? span_cross_weak_bearish_points : span_cross_score
+
+// == Senkou Span Cross / neutral bearish (price inside kumo) ==
+span_cross_score := (lead_line_cross_bear and price_inside_kumo) ? span_cross_neutral_bearish_points : span_cross_score
+
+// == Senkou Span Cross / strong bearish (price below kumo) ==
+span_cross_score := (lead_line_cross_bear and price_below_kumo) ? span_cross_strong_bearish_points : span_cross_score
+
+// == Chikou Span Cross ==
+// The Chikou Span Cross signal occurs when the Chikou Span (Lagging line) rises above or falls below the price.
+
+past_price = close[displacement]
+lag_line_bull_cross = close > close[displacement]
+lag_line_bear_cross = close < close[displacement]
+
+past_price_below_kumo = (past_price < leadLine2 and past_price < leadLine1)
+past_price_above_kumo = (past_price > leadLine2 and past_price > leadLine1)
+past_price_inside_kumo = (leadLine2 < past_price and past_price < leadLine1) and (leadLine1 < past_price and past_price < leadLine2)
+lag_line_cross_score = 0.0
+lag_line_cross_score := resolve(lag_line_cross_score[1], 0)
+
+use_lag_line = true
+lag_line_cross_weight = 1
+
+lag_line_cross_weak_bullish_points = .5
+lag_line_cross_neutral_bullish_points = 1
+lag_line_cross_strong_bullish_points = 3
+
+lag_line_cross_weak_bearish_points = -.5
+lag_line_cross_neutral_bearish_points = 1
+lag_line_cross_strong_bearish_points = -3
+
+// == Chikou Span Cross / weak bullish (price below kumo)
+lag_line_cross_score := (lag_line_bull_cross and past_price_below_kumo) ? lag_line_cross_weak_bullish_points : lag_line_cross_score
+
+// == Chikou Span Cross / neutral bullish (price inside kumo)
+lag_line_cross_score := (lag_line_bull_cross and past_price_inside_kumo) ? lag_line_cross_neutral_bullish_points : lag_line_cross_score
+
+// == Chikou Span Cross / strong bullish (price above kumo)
+lag_line_cross_score := (lag_line_bull_cross and past_price_above_kumo) ? lag_line_cross_strong_bullish_points : lag_line_cross_score
+
+// == Chikou Span Cross / weak bearish (price above kumo)
+lag_line_cross_score := (lag_line_bear_cross and past_price_above_kumo) ? lag_line_cross_weak_bearish_points : lag_line_cross_score
+
+// == Chikou Span Cross / neutral bearish (price inside kumo)
+lag_line_cross_score := (lag_line_bear_cross and past_price_inside_kumo) ? lag_line_cross_neutral_bearish_points : lag_line_cross_score
+
+// == Chikou Span Cross / strong bearish (price below kumo)
+lag_line_cross_score := (lag_line_bear_cross and past_price_below_kumo) ? lag_line_cross_strong_bearish_points : lag_line_cross_score
+
+// == lag line releative to cloud ==
+
+use_lag_line_location = true
+
+lag_line_location_weight = 1
+
+lag_line_location_above_points = 1
+lag_line_location_inside_points = 0
+lag_line_location_below_points = -1
+lag_line_placement_score = 0.0
+lag_line_placement_score := resolve(lag_line_placement_score[1], 0)
+
+lag_line_placement_score := past_price_above_kumo ? lag_line_location_above_points : lag_line_placement_score
+lag_line_placement_score := past_price_inside_kumo ? lag_line_location_inside_points : lag_line_placement_score
+lag_line_placement_score := past_price_below_kumo ? lag_line_location_below_points : lag_line_placement_score
+
+// == price relative to cloud ==
+price_placement_score = 0.0
+price_placement_score := resolve(price_placement_score[1], 0)
+
+use_price_location = true
+price_location_weight = 1
+
+price_location_above_points = 1
+price_location_inside_points = 0
+price_location_below_points = -1
+
+price_below_kumo := (close < leadLine2 and close < leadLine1)
+price_above_kumo := (close > leadLine2 and close > leadLine1)
+price_inside_kumo := (not price_below_kumo) and (not price_above_kumo)
+
+price_placement_score := price_above_kumo ? price_location_above_points : price_placement_score
+price_placement_score := price_inside_kumo ? price_location_inside_points : price_placement_score
+price_placement_score := price_below_kumo ? price_location_below_points : price_placement_score
+
+// == plot score ==
+
+total_score = (use_tk_cross ? tk_cross_weight * tk_cross_score : na) + (use_pk_cross ? pk_cross_weight * pk_cross_score : na) + (use_kumo_breakout ? kumo_breakout_weight * kumo_breakout_score : na) + (use_span_cross ? span_cross_weight * span_cross_score : na) + (use_lag_line ? lag_line_cross_weight * lag_line_cross_score : na) + (use_price_location ? price_location_weight * price_placement_score : na)
+total_score := total_score + (use_lag_line_location ? lag_line_location_weight * lag_line_placement_score : na)
+
+r1 = plot(2, style=plot.style_circles, color=color.new(color.gray,25), title="Volatility Zone",display = display.pane)
+r2 = plot(-2, style=plot.style_circles, color=color.new(color.gray,25), title="Volatility Zone", display = display.pane)
+
+b1 = plot(8, style=plot.style_circles, color=color.new(color.yellow,25), title="Reversal Eminent", display = display.pane)
+b2 = plot(11, style=plot.style_circles, color=color.new(color.red,0), linewidth=2, title="Reversal Eminent (Sell)", display = display.pane)
+
+s1 = plot(-8, style=plot.style_circles, color=color.new(color.yellow,25), title="Reversal Probable",display = display.pane)
+s2 = plot(-11, style=plot.style_circles, color=color.new(color.lime,0), linewidth=2, title="Reversal Eminent (Buy)", display = display.pane)
+
+fill(b1,b2,top_color = color.new(color.gray,50),bottom_color = color.new(color.gray,25),title="Sell Zone", fillgaps = true,top_value=11, bottom_value = 8)
+fill(s1,s2,bottom_color = color.new(color.gray,50),top_color = color.new(color.gray,25), title="Buy Zone", fillgaps = true,top_value=-8, bottom_value = -11)
+
+fill(r1,r2,bottom_color = color.new(color.gray,75),top_color = color.new(color.gray,75), title="Volatility Zone", fillgaps = true,top_value=2, bottom_value = -2)
+
+
+flip_indicator = ((close/close[displacement])*100)-100
+plot(flip_indicator*10, style=plot.style_area, color=flip_indicator > 0 ? color.new(color.lime,60) : color.new(color.red,60), linewidth=2, title="PA Over Time")
+
+
+weighted_flip_indicator = ta.ema(ta.alma(flip_indicator*10, 10, 0.85, 6),10)
+plot(weighted_flip_indicator, linewidth=2, style=plot.style_area, color=(weighted_flip_indicator[1] < weighted_flip_indicator ? color.new(color.lime,80) : color.new(color.red,80)), title="Flip Weight")
+
+
+plot(0, style=plot.style_line, title="Base", display = display.pane)
+plot(total_score, linewidth=3, style=plot.style_line, color= color.yellow, title="Quant Weight")
+
+
+

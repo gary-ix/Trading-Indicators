@@ -1,0 +1,23 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles with Pivot Trendlines", overlay = true)
+
+// @keywords: price-action-candles, pivot-low, pivot-high, two-up, two-down, triangle-markers, swing-low, swing-high, pivot-length, reversal-marker, below-bar, above-bar, simple-pivot, price-action, trend-change, pivot-signal, low-pivot, high-pivot, shape-markers, pivot-detection
+
+L = low
+H = high
+
+// twoup =  (L < L[-1]) and (L < L[1]) and (L[-1] < L[-2])
+low_length = input.int(2, title = 'UP Length')
+twoup = ta.pivotlow(L, low_length,low_length)
+
+// twodown =  (H > H[-1]) and (H > H[1]) 
+high_length = input.int(2, title = 'DOWN Length')
+twodown = ta.pivothigh(H, high_length,high_length)
+
+plotshape(twoup, title = 'Two Up', location = location.belowbar, color = color.green, offset = -low_length, style = shape.triangleup)
+plotshape(twodown, title = 'Two Down', location = location.abovebar, color = color.red, offset = -high_length, style = shape.triangledown)
+

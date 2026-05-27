@@ -1,0 +1,606 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("Hercules Strategy 1.7", overlay=true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, default_qty_value=100, initial_capital=100000, default_qty_type=strategy.percent_of_equity)
+
+// @keywords: hercules-strategy, hercules, lightning-signals, engulfing-candles, forex-session-filter, day-of-week-filter, moving-average-filter, ichimoku-cloud-filter, elder-force-index, support-resistance-break, pivot-high-low, risk-reward-ratio, take-profit-stop-loss, position-tool, max-gain-loss-pips, prior-day-range, daily-open-filter, time-range-breakout, inverse-signals, strategy-entry-exit
+
+// trade settings
+inverse_settings = input.bool(false, title = 'Inverse Signals', group = 'Trade Settings', inline = '1')
+long_to_short_lock = input.bool(false, title = 'Next Trade Cannot Be Same Side', group = 'Trade Settings', inline = '1')
+min_ticks = input.int(500, title='Lightning                  ', tooltip='On Tradingview for FOREX 1 Pip = 10 Ticks', group = 'Trade Settings', inline = '2')
+tradeType = input.string('BOTH', title='What trades should be taken ?   ', options=['LONG', 'SHORT', 'BOTH'], group = 'Trade Settings', inline = '3')
+
+trade_sydney    = input.bool(true, title = 'Sydney Session   ', group = 'Trade Settings', inline = '5')
+sydney_session  = input.session("1800-0200", title = '', group = 'Trade Settings', inline = '5')
+
+trade_tokyo     = input.bool(true, title = 'Tokyo Session     ', group = 'Trade Settings', inline = '6')
+tokyo_session   = input.session("1900-0400", title = '', group = 'Trade Settings', inline = '6')
+
+trade_london    = input.bool(true, title = 'London Session   ', group = 'Trade Settings', inline = '7')
+london_session  = input.session("0300-1200", title = '', group = 'Trade Settings', inline = '7')
+
+trade_newyork   = input.bool(true, title = 'New York Session', group = 'Trade Settings', inline = '8')
+newyork_session = input.session("0800-1700", title = '', group = 'Trade Settings', inline = '8')
+
+trade_monday    = input.bool(true, "Trade Mondays", group = 'Trade Settings', inline = '9')
+trade_tuesday   = input.bool(true, "Trade Tuesdays", group = 'Trade Settings', inline = '10')
+trade_wednesday = input.bool(true, "Trade Wednesdays", group = 'Trade Settings', inline = '11')
+trade_thursday  = input.bool(true, "Trade Thursdays", group = 'Trade Settings', inline = '12')
+trade_friday    = input.bool(true, "Trade Fridays", group = 'Trade Settings', inline = '13')
+trade_saturday  = input.bool(true, "Trade Saturdays", group = 'Trade Settings', inline = '14')
+trade_sunday    = input.bool(true, "Trade Sundays", group = 'Trade Settings', inline = '15')
+
+
+// filter settings
+engulf_only = input.bool(true, title='Engulfing Candles Only', group = 'Filter Settings', inline = '1')
+
+use_prev_candle = input(false, title='Previous Candle Filter    ', group = 'Filter Settings', inline = '2')
+prev_tf = input.timeframe('', title=' ', group = 'Filter Settings', inline = '2')
+
+use_ma = input.bool(title='MA Filter', defval=false, group='Filter Settings', inline = '3')
+ma_type = input.string(title=' ', defval='SMA', options=['SMA', 'EMA', 'SMMA (RMA)', 'WMA', 'VWMA'],  group='Filter Settings', inline = '3')
+ma_source = input.source(title=' ', defval=close, group='Filter Settings', inline = '3')
+ma_length = input.int(defval=50, title=' ', minval=1,  group='Filter Settings', inline = '3')
+
+prev_day_range = input.string('Outside', title = 'Prior Days Range           ', options = ['Outside', 'Inside', 'None'], group = 'Filter Settings', inline = '4')
+
+use_day_open = input.bool(false, title = 'Daily Open Filter        ', group = 'Filter Settings', inline = '5')
+day_open = input.session("0930-0931", title = ' ', group = 'Filter Settings', inline = '5')
+
+use_range_time = input.bool(false, title = 'Time Range Filter       ', group = 'Filter Settings', inline = '6')
+range_time = input.session("0930-1030", title = ' ', group = 'Filter Settings', inline = '7')
+range_timedraw = input.session("0930-1600", title = ' ', group = 'Filter Settings', inline = '7')
+
+use_support_resistance = input.bool(false, title = 'Support/Resistance Break', group = 'Filter Settings', inline = '8')
+left_bars = input.int(15, title = "S/R Left Bars", group = 'Filter Settings', inline = '9')
+right_bars = input.int(15, title = "S/R Right Bars", group = 'Filter Settings', inline = '9')
+sr_volumethres = input.int(20, minval = 0, maxval = 100, title = 'S/R Volume Threshold', group = 'Filter Settings', inline = '10')
+
+ichi_type = input.string("Inside", title = 'Cloud Filter', options = ['Inside', 'Outside', 'None'],
+ group = 'Filter Settings', inline = '11')
+conversionPeriods = 9
+basePeriods = 26
+laggingSpan2Periods = 52
+displacement = 26
+
+use_efi = input.bool(false, title = '' , group='Filter Settings', inline = '12')
+input_efibuy = input.int(0, title = 'EFI Buy', group='Filter Settings', inline = '12')
+input_efisell = input.int(0, title = 'EFI Sell', group='Filter Settings', inline = '12')
+efi_length = 13
+efi_type =  'EMA'
+
+
+// risk management settings
+use_rr_tp = input.bool(true, title = 'R:R Auto-Calculation', group = 'Risk Management', inline = '1')
+rr_tp = input.float(2.0, title='', minval=0.0, group = 'Risk Management', inline = '1')
+
+use_tp = input.bool(false, title = 'Alt Target        ', group = 'Risk Management', inline = '2')
+tp_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '2')
+tp_type = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '2')
+
+use_sl = input.bool(false, title = 'Alt Stop Loss      ', group = 'Risk Management', inline = '3')
+sl_amount = input.float(1.00, title = '', group = 'Risk Management', inline = '3')
+sl_type = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '3')
+
+
+// max gains & max losses
+trade_size = input.float(1, title = 'Trade Size', group = 'Max Gain/Loss', inline = '1')
+
+use_max_daily_gain = input.bool(false, title = 'Max Daily Gain (pips)    ', group = 'Max Gain/Loss', inline = '2')
+max_daily_gain = input.int(3000, title = '', group = 'Max Gain/Loss', inline = '2', step = 1000)
+
+use_max_daily_loss = input.bool(false, title = 'Max Daily Loss (pips)    ', group = 'Max Gain/Loss', inline = '3')
+max_daily_loss = input.int(3000, title = '', group = 'Max Gain/Loss', inline = '3', step = 1000)
+
+use_max_weekly_gain = input.bool(false, title = 'Max Weekly Gain (pips) ', group = 'Max Gain/Loss', inline = '4')
+max_weekly_gain = input.int(25000, title = '', group = 'Max Gain/Loss', inline = '4', step = 1000)
+
+use_max_weekly_loss = input.bool(false, title = 'Max Weekly Loss (pips) ', group = 'Max Gain/Loss', inline = '5')
+max_weekly_loss = input.int(25000, title = '', group = 'Max Gain/Loss', inline = '5', step = 1000)
+
+use_max_monthly_gain = input.bool(false, title = 'Max Monthly Gain (pips)', group = 'Max Gain/Loss', inline = '6')
+max_monthly_gain = input.int(100000, title = '', group = 'Max Gain/Loss', inline = '6', step = 1000)
+
+use_max_monthly_loss = input.bool(false, title = 'Max Monthly Loss (pips)', group = 'Max Gain/Loss', inline = '7')
+max_monthly_loss = input.int(100000, title = '', group = 'Max Gain/Loss', inline = '7', step = 1000)
+
+
+// // error catching
+// if use_rr_tp and (use_tp or use_sl)
+//     runtime.error("You cannot use Auto-Calculating R:R with Alt Target or Alt Stop Loss")
+// if long_to_short_lock and tradeType != 'BOTH'
+//     runtime.error("You cannot require the next trade to be a different side if 'BOTH' is not enabled in 'What Trades should be taken'")
+    
+
+// position lines
+line_showing = input.string('Current & Past', title = 'Position Tool', options = ['None', 'Current', 'Current & Past'], group = 'Position Line Settings', inline = '1')
+css_targetline = input.color(color.new(color.green,80), title = 'Profit', group = 'Position Line Settings', inline = '2')
+css_stopline = input.color(color.new(color.red,80), title = 'Loss', group = 'Position Line Settings', inline = '2')
+css_toolcolor = input.color(color.white, title = 'Text', group = 'Position Line Settings', inline = '2')
+
+
+// timeframe
+is_sydney_session = time(timeframe.period, str.format('{0}:1234567', sydney_session), 'America/New_York') and trade_sydney
+is_tokyo_session = time(timeframe.period, str.format('{0}:1234567', tokyo_session), 'America/New_York') and trade_tokyo
+is_euro_session = time(timeframe.period, str.format('{0}:1234567', london_session), 'America/New_York') and trade_london
+is_newyork_session = time(timeframe.period, str.format('{0}:1234567', newyork_session), 'America/New_York') and trade_newyork
+
+current_day = dayofweek(time)
+is_tradeable_day = (trade_monday and current_day == dayofweek.monday)
+ or (trade_tuesday and current_day == dayofweek.tuesday)
+ or (trade_wednesday and current_day == dayofweek.wednesday)
+ or (trade_thursday and current_day == dayofweek.thursday)
+ or (trade_friday and current_day == dayofweek.friday)
+ or (trade_saturday and current_day == dayofweek.saturday)
+ or (trade_sunday and current_day == dayofweek.sunday)
+
+is_trade_sess = (is_sydney_session or is_tokyo_session or is_euro_session or is_newyork_session) and is_tradeable_day
+
+
+// lighting signals
+green = close > open
+red = close < open
+dif = math.abs(close - open)
+move_up = green and dif >= min_ticks * syminfo.mintick
+move_dn = red and dif >= min_ticks * syminfo.mintick
+
+bull_engulfing = close > open and close > open[1] and open[1] > close[1] and dif > min_ticks * syminfo.mintick
+bear_engulfing = close < open and close < open[1] and open[1] < close[1] and dif > min_ticks * syminfo.mintick
+
+lightning_bull = engulf_only ? bull_engulfing : move_up
+lightning_bear = engulf_only ? bear_engulfing : move_dn
+
+
+// prev candle calculate
+prev_candle_src = request.security(syminfo.tickerid, prev_tf, green[1] ? true : false, lookahead = barmerge.lookahead_on)
+prev_candle_long = use_prev_candle ? (prev_candle_src == true) : true
+prev_candle_short = use_prev_candle ? (prev_candle_src == false) : true
+
+
+// ma filter
+ma(source, length, type) =>
+    type == 'SMA' ? ta.sma(source, length) : type == 'EMA' ? ta.ema(source, length) : type == 'SMMA (RMA)' ? ta.rma(source, length) : type == 'WMA' ? ta.wma(source, length) : type == 'VWMA' ? ta.vwma(source, length) : na
+ma = ma(ma_source, ma_length, ma_type)
+plot(use_ma ? ma : na, color=color.yellow, title='Filter MA')
+
+ma_long = use_ma ? close > ma : true
+ma_short = use_ma ? close < ma : true
+
+
+// get prior days high low
+prior_high = request.security(syminfo.tickerid, 'D', high[1], lookahead=barmerge.lookahead_on)
+prior_low = request.security(syminfo.tickerid, 'D', low[1], lookahead=barmerge.lookahead_on)
+
+prior_day_cond = prev_day_range == 'Outside' and (close > prior_high or close < prior_low) ? true :
+ prev_day_range == 'Inside' and (close < prior_high and close > prior_low) ? true : prev_day_range == 'None' ? true : false
+
+
+// get open price
+open_time = time(timeframe.period, day_open, "America/New_York")
+var float open_price = na
+open_price := open_time ? open : open_price[1]
+var line open_line = na
+// bgcolor(open_time ? color.new(color.yellow,70) : na)
+
+if use_day_open
+    if open_time
+        // adjust yesterdays line
+        // line.set_extend(open_line, extend.none)
+        // new line
+        open_line := line.new(x1 = time, y1 = open_price, x2 = time + 1, y2 = open_price, 
+         xloc = xloc.bar_time, extend = extend.none, color = close > open_price ? color.new(#2ba12f, 0) : color.new(#ff0000, 0),
+         style = line.style_solid, width = 2)
+    else
+        line.set_x2(open_line, time)
+        line.set_color(open_line, close > open_price ? color.new(#2ba12f, 0) : color.new(#ff0000, 0))
+
+open_price_buy = close > open_price or not use_day_open
+open_price_sell = close < open_price or not use_day_open
+
+
+// range time filter
+// array management
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+
+
+// manage all lines but mid
+f_manage_lines(sess_calc, sess_draw, line_array, line_color, line_style, line_width, condition, update_value) =>
+
+    newest_line = array.get(line_array,0)
+
+    // during session 1 calculation time
+    if sess_calc
+        // new lines
+        if not sess_calc[1]
+            line.delete(array.get(line_array, array.size(line_array) - 1))
+            f_array_add_pop(line_array, line.new(x1 = time, y1 = update_value, x2 = time+2, y2 = update_value,
+             xloc = xloc.bar_time, extend = extend.right, color = line_color, width = line_width,
+             style = (line_style == 'Solid' ? line.style_solid : line_style == 'Dashed' ? line.style_dashed : line_style == 'Dotted' ? line.style_dotted : line.style_solid)))
+
+        // update line values
+        if sess_calc[1]
+            line.set_x2(newest_line, time)
+            if condition
+                line.set_y1(newest_line, update_value)
+                line.set_y2(newest_line, update_value)
+
+    else
+        // end lines and end extension
+        if sess_draw[1]
+            // highest body
+            line.set_x2(newest_line, time)
+            line.set_extend(newest_line, extend.none)
+
+var sess1_highesthigh_line = array.new_line(50, na)
+var sess1_lowestlow_line = array.new_line(50, na)
+
+sess1_css_highest =     color.new(color.yellow,10)
+sess1_style_highest =   'Solid'
+sess1_width_highest =   1
+sess1_css_lowest =     color.new(color.yellow,10)
+sess1_style_lowest =   'Solid'
+sess1_width_lowest =    1
+is_range_time = time(timeframe.period, str.format('{0}:1234567', range_time), 'America/New_York') and use_range_time and timeframe.isintraday 
+is_range_timedraw = time(timeframe.period, str.format('{0}:1234567', range_timedraw), 'America/New_York') and use_range_time and timeframe.isintraday 
+f_manage_lines(is_range_time, is_range_timedraw, sess1_highesthigh_line, sess1_css_highest, sess1_style_highest, sess1_width_highest, high > line.get_y1(array.get(sess1_highesthigh_line,0)), high)
+f_manage_lines(is_range_time, is_range_timedraw, sess1_lowestlow_line, sess1_css_lowest, sess1_style_lowest, sess1_width_lowest, low < line.get_y1(array.get(sess1_lowestlow_line,0)), low)
+
+sess1_buy = (not is_range_time and is_range_timedraw and close > line.get_y2(array.get(sess1_highesthigh_line,0))) or not use_range_time
+sess1_sell = (not is_range_time and is_range_timedraw and close < line.get_y2(array.get(sess1_lowestlow_line,0))) or not use_range_time
+
+
+// support and resistance
+resistance_value = ta.valuewhen(ta.pivothigh(high,left_bars,right_bars), high[right_bars], 0)
+support_value = ta.valuewhen(ta.pivotlow(low,left_bars,right_bars), low[right_bars], 0)
+var line resistance = na
+var line support = na
+if use_support_resistance
+    if resistance_value != resistance_value[1]
+        line.set_extend(resistance, extend.none)
+        resistance := line.new(x1 = time[right_bars], y1 = resistance_value, x2 = time[right_bars + 1], y2 = resistance_value,
+         color = color.new(#FF0000,0), extend = extend.right, xloc = xloc.bar_time)
+    else
+        line.set_x2(resistance, time)
+    if support_value != support_value[1]
+        line.set_extend(support, extend.none)
+        support := line.new(x1 = time[right_bars], y1 = support_value, x2 = time[right_bars + 1], y2 = support_value,
+         color = color.new(#233dee,0), extend = extend.right, xloc = xloc.bar_time)
+    else
+        line.set_x2(support, time)
+        
+sr_short = ta.ema(volume, 5)
+sr_long = ta.ema(volume, 10)
+sr_osc = 100 * (sr_short - sr_long) / sr_long
+sr_buy = (close >= line.get_y1(resistance) and sr_osc > sr_volumethres) or not use_support_resistance
+sr_sell = (close <= line.get_y1(support) and  sr_osc > sr_volumethres ) or not use_support_resistance
+    
+
+
+// calc ichimoku
+donchian(len) => 
+    math.avg(ta.lowest(len), ta.highest(len))
+conversionLine = donchian(conversionPeriods)
+baseLine = donchian(basePeriods)
+leadLine1 = math.avg(conversionLine, baseLine)
+leadLine2 = donchian(laggingSpan2Periods)
+
+ichi_inside = close <= math.max(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ and close >= math.min(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ichi_outside = close >= math.max(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+ or close <= math.min(leadLine1[displacement - 1], leadLine2[displacement - 1]) 
+
+ichi_cond = (ichi_type == 'Inside' and ichi_inside)
+ or (ichi_type == 'Outside' and ichi_outside)
+ or ichi_type == 'None'
+
+
+// efi function
+f_efi(calc_bool) =>
+    var float efi_value = na
+    if calc_bool
+        efi_value := switch efi_type
+            "EMA" => math.round(ta.ema(ta.change(close[1]) * volume[1], efi_length),0)
+            "SMA" => math.round(ta.sma(ta.change(close[1]) * volume[1], efi_length),0)
+            "VWMA" => math.round(ta.vwma(ta.change(close[1]) * volume[1], efi_length),0)
+            "RMA" => math.round(ta.rma(ta.change(close[1]) * volume[1], efi_length),0)
+            "HMA" => math.round(ta.hma(ta.change(close[1]) * volume[1], efi_length),0)
+    efi_value
+
+efi_val = f_efi(use_efi)
+efi_buy = use_efi and efi_val > input_efibuy or not use_efi
+efi_sell = use_efi and efi_val < input_efisell or not use_efi
+
+
+
+//  define vars
+var bool in_trade = false
+var int trade_side = 0
+var int last_trade = na
+
+var float target = 99999999.99
+var float stop = 0.000000
+var float entry_price = 0.00
+
+var bool long_entry = false
+var bool short_entry = false
+
+var bool tgt_hit = false
+var bool stop_hit = false
+
+var bool long_exit = false
+var bool short_exit = false
+
+var max_daily_gain_hit = false
+var max_daily_loss_hit = false
+var max_weekly_gain_hit = false
+var max_weekly_loss_hit = false
+var max_monthly_gain_hit = false
+var max_monthly_loss_hit = false
+var max_gains_hit = false
+var max_losses_hit = false
+
+var float strategy_openpips = 0.00
+var float strategy_newclosedpips = 0.00
+var float daily_pips = 0.00
+var float weekly_pips = 0.00
+var float monthly_pips = 0.00
+var float beginning_of_day_pips = 0.00
+var float beginning_of_week_pips = 0.00
+var float beginning_of_month_pips = 0.00
+
+
+// define entry
+long_trade_side = long_to_short_lock ? (last_trade == -1 or na(last_trade)) : trade_side != 1 
+short_trade_side = long_to_short_lock ? (last_trade == 1 or na(last_trade)) : trade_side != -1 
+
+long_conditions = is_trade_sess and lightning_bull and prev_candle_long and ma_long and sess1_buy and sr_buy and efi_buy and ichi_cond and tradeType != "SHORT"
+short_conditions = is_trade_sess and lightning_bear and prev_candle_short and ma_short and sess1_sell and sr_sell and efi_sell and ichi_cond and tradeType != "LONG"
+long_entry :=  (inverse_settings ? short_conditions : long_conditions) and prior_day_cond and open_price_buy and not
+ (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit) and not
+ (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit) and long_trade_side and not long_entry[1]
+short_entry := (inverse_settings ? long_conditions : short_conditions) and prior_day_cond and open_price_sell and not
+ (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit) and not
+ (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit) and short_trade_side and not short_entry[1]
+
+// define position
+entry_price := long_entry[1] or short_entry[1] ? open :  in_trade == true ? entry_price[1] : na
+trade_side := long_entry[1] ? 1 : short_entry[1] ? -1 : in_trade == false ? 0 : trade_side[1]
+last_trade := (trade_side != 0 and trade_side != trade_side[1]) ? trade_side : last_trade[1]
+
+// define targets and stops
+if use_tp
+    target := trade_side == 1 ? (tp_type == 'Percent' ? (entry_price + (entry_price * (tp_amount/100))) : entry_price + tp_amount ) 
+     : trade_side == -1 ? (tp_type == 'Percent' ? (entry_price - (entry_price * (tp_amount/100))) : entry_price - tp_amount ) : na
+else
+    target := na
+    
+if use_sl    
+    stop := trade_side == 1 ?  ( sl_type == 'Percent' ? (entry_price - (entry_price * (sl_amount/100))) : entry_price - sl_amount ) : trade_side == -1 ? ( sl_type == 'Percent' ? (entry_price + (entry_price * (sl_amount/100))) : entry_price + sl_amount ) : na
+else    
+    stop := na
+
+if use_rr_tp
+    target := long_entry[1] ? open + math.abs(open - low[1]) * rr_tp 
+     : short_entry[1] ? open - math.abs(open - high[1]) * rr_tp
+     : target[1]
+
+    stop := long_entry[1] ? low[1]
+     : short_entry[1] ? high[1]
+     : stop[1]
+
+
+// MAX DAILY GAIN / LOSS CALCULATIONS
+pip_mult = syminfo.mintick
+//open pnl
+if in_trade
+    if trade_side == 1
+        strategy_openpips := (close - entry_price) / pip_mult * trade_size
+    else if trade_side == -1
+        strategy_openpips := (entry_price - close) / pip_mult * trade_size
+    else
+        strategy_openpips := 0
+else 
+    strategy_openpips := 0   
+
+
+// see if max profit/loss thresholds are met
+max_daily_gain_hit := dayofweek != dayofweek[1] ? false : use_max_daily_gain and daily_pips[1] + strategy_openpips >= max_daily_gain ? true : max_daily_gain_hit[1]
+max_weekly_gain_hit :=  weekofyear != weekofyear[1] ? false : use_max_weekly_gain and weekly_pips[1] + strategy_openpips >= max_weekly_gain ? true : max_weekly_gain_hit[1]
+max_monthly_gain_hit := month != month[1] ? false : use_max_monthly_gain and monthly_pips[1] + strategy_openpips >= max_monthly_gain ? true : max_monthly_gain_hit[1]
+
+max_daily_loss_hit := dayofweek != dayofweek[1] ? false : use_max_daily_loss and daily_pips[1] + strategy_openpips <= -max_daily_loss ? true : max_daily_loss_hit[1]
+max_weekly_loss_hit :=  weekofyear != weekofyear[1] ? false : use_max_weekly_loss and weekly_pips[1] + strategy_openpips <= -max_weekly_loss ? true : max_weekly_loss_hit[1]
+max_monthly_loss_hit := month != month[1] ? false : use_max_monthly_loss and monthly_pips[1] + strategy_openpips <= -max_monthly_loss ? true : max_monthly_loss_hit[1]
+
+
+// update position management
+max_gains_hit := trade_side != 0 and (max_daily_gain_hit or max_weekly_gain_hit or max_monthly_gain_hit)
+max_losses_hit := trade_side != 0 and (max_daily_loss_hit or max_weekly_loss_hit or max_monthly_loss_hit)
+tgt_hit := trade_side == 1 and high >= target or trade_side == -1 and low <= target
+stop_hit := trade_side == 1 and low <= stop or trade_side == -1 and high >= stop
+
+long_exit := ( (tgt_hit or stop_hit or max_gains_hit or max_losses_hit or not is_trade_sess) ) and in_trade[1] == true and trade_side[1] == 1
+short_exit := ( (tgt_hit or stop_hit or max_gains_hit or max_losses_hit or not is_trade_sess)) and in_trade[1] == true and trade_side[1] == -1   
+
+in_trade := long_entry or short_entry ? true : long_exit or short_exit ?  false : in_trade[1]
+
+
+// closed pnl calculations
+// reversal trades pnl calculation
+if trade_side[1] == 1 and trade_side == -1 
+    strategy_newclosedpips := (open - entry_price) / pip_mult * trade_size
+else  if trade_side[1] == -1 and trade_side == 1 
+    strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+    
+// time exits pnl calculation
+if not is_trade_sess[1] and is_trade_sess[2] 
+    if trade_side[1] == 1 and trade_side == 0
+        strategy_newclosedpips := (open - entry_price) / pip_mult * trade_size
+    if trade_side[1] == -1 and trade_side == 0
+        strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+
+
+// all other exits pnl calculation
+if long_exit[1]
+    if tgt_hit[1]
+        strategy_newclosedpips := (target[1] - entry_price[1]) / pip_mult * trade_size
+    else if stop_hit[1]
+        strategy_newclosedpips := (stop[1] - entry_price[1]) / pip_mult * trade_size
+    else
+        strategy_newclosedpips := (open - entry_price[1]) / pip_mult * trade_size
+else if short_exit[1]
+    if tgt_hit[1]
+        strategy_newclosedpips := (entry_price[1] - target[1]) / pip_mult * trade_size
+    else if stop_hit[1]
+        strategy_newclosedpips := (entry_price[1] - stop[1]) / pip_mult * trade_size
+    else
+        strategy_newclosedpips := (entry_price[1] - open) / pip_mult * trade_size
+else 
+    strategy_newclosedpips := 0 
+
+
+// // calculate pips
+daily_pips := dayofweek != dayofweek[1] ? 0 : daily_pips[1] + strategy_newclosedpips
+weekly_pips := weekofyear != weekofyear[1] ? 0 : weekly_pips[1] + strategy_newclosedpips
+monthly_pips := month != month[1] ? 0 : monthly_pips[1] + strategy_newclosedpips
+
+
+// debug pips
+// bgcolor(dayofweek != dayofweek[1]  ? color.white : max_daily_gain_hit ? color.new(color.green, 70) : max_daily_loss_hit ? color.new(color.red, 70) : na)
+// // bgcolor(max_daily_gain_hit == true ? color.green : na)
+// barcolor(tgt_hit ? color.green : stop_hit ? color.red : na)
+// plot(monthly_pips, color = color.teal)
+// plot(strategy_openpips, color = color.yellow)
+// plot(strategy_newclosedpips, color = color.fuchsia)
+// // plot(daily_pips, color = color.teal)
+// // plot(strategy_openpips, color = color.yellow)
+// // plot(strategy_newclosedpips, color = color.fuchsia)
+
+
+//  calculate variables for text
+profit_pct = math.round(math.abs((target - entry_price) / target * 100),2)
+stop_pct = math.round(math.abs((stop - entry_price) / stop * 100),2)
+
+target_text = 'TGT: ' + str.tostring(math.round_to_mintick(target)) + ' (' + str.tostring(profit_pct) + '%)'
+stoploss_text = 'SL: ' + str.tostring(math.round_to_mintick(stop)) + ' (' + str.tostring(stop_pct) + '%)'
+
+
+// --TRADE POSIITION LINES-- //
+var line current_entryline = na
+var line current_targetline = na
+var line current_stopline = na
+
+previous_entrylines = array.new_line(50, na)
+previous_targetlines = array.new_line(50, na)
+previous_stoplines = array.new_line(50, na)
+
+var box profit_box = na
+var box loss_box = na
+
+previous_profit_box = array.new_box(50,na)
+previous_loss_box = array.new_box(50,na)
+
+show_position_tool = line_showing != 'None' 
+show_previous = line_showing == 'Past' or line_showing == 'Current & Past'
+
+
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+f_copy_n_store(current_line, storing_array) =>
+    if show_previous
+        copied_line = line.copy(current_line)
+        line.set_extend(copied_line, extend.none)
+        line.set_x2(copied_line, time)
+        f_array_add_pop(storing_array, copied_line)
+    line.delete(current_line)
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+
+
+// --FUNCTION TO COPY BOX TO STORED ARRAY-- //
+f_copy_n_storebox(current_box, storing_array, box_type, valign_type) =>
+    if show_previous
+        copied_box = box.copy(current_box)
+        box.set_extend(copied_box, extend.none)
+        box.set_right(copied_box, time)
+        box.set_text(copied_box, box_type == 1 ? target_text : stoploss_text)
+        box.set_text_color(copied_box, css_toolcolor)
+        box.set_text_size(copied_box, size.small)
+        box.set_text_valign(copied_box, valign_type == 1 ? text.align_top : text.align_bottom)
+        f_array_add_pop(storing_array, copied_box)
+
+    box.delete(current_box)
+// --FUNCTION TO COPY LINE TO STORED ARRAY-- //
+
+
+
+// new lines
+if long_entry[1] or short_entry[1] and show_position_tool
+    // if we were in a trade and flipped side
+    if entry_price[1] != 0
+        f_copy_n_storebox(profit_box, previous_profit_box, 1,long_entry[1] ? 1 : -1)
+        f_copy_n_storebox(loss_box, previous_loss_box, -1, long_entry[1] ? -1 : 1)
+    profit_box := box.new(left = time, top = target, right = time + 1, bottom = entry_price, border_color = color.new(css_targetline, 50), border_width = 1, border_style = line.style_solid, xloc = xloc.bar_time,
+     extend = extend.right, bgcolor = css_targetline, text = target_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign = long_entry[1] ? text.align_top : text.align_bottom)
+    loss_box := box.new(left = time, top = entry_price, right = time + 1, bottom = stop, border_color = color.new(css_stopline, 50), border_width = 1, border_style = line.style_solid, xloc = xloc.bar_time,
+     extend = extend.right, bgcolor = css_stopline, text = stoploss_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign =  long_entry[1] ?text.align_bottom : text.align_top)
+    
+
+// manage lines
+if long_exit or short_exit
+    f_copy_n_storebox(profit_box, previous_profit_box, 1, long_exit ? 1 : -1)
+    f_copy_n_storebox(loss_box, previous_loss_box, -1, long_exit ? -1 : 1)
+else
+    box.set_right(profit_box, time)
+    box.set_right(loss_box, time)
+// --TRADE POSIITION LINES-- //
+
+
+// backtest certain time
+// backtest_start = input.time(defval=timestamp('01 Jan 2021 13:30 +0000'), title='Backtesting Start Time', group = 'Backtesting Settings')
+// backtest_end = input.time(defval=timestamp('01 Dec 2023 19:30 +0000'), title='Backtesting End Time', group = 'Backtesting Settings')
+// is_backtesting_time = time > backtest_start and time < backtest_end
+
+
+// --ORDERS-- //
+if not is_trade_sess
+    strategy.close_all(comment = 'EOD', immediately = true)
+
+if (strategy.position_size > 0)
+    strategy.exit(id="LE", limit=target, stop=stop , comment = "TP/SL")
+if (strategy.position_size < 0)
+    strategy.exit(id="SS_E", limit=target, stop=stop , comment = "TP/SL")
+
+if long_exit
+    strategy.close("LE", comment = "LX")
+else if short_exit
+    strategy.close("SS_E", comment = "SS_X")
+
+if long_entry 
+    strategy.entry("LE", strategy.long)
+else if short_entry 
+    strategy.entry("SS_E", strategy.short)
+
+
+
+// --ORDERS-- //
+
+
+
+
+// basically the old way what happeneed is that orders werent cancelled and they would overlap and that is why sometimes
+//  it would enter and exit same bar. It is not always the accurate inputted stop price. There might be a workaround with
+//  calling strategy order cancellations, but having an indicator follow the same backtesting "engine" might be far fetched. What I did is coded it like the other
+//  work we have done. All take profits/stops should occur at the price they are assigned to UNLESS it is the bar following entry
+//  then it will exit at that bars open.
+
+// so it really comes down to how you want to calculate with tradingviews backtest engine. the way it is programmed now
+// is like the most recent 
+

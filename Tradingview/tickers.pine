@@ -1,0 +1,322 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("TICKERS", overlay = true)
+
+// @keywords: tickers, multi-symbol, vwap, relative-volume, rth-session, overnight-session, initial-balance, session-high-low, daily-change, json-alert, symbol-scanner, es-nq-rty, prior-day-range, cumulative-volume, market-data, session-levels, price-feed, ib-range, on-range, cross-market
+
+import TradingView/RelativeValue/2 as rv
+
+symbol1 = input.symbol('CME_MINI:ES1!')
+symbol2 = input.symbol('CME_MINI:NQ1!')
+symbol3 = input.symbol('CME_MINI:RTY1!')
+symbol4 = input.symbol('CBOT:YM1!')
+symbol5 = input.symbol('TVC:VIX')
+symbol6 = input.symbol('TVC:DXY')
+symbol7 = input.symbol('CBOT:UB1!')
+symbol8 = input.symbol('BINANCE:BTCUSDT')
+symbol9 = input.symbol('COMEX:GC1!')
+symbol10 = input.symbol('NYMEX:CL1!')
+
+
+// sessions
+get_open = 0 
+get_max = 1
+get_min = 2
+get_close = 3
+rth_session = input.session('0930-1659', title='RTH Session (EST)', group = 'Symbol Settings')
+on_session = input.session('1700-0929', title='ON Session (EST)', group = 'Symbol Settings')
+ib_session = input.session('0930-1030', title='IB Session (EST)', group = 'Symbol Settings')
+f_calculate_level(sess_time, src, level_type) =>
+    is_sess = time == time(timeframe.period, str.format('{0}:1234567', sess_time), 'America/New_York')
+    var float level = na
+    level := is_sess and not is_sess[1] ? src
+     : is_sess ? (
+         level_type == 1 ? math.max(src, level[1]) 
+         : level_type == 2 ? math.min(src, level[1])
+         : level_type == 0 ? level[1]
+         : level_type == 3 ? close
+         : na
+         )
+     : level[1]
+
+
+f_calculate_prior_level(sess_time, src, level_type) =>
+    is_sess = time == time(timeframe.period, str.format('{0}:1234567', sess_time), 'America/New_York')
+    var float level = na
+    var float prior_level = na
+    level := is_sess and not is_sess[1] ? src
+     : is_sess ? (level_type == 1 ? math.max(src, level[1]) : math.min(src, level[1]))
+     : level[1]
+    prior_level := is_sess and not is_sess[1] ? level[1] : prior_level[1]
+
+
+// rvol
+input_rvol = input.session('0930-1700', title='RV0L Time (EST)', group = 'RVOL Settings')
+rvol_days = input.int(20, title = 'RVOL Days', group = 'RVOL Settings')
+is_rvol_time1 = time == time(timeframe.period, str.format('{0}:1234567', input_rvol), 'America/New_York')
+f_calculate_rvol(sess_type) =>
+    is_rvol = time == time(timeframe.period, str.format('{0}:1234567', input_rvol), 'America/New_York')
+    bool anchor =  sess_type == 1 ? (is_rvol and not is_rvol[1]) : (not is_rvol and is_rvol[1])
+    bool useCumulative = true
+    float currVol = rv.calcCumulativeSeries(volume, anchor, useCumulative)
+    float pastVol  = rv.averageAtTime(volume, rvol_days, anchor, useCumulative)
+    float volRatio = math.round(currVol / pastVol * 100,0)
+    volRatio[1]
+
+
+f_daily_data(symbol) =>
+    [current_price, pct, yc] = 
+         request.security(symbol, 'D', 
+         [close,
+         math.round(( (close - close[1]) / close[1] ) * 100, 2),
+         close[1]
+         ])
+    [current_price, pct, yc]
+
+
+f_minute_data(symbol) =>
+    [vwap, rthH, rthL, rthO, yh, yl, ibh, ibl, onh, onl] =
+         request.security(symbol, "1",
+         [math.round_to_mintick(ta.vwap),
+         f_calculate_level(rth_session, high, get_max),
+         f_calculate_level(rth_session, low, get_min),
+         f_calculate_level(rth_session, open, get_open),
+         f_calculate_prior_level(rth_session, high, get_max),
+         f_calculate_prior_level(rth_session, low, get_min),
+         f_calculate_level(ib_session, high, get_max),
+         f_calculate_level(ib_session, low, get_min),
+         f_calculate_level(on_session, high, get_max),
+         f_calculate_level(on_session, low, get_min)
+         ])
+
+
+f_5minute_data(symbol) =>
+    [rvol_rth, rvol_on] =
+         request.security(symbol, "5", [
+         f_calculate_rvol(1),
+         f_calculate_rvol(0)
+         ]
+         )
+
+
+
+[current_price1, pct1, yc1] = f_daily_data(symbol1)
+[current_price2, pct2, yc2] = f_daily_data(symbol2)
+[current_price3, pct3, yc3] = f_daily_data(symbol3)
+[current_price4, pct4, yc4] = f_daily_data(symbol4)
+[current_price5, pct5, yc5] = f_daily_data(symbol5)
+[current_price6, pct6, yc6] = f_daily_data(symbol6)
+[current_price7, pct7, yc7] = f_daily_data(symbol7)
+[current_price8, pct8, yc8] = f_daily_data(symbol8)
+[current_price9, pct9, yc9] = f_daily_data(symbol9)
+[current_price10, pct10, yc10] = f_daily_data(symbol10)
+
+
+[vwap1, rthH1, rthL1, rthO1, yh1, yl1, ibh1, ibl1, onh1, onl1] = f_minute_data(symbol1)
+[vwap2, rthH2, rthL2, rthO2,  yh2, yl2, ibh2, ibl2, onh2, onl2] = f_minute_data(symbol2)
+[vwap3, rthH3, rthL3, rthO3,  yh3, yl3, ibh3, ibl3, onh3, onl3] = f_minute_data(symbol3)
+[vwap4, rthH4, rthL4, rthO4,  yh4, yl4, ibh4, ibl4, onh4, onl4] = f_minute_data(symbol4)
+[vwap5, rthH5, rthL5, rthO5,  yh5, yl5, ibh5, ibl5, onh5, onl5] = f_minute_data(symbol5)
+[vwap6, rthH6, rthL6, rthO6,  yh6, yl6, ibh6, ibl6, onh6, onl6] = f_minute_data(symbol6)
+[vwap7, rthH7, rthL7, rthO7,  yh7, yl7, ibh7, ibl7, onh7, onl7] = f_minute_data(symbol7)
+[vwap8, rthH8, rthL8, rthO8,  yh8, yl8, ibh8, ibl8, onh8, onl8] = f_minute_data(symbol8)
+[vwap9, rthH9, rthL9, rthO9,  yh9, yl9, ibh9, ibl9, onh9, onl9] = f_minute_data(symbol9)
+[vwap10, rthH10, rthL10, rthO10,  yh10, yl10, ibh10, ibl10, onh10, onl10] = f_minute_data(symbol10)
+
+
+[rvol1_rth, rvol_on1] = f_5minute_data(symbol1)
+[rvol2_rth, rvol_on2]   = f_5minute_data(symbol2)
+[rvol3_rth, rvol_on3]   = f_5minute_data(symbol3)
+[rvol4_rth, rvol_on4]   = f_5minute_data(symbol4)
+[rvol5_rth, rvol_on5]   = f_5minute_data(symbol5)
+[rvol6_rth, rvol_on6]  = f_5minute_data(symbol6)
+[rvol7_rth, rvol_on7]   = f_5minute_data(symbol7)
+[rvol8_rth, rvol_on8]   = f_5minute_data(symbol8)
+[rvol9_rth, rvol_on9]   = f_5minute_data(symbol9)
+[rvol10_rth, rvol_on10]   = f_5minute_data(symbol10)
+
+
+rvol1 = is_rvol_time1 ? rvol1_rth : rvol_on1
+rvol2 = is_rvol_time1 ? rvol2_rth : rvol_on2
+rvol3 = is_rvol_time1 ? rvol3_rth : rvol_on3
+rvol4 = is_rvol_time1 ? rvol4_rth : rvol_on4
+rvol5 = is_rvol_time1 ? rvol5_rth : rvol_on5
+rvol6 = is_rvol_time1 ? rvol6_rth : rvol_on6
+rvol7 = is_rvol_time1 ? rvol7_rth : rvol_on7
+rvol8 = is_rvol_time1 ? rvol8_rth : rvol_on8
+rvol9 = is_rvol_time1 ? rvol9_rth : rvol_on9
+rvol10 = is_rvol_time1 ? rvol10_rth : rvol_on10
+
+var bool us_futures_open = false
+var bool crypto_open = false
+if barstate.islast
+
+    us_futures_open := str.format_time(time, 'HH:mm', 'America/New_York') == '18:00' 
+    crypto_open := str.format_time(time, 'HH:mm', 'America/New_York') == '19:00' 
+    authorization = "vBKRAcWpJ8fEnF1tWy8nVmmtwWRM1t2f"
+    alert('{"Authorization": "' + str.tostring(authorization) + '",
+     "us_futures_open": "' + str.tostring(us_futures_open) + '", 
+     "crypto_open": "' + str.tostring(crypto_open) + '", 
+     "stocks": [
+     {"symbol": "' + symbol1 + '", 
+         "price": "' + str.tostring(current_price1) + '", 
+         "vwap": "' + str.tostring(vwap1) + '",
+         "rvol": "' + str.tostring(rvol1) + '",
+         "ibh": "' + str.tostring(ibh1) + '", 
+         "ibl": "' + str.tostring(ibl1) + '",  
+         "onh": "' + str.tostring(onh1) + '",  
+         "onl": "' + str.tostring(onl1) + '",  
+         "pct": "' + str.tostring(pct1) + '", 
+         "yc": "' + str.tostring(yc1) + '", 
+         "yh": "' + str.tostring(yh1) + '", 
+         "yl": "' + str.tostring(yl1) + '", 
+         "rthO": "' + str.tostring(rthO1) + '", 
+         "rthH": "' + str.tostring(rthH1) + '", 
+         "rthL": "' + str.tostring(rthL1) + '"}, 
+     {"symbol": "' + symbol2 + '", 
+         "price": "' + str.tostring(current_price2) + '", 
+         "vwap": "' + str.tostring(vwap2) + '",
+         "rvol": "' + str.tostring(rvol2) + '",
+         "ibh": "' + str.tostring(ibh2) + '", 
+         "ibl": "' + str.tostring(ibl2) + '",  
+         "onh": "' + str.tostring(onh2) + '",  
+         "onl": "' + str.tostring(onl2) + '",  
+         "pct": "' + str.tostring(pct2) + '", 
+         "yc": "' + str.tostring(yc2) + '", 
+         "yh": "' + str.tostring(yh2) + '", 
+         "yl": "' + str.tostring(yl2) + '", 
+         "rthO": "' + str.tostring(rthO2) + '", 
+         "rthH": "' + str.tostring(rthH2) + '", 
+         "rthL": "' + str.tostring(rthL2) + '"}, 
+     {"symbol": "' + symbol3 + '", 
+         "price": "' + str.tostring(current_price3) + '", 
+         "vwap": "' + str.tostring(vwap3) + '", 
+         "rvol": "' + str.tostring(rvol3) + '",
+         "ibh": "' + str.tostring(ibh3) + '", 
+         "ibl": "' + str.tostring(ibl3) + '", 
+         "onh": "' + str.tostring(onh3) + '",  
+         "onl": "' + str.tostring(onl3) + '",  
+         "pct": "' + str.tostring(pct3) + '", 
+         "yc": "' + str.tostring(yc3) + '", 
+         "yh": "' + str.tostring(yh3) + '", 
+         "yl": "' + str.tostring(yl3) + '", 
+         "rthO": "' + str.tostring(rthO3) + '", 
+         "rthH": "' + str.tostring(rthH3) + '", 
+         "rthL": "' + str.tostring(rthL3) + '"}, 
+     {"symbol": "' + symbol4 + '", 
+         "price": "' + str.tostring(current_price4) + '", 
+         "vwap": "' + str.tostring(vwap4) + '", 
+         "rvol": "' + str.tostring(rvol4) + '",
+         "ibh": "' + str.tostring(ibh4) + '", 
+         "ibl": "' + str.tostring(ibl4) + '", 
+         "onh": "' + str.tostring(onh4) + '",  
+         "onl": "' + str.tostring(onl4) + '",  
+         "pct": "' + str.tostring(pct4) + '", 
+         "yc": "' + str.tostring(yc4) + '", 
+         "yh": "' + str.tostring(yh4) + '", 
+         "yl": "' + str.tostring(yl4) + '", 
+         "rthO": "' + str.tostring(rthO4) + '", 
+         "rthH": "' + str.tostring(rthH4) + '", 
+         "rthL": "' + str.tostring(rthL4) + '"}, 
+     {"symbol": "' + symbol5 + '", 
+         "price": "' + str.tostring(current_price5) + '", 
+         "vwap": "' + str.tostring(vwap5) + '",
+         "rvol": "' + str.tostring(rvol5) + '",
+         "ibh": "' + str.tostring(ibh5) + '", 
+         "ibl": "' + str.tostring(ibl5) + '", 
+         "onh": "' + str.tostring(onh5) + '",  
+         "onl": "' + str.tostring(onl5) + '",   
+         "pct": "' + str.tostring(pct5) + '", 
+         "yc": "' + str.tostring(yc5) + '", 
+         "yh": "' + str.tostring(yh5) + '", 
+         "yl": "' + str.tostring(yl5) + '", 
+         "rthO": "' + str.tostring(rthO5) + '", 
+         "rthH": "' + str.tostring(rthH5) + '", 
+         "rthL": "' + str.tostring(rthL5) + '"}, 
+     {"symbol": "' + symbol6 + '", 
+         "price": "' + str.tostring(current_price6) + '", 
+         "vwap": "' + str.tostring(vwap6) + '", 
+         "rvol": "' + str.tostring(rvol6) + '",
+         "ibh": "' + str.tostring(ibh6) + '", 
+         "ibl": "' + str.tostring(ibl6) + '", 
+         "onh": "' + str.tostring(onh6) + '",  
+         "onl": "' + str.tostring(onl6) + '",  
+         "pct": "' + str.tostring(pct6) + '", 
+         "yc": "' + str.tostring(yc6) + '", 
+         "yh": "' + str.tostring(yh6) + '", 
+         "yl": "' + str.tostring(yl6) + '", 
+         "rthO": "' + str.tostring(rthO6) + '", 
+         "rthH": "' + str.tostring(rthH6) + '", 
+         "rthL": "' + str.tostring(rthL6) + '"}, 
+     {"symbol": "' + symbol7 + '", 
+         "price": "' + str.tostring(current_price7) + '", 
+         "vwap": "' + str.tostring(vwap7) + '", 
+         "rvol": "' + str.tostring(rvol7) + '",
+         "ibh": "' + str.tostring(ibh7) + '", 
+         "ibl": "' + str.tostring(ibl7) + '", 
+         "onh": "' + str.tostring(onh7) + '",  
+         "onl": "' + str.tostring(onl7) + '",  
+         "pct": "' + str.tostring(pct7) + '", 
+         "yc": "' + str.tostring(yc7) + '", 
+         "yh": "' + str.tostring(yh7) + '", 
+         "yl": "' + str.tostring(yl7) + '", 
+         "rthO": "' + str.tostring(rthO7) + '", 
+         "rthH": "' + str.tostring(rthH7) + '", 
+         "rthL": "' + str.tostring(rthL7) + '"}, 
+     {"symbol": "' + symbol8 + '", 
+         "price": "' + str.tostring(current_price8) + '", 
+         "vwap": "' + str.tostring(vwap8) + '", 
+         "rvol": "' + str.tostring(rvol8) + '",
+         "ibh": "' + str.tostring(ibh8) + '", 
+         "ibl": "' + str.tostring(ibl8) + '", 
+         "onh": "' + str.tostring(onh8) + '",  
+         "onl": "' + str.tostring(onl8) + '",  
+         "pct": "' + str.tostring(pct8) + '", 
+         "yc": "' + str.tostring(yc8) + '", 
+         "yh": "' + str.tostring(yh8) + '", 
+         "yl": "' + str.tostring(yl8) + '", 
+         "rthO": "' + str.tostring(rthO8) + '", 
+         "rthH": "' + str.tostring(rthH8) + '", 
+         "rthL": "' + str.tostring(rthL8) + '"}, 
+     {"symbol": "' + symbol9 + '", 
+         "price": "' + str.tostring(current_price9) + '", 
+         "vwap": "' + str.tostring(vwap9) + '",
+         "rvol": "' + str.tostring(rvol9) + '",
+         "ibh": "' + str.tostring(ibh9) + '", 
+         "ibl": "' + str.tostring(ibl9) + '", 
+         "onh": "' + str.tostring(onh9) + '",  
+         "onl": "' + str.tostring(onl9) + '",  
+         "pct": "' + str.tostring(pct9) + '", 
+         "yc": "' + str.tostring(yc9) + '", 
+         "yh": "' + str.tostring(yh9) + '", 
+         "yl": "' + str.tostring(yl9) + '", 
+         "rthO": "' + str.tostring(rthO9) + '", 
+         "rthH": "' + str.tostring(rthH9) + '", 
+         "rthL": "' + str.tostring(rthL9) + '"}, 
+     {"symbol": "' + symbol10 + '", 
+         "price": "' + str.tostring(current_price10) + '",
+         "vwap": "' + str.tostring(vwap10) + '", 
+         "rvol": "' + str.tostring(rvol10) + '",
+         "ibh": "' + str.tostring(ibh10) + '", 
+         "ibl": "' + str.tostring(ibl10) + '", 
+         "onh": "' + str.tostring(onh10) + '",  
+         "onl": "' + str.tostring(onl10) + '",  
+         "pct": "' + str.tostring(pct10) + '", 
+         "yc": "' + str.tostring(yc10) + '", 
+         "yh": "' + str.tostring(yh10) + '", 
+         "yl": "' + str.tostring(yl10) + '", 
+         "rthO": "' + str.tostring(rthO10) + '", 
+         "rthH": "' + str.tostring(rthH10) + '", 
+         "rthL": "' + str.tostring(rthL10) + '"}'
+     +  ']}' 
+     , alert.freq_once_per_bar_close)
+
+
+
+// plot(rthO2)
+// is_sess = time == time(timeframe.period, str.format('{0}:1234567', rth_session), 'America/New_York')
+// bgcolor(is_sess and not is_sess[1] ? color.blue : na)
+

@@ -1,0 +1,346 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Consecutive Candle Levels", overlay = true)
+
+// @keywords: consecutive-candles, fibonacci-levels, swing-high, swing-low, barrier-lines, extension-levels, retracement-levels, bar-coloring, background-highlight, range-box, consecutive-count, direction-tracking, level-breakout, configurable-levels, overlay-levels, candle-streak, high-low-range, box-lines, signal-candle, break-detection
+
+// update_tracking() =>
+//     var startBN = track_StartBN[1]
+//     var endBN = bar_index + 1
+//     var fibHigh = math.max(high, track_fibHigh[1])
+//     var fibLow = math.min(low, track_fibLow[1])
+//     var fibHighBN = high == fibHigh ? bar_index : track_fibHighBN[1]
+//     var fibLowBN = low == fibLow ? bar_index : track_fibLowBN[1]
+//     [startBN, endBN, fibHigh, fibLow, fibHighBN, fibLowBN]
+// [track_StartBN, track_EndBN, track_fibHigh, track_fibLow, track_fibHighBN, track_fibLowBN] = update_tracking()
+
+
+// inputs
+cons_candles = input.int(3, title = 'Consecutive Candles')
+
+show_0 = input(true, "", inline = "0")
+label_0 = input.string("0", "", inline = "0")
+value_0 = input(0, "", inline = "0")
+color_0 = input(#787b86, "", inline = "0")
+
+show_100 = input(true, "", inline = "100")
+label_100 = input.string("100", "", inline = "100")
+value_100 = input(100, "", inline = "100")
+color_100 = input(#787b86, "", inline = "100")
+
+show_1 = input(false, "", inline = "Level1")
+label_1 = input.string("Level 1", "", inline = "Level1")
+value_1 = input(0.382, "", inline = "Level1")
+color_1 = input(#787b86, "", inline = "Level1")
+
+show_2 = input(false, "", inline = "Level2")
+label_2 = input.string("Level 2", "", inline = "Level2")
+value_2 = input(0.5, "", inline = "Level2")
+color_2 = input(#787b86, "", inline = "Level2")
+
+show_3 = input(false, "", inline = "Level3")
+label_3 = input.string("Level 3", "", inline = "Level3")
+value_3 = input(0.68, "", inline = "Level3")
+color_3 = input(#787b86, "", inline = "Level3")
+
+show_4 = input(false, "", inline = "Level4")
+label_4 = input.string("Level 4", "", inline = "Level4")
+value_4 = input(1.38, "", inline = "Level4")
+color_4 = input(#787b86, "", inline = "Level4")
+
+show_5 = input(false, "", inline = "Level5")
+label_5 = input.string("Level 5", "", inline = "Level5")
+value_5 = input(1.5, "", inline = "Level5")
+color_5 = input(#787b86, "", inline = "Level5")
+
+
+barrier_pos_lbl = input.string("+1.65", "", inline = "Positive Barrier")
+barrier_pos = input(1.65, "", inline = "Positive Barrier")
+barrier_pos_css = input(#b51d1d, "", inline = "Positive Barrier")
+
+barrier_neg_lbl = input.string("-0.65", "", inline = "Negative Barrier")
+barrier_neg = input(-0.65, "", inline = "Negative Barrier")
+barrier_neg_css = input(#b51d1d, "", inline = "Negative Barrier")
+
+
+
+
+// functions
+f_array_shift_push(array, new_value_to_add) =>
+    array.shift(array)
+    array.push(array, new_value_to_add)
+
+
+// f_array_add_pop(array, new_value_to_add) =>
+//     array.unshift(array, new_value_to_add)
+//     array.pop(array)
+
+
+f_stopLine(boxObj) =>
+    // box.set_left(boxObj, bar_index[1])  
+    // box.set_extend(boxObj, extend.none)  
+    box.delete(boxObj)
+
+f_create_fib_values(startBN, endBN, fibTop, fibBot, fibTopBN, fibBotBN) =>
+    var float fib0_value = 0.00
+    var float fib100_value = 0.00
+
+    var float fib1_value = 0.00
+    var float fib2_value = 0.00
+    var float fib3_value = 0.00
+    var float fib4_value = 0.00
+    var float fib5_value = 0.00
+
+    var float fibpos_value = 0.00
+    var float fibneg_value = 0.00 
+
+    topIsO = fibTopBN > fibBotBN
+
+    fib0_value := topIsO ? fibTop : fibBot
+    fib100_value := topIsO ? fibBot : fibTop
+    fib_distance = math.abs(fib0_value - fib100_value)
+
+    fibpos_value := topIsO ?  fib0_value - (fib_distance * barrier_pos) : fib0_value + (fib_distance * barrier_pos)
+    fibneg_value := topIsO ?  fib0_value - (fib_distance * barrier_neg) : fib0_value + (fib_distance * barrier_neg)
+
+    [fib0_value, fib100_value, fibpos_value, fibneg_value]
+
+
+f_draw_fibs(
+     stopLines, startBN, endBN, fibTop, fibBot, fibTopBN, fibBotBN
+     ) =>
+
+
+    var float barrier_top = na
+    var float barrier_bot = na
+
+    var box fib0Line    = na
+    var box fib100Line  = na
+    var box fibPOSLine  = na
+    var box fibNEGLine  = na
+
+    if stopLines
+        f_stopLine(fib0Line)
+        f_stopLine(fib100Line)
+        f_stopLine(fibPOSLine)
+        f_stopLine(fibNEGLine)
+
+        barrier_top := na
+        barrier_bot := na
+
+    else
+
+
+        [fib0_value, fib100_value, fibpos_value, fibneg_value] = f_create_fib_values(startBN, endBN, fibTop, fibBot, fibTopBN, fibBotBN)
+
+        if show_0
+            fib0Line := box.new(left=startBN, top=fib0_value, right= endBN, bottom=fib0_value,
+                 border_color = color_0, extend = extend.none, text = label_0, text_color = chart.fg_color,
+                 text_size = size.small, text_halign = text.align_right, text_valign = text.align_top)
+
+        if show_100
+            fib100Line := box.new(left=startBN, top=fib100_value, right= endBN, bottom=fib100_value,
+                 border_color = color_100, extend = extend.none, text = label_100, text_color = chart.fg_color,
+                 text_size = size.small, text_halign = text.align_right, text_valign = text.align_top)
+
+
+        fibPOSLine := box.new(left=startBN, top=fibpos_value, right= endBN, bottom=fibpos_value,
+                 border_color = barrier_pos_css, extend = extend.none, text = barrier_pos_lbl, text_color = chart.fg_color,
+                 text_size = size.small, text_halign = text.align_right, text_valign = text.align_top)
+
+        fibNEGLine := box.new(left=startBN, top=fibneg_value, right= endBN, bottom=fibneg_value,
+                 border_color = barrier_neg_css, extend = extend.none, text = barrier_neg_lbl, text_color = chart.fg_color,
+                 text_size = size.small, text_halign = text.align_right, text_valign = text.align_top)
+
+        barrier_top := math.max(fibpos_value, fibneg_value)
+        barrier_bot := math.min(fibpos_value, fibneg_value)
+
+
+    // return all line values here for alerts
+    [barrier_top, barrier_bot] 
+    
+
+
+
+
+
+
+
+
+
+// define vars
+var startBNs    = array.new_int(100, na)
+var endBNs      = array.new_int(100, na)
+var fibHighs    = array.new_float(100, na)
+var fibLows     = array.new_float(100, na)
+var fibHighsBN  = array.new_int(100, na)
+var fibLowsBN   = array.new_int(100, na)
+
+
+
+
+
+
+var int track_StartBN   = 0
+var int track_EndBN     = 0
+var float track_fibHigh = na
+var float track_fibLow  = na
+var int track_fibHighBN = 0
+var int track_fibLowBN  = 0
+
+var int candleCount = 0
+var int candleSide  = 0
+
+var bool firstDraw      = true
+var bool barrierBroken  = false
+
+var float barrier_top   = na
+var float barrier_bot   = na
+
+
+// track candle type / consecutive 
+candleSide  := bar_index < cons_candles*2 ? 0 : close >= close[1] ? 1 : -1
+candleCount := bar_index < cons_candles*2 ? 0 
+     : bar_index  == 0 or candleSide != candleSide[1] ? 1 
+     : candleCount[1] + 1
+
+
+
+
+
+
+// main
+if bar_index < cons_candles * 2
+    firstDraw := true
+
+
+else if firstDraw
+    if candleCount[1] == cons_candles
+        // cond met
+        track_StartBN       := track_StartBN[1]
+        track_EndBN         := bar_index + 1
+        track_fibHigh       := math.max(high, track_fibHigh[1])
+        track_fibLow        := math.min(low, track_fibLow[1])
+        track_fibHighBN     := high == track_fibHigh ? bar_index : track_fibHighBN[1]
+        track_fibLowBN      := low == track_fibLow ? bar_index : track_fibLowBN[1] 
+    else if candleSide != candleSide[1]
+        //  reset
+        track_StartBN       := bar_index[1]
+        track_EndBN         := bar_index + 1
+        track_fibHigh       := math.max(high, high[1])
+        track_fibLow        := math.min(low, low[1])
+        track_fibHighBN     := high[1] == track_fibHigh ? bar_index[1] : high == track_fibHigh ? bar_index : track_fibHighBN[1]
+        track_fibLowBN      := low[1] == track_fibLow ? bar_index[1] : low == track_fibLow ? bar_index : track_fibLowBN[1]
+    else 
+        // track
+        track_StartBN       := track_StartBN[1]
+        track_EndBN         := bar_index + 1
+        track_fibHigh       := math.max(high, track_fibHigh[1])
+        track_fibLow        := math.min(low, track_fibLow[1])
+        track_fibHighBN     := high == track_fibHigh ? bar_index : track_fibHighBN[1]
+        track_fibLowBN      := low == track_fibLow ? bar_index : track_fibLowBN[1]
+
+    if candleCount[1] == cons_candles
+        [barr_top, barr_bot] = f_draw_fibs(false, track_StartBN, track_EndBN, track_fibHigh, track_fibLow, track_fibHighBN, track_fibLowBN)
+        barrier_top := barr_top
+        barrier_bot := barr_bot
+
+        // reset
+        track_StartBN       := bar_index[1]
+        track_EndBN         := bar_index + 1
+        track_fibHigh       := math.max(high, high[1])
+        track_fibLow        := math.min(low, low[1])
+        track_fibHighBN     := high[1] == track_fibHigh ? bar_index[1] : high == track_fibHigh ? bar_index : track_fibHighBN[1]
+        track_fibLowBN      := low[1] == track_fibLow ? bar_index[1] : low == track_fibLow ? bar_index : track_fibLowBN[1]
+        
+        firstDraw := false
+
+
+// else
+//     if candleCount[1] == cons_candles
+//         // cond met
+//         track_StartBN       := track_StartBN[1]
+//         track_EndBN         := bar_index + 1
+//         track_fibHigh       := math.max(high, track_fibHigh[1])
+//         track_fibLow        := math.min(low, track_fibLow[1])
+//         track_fibHighBN     := high == track_fibHigh ? bar_index : track_fibHighBN[1]
+//         track_fibLowBN      := low == track_fibLow ? bar_index : track_fibLowBN[1] 
+
+//         f_array_shift_push(startBNs, track_StartBN)
+//         f_array_shift_push(endBNs, track_EndBN)
+//         f_array_shift_push(fibHighs, track_fibHigh)
+//         f_array_shift_push(fibLows, track_fibLow)
+//         f_array_shift_push(fibHighsBN, track_fibHighBN)
+//         f_array_shift_push(fibLowsBN, track_fibLowBN)
+
+
+//     else if candleSide != candleSide[1]
+//         // reset
+//         track_StartBN       := bar_index[1]
+//         track_EndBN         := bar_index + 1
+//         track_fibHigh       := math.max(high, high[1])
+//         track_fibLow        := math.min(low, low[1])
+//         track_fibHighBN     := high[1] == track_fibHigh ? bar_index[1] : high == track_fibHigh ? bar_index : track_fibHighBN[1]
+//         track_fibLowBN      := low[1] == track_fibLow ? bar_index[1] : low == track_fibLow ? bar_index : track_fibLowBN[1]
+//     else 
+//         // track
+//         track_StartBN       := track_StartBN[1]
+//         track_EndBN         := bar_index + 1
+//         track_fibHigh       := math.max(high, track_fibHigh[1])
+//         track_fibLow        := math.min(low, track_fibLow[1])
+//         track_fibHighBN     := high == track_fibHigh ? bar_index : track_fibHighBN[1]
+//         track_fibLowBN      := low == track_fibLow ? bar_index : track_fibLowBN[1]
+
+
+
+
+barrierBroken := high >= barrier_top or low <= barrier_bot
+if barrierBroken
+
+    // stop current lines
+    [barr_top, barr_bot] = f_draw_fibs(true, track_StartBN, track_EndBN, track_fibHigh, track_fibLow, track_fibHighBN, track_fibLowBN)
+
+    // check if new lines are not broken - if they are delete other draw
+    // for i = 0 to array.size(startBNs) - 1
+    //     temp_startBN    = array.get(startBNs, i)
+    //     temp_endBN      = array.get(endBNs, i)
+    //     temp_barsback   = bar_index - temp_startBN
+
+
+        // if this doesnt work can create own loop to lookback
+        // temp_HH         = ta.highestbars(high, temp_barsback)
+        // temp_LL         = ta.lowestbars(low, temp_barsback)
+
+
+
+        // create new fib level values
+        // temp_
+
+
+        // if it fits draw
+        // else delete from array
+
+
+    // draw lines from array
+    // delete newly drawn values from array
+
+
+// plot(barrier_top)
+// plot(barrier_bot)
+
+bgcolor(firstDraw ? color.new(color.aqua, 95) : barrierBroken ? color.new(color.yellow,95) : na)
+barcolor(candleCount[1] == cons_candles and firstDraw[1] ? color.new(color.white, 0) 
+ : barrierBroken ? color.new(color.fuchsia, 0)
+ : na)
+// plot(track_fibHigh, color = color.gray)
+// plot(track_fibLow, color = color.gray)
+
+
+
+
+
+
+// alerts

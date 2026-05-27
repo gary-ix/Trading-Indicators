@@ -1,0 +1,20 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("VARIP Test", overlay = false)
+
+// @keywords: varip-increment, var-comparison, realtime-bar-counter, dual-plot-test, orange-var-series, blue-varip-series, tick-update-demo, persistence-test, lower-pane, debug-counter, bar-by-bar-accumulator, varip-vs-var, sandbox-indicator, increment-plot, state-persistence, development-test, no-overlay-signals, simple-line-plot, runtime-behavior, pine-varip-demo
+
+varip int v = -1
+v := v + 1
+plot(v, color = color.blue)
+
+var int v2 = -1
+v2 := v2 + 1
+plot(v2, color = color.orange)
+
+
+
+

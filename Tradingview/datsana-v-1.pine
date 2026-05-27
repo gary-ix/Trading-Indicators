@@ -1,0 +1,126 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator('datsana V.1', overlay=true)
+
+// @keywords: rsi-divergence-lines, resistance-support-levels, dual-ema-trend-fill, vwap-filter, tick-pattern-diamonds, demark-indicator, ehler-ratio, bollinger-bands, deceleration-filter, tpo-extremes, arrow-signals, buy-sell-labels, inverse-trend-toggle, rsi-overbought-oversold, ema-199-299, momentum-exhaustion, price-reversal-markers, multi-filter-entries, gradient-candles, plotshape-markers
+
+
+dlenuli = float(na)
+dleodin = float(na)
+dletri = float(na)
+
+
+
+search = input.int(141, title='rsi div. search length', group='rsi div')
+highrsi = input.int(70, title='high rsi', group='rsi div')
+lowrsi = input.int(30, title='low rsi', group='rsi div')
+rsi = ta.rsi(close, 14)
+mprx = ta.highest(close, search)  // mx
+mprm = ta.lowest(close, search)  // mn
+dleodin := close == mprx and rsi > highrsi ? close : dleodin[1]
+dletri := close == mprm and rsi < lowrsi ? close : dletri[1]
+isu = high > dleodin
+iso = low < dletri
+plot(dleodin, color=#ee524f41, linewidth=4, title='rsi div. res line')
+plot(dletri, color=#26a79a41, linewidth=4, title='rsi div. sup line')
+
+
+// ema
+ema199 = ta.ema(close, 199)
+ema299 = ta.ema(close, 299)
+plm1 = plot(ema199, color=#00000000, title='ema199', style=plot.style_stepline)
+plm2 = plot(ema299, color=#00000000, title='ema299', style=plot.style_stepline)
+trend = ema199 > ema299
+fill(plm1, plm2, color=trend ? #26a79a31 : #ee524f31, title='ema fill', transp=90)
+
+// vwap / sma
+ma17 = ta.sma(close, 17)
+plot(ta.vwap, color=color.new(#e35c8d, 0), title='vwap', display=display.none)
+
+// tkps
+acctkpsfl = input.bool(true, title='filter tkps', group='tkps')
+tkps = (acctkpsfl ? isu and close > ta.vwap ? true : false : true) and close[1] > high[2] and close < high[2] ? 1 : (acctkpsfl ? isu and close < ta.vwap ? true : false : true) and close[1] < high[2] and close > high[2] ? 3 : 0
+plotshape(tkps == 1, title='tkps', location=location.abovebar, color=#ee524f41, style=shape.diamond, size=size.tiny)
+plotshape(tkps == 3, title='tkps', location=location.belowbar, color=#26a79a41, style=shape.diamond, size=size.tiny)
+
+// demark
+dmrkx = high > high[1] ? high - high[1] : 0
+dmrkm = low > low[1] ? low - low[1] : 0
+rkxse = ta.sma(dmrkx, 17)
+rkmse = ta.sma(dmrkm, 17)
+demark = rkxse / (rkxse + rkmse)
+
+// ehler
+hlr = float(na)
+lvw = ta.lowest(hlc3, 17)
+hlr := (hlc3 - lvw) / (ta.highest(hlc3, 17) - lvw)
+
+// bb
+dev = ta.stdev(close, 21)
+bbup = ma17 + dev * 2
+bbdw = ma17 - dev * 2
+tcbb = high > bbup or low < bbdw
+plot(bbup, color=hlr == 1 ? #ee524f : #ee524f41, title='upper bbands', linewidth=2, style=plot.style_stepline)
+plot(bbdw, color=hlr == 0 ? #26a79a : #26a79a41, title='lower bbands', linewidth=2, style=plot.style_stepline)
+
+// deceleration
+accdc = input.bool(false, title='active deceleration', group='deceleration')
+dsn = input.float(1.035, title='deceleration density', step=0.001, group='deceleration')
+change = math.abs(ma17 - ta.sma(ma17, 7))
+// tcbb == false and 
+isdecc = accdc ? change < change[1] * dsn and tcbb : true
+
+// is tpo
+istpx = ta.highest(close, 247) == close
+istpm = ta.lowest(close, 247) == close
+
+
+
+// signals
+bstop = isdecc and isu and istpx[1] and close < open
+bsbtm = isdecc and iso and istpm[1] and close > open
+inverse = input.bool(true, title='reverse trend for signals', group='trend')
+plotshape(bstop, location=location.abovebar, color=color.new(#ee524f, 0), style=shape.arrowdown, size=size.small)
+plotshape(bsbtm, location=location.belowbar, color=color.new(#26a79a, 0), style=shape.arrowup, size=size.small)
+plotshape(bstop and (inverse ? trend : trend == false), location=location.abovebar, color=color.new(#ee524f, 0), style=shape.triangledown, size=size.tiny)
+plotshape(bsbtm and (inverse ? trend == false : trend), location=location.belowbar, color=color.new(#26a79a, 0), style=shape.triangleup, size=size.tiny)
+
+// plotchar(bstop and (inverse ? trend : trend == false), char='Sell', location=location.abovebar, color=color.new(#ffffff, 0), size=size.tiny)
+// plotchar(bsbtm and (inverse ? trend == false : trend), char='Buy', location=location.belowbar, color=color.new(#ffffff, 0), size=size.tiny)
+
+
+buy_color = input.color(#27a69b, title='Buy Color', inline='6', group='Signal Settings')
+sell_color = input.color(#b63632, title='Sell Color', inline='6', group='Signal Settings')
+neutral_color = input.color(color.yellow, title='Neutral Color', inline='6', group='Signal Settings')
+color_candles = input.string('Gradient', title = 'Color Candles', options = ['Gradient', 'Two-Colors', 'None'], inline = '7', group = 'Signal Settings')
+
+plotshape(bsbtm and (inverse ? trend == false : trend) ? low - (syminfo.mintick * 20) : na, style=shape.labelup, editable=false, text= "BUY", textcolor=color.white, location= location.absolute, color=color.new(buy_color, 30), size=size.tiny)
+plotshape(bstop and (inverse ? trend : trend == false) ? high + (syminfo.mintick * 20) : na, style=shape.labeldown, editable=false, text='SELL', textcolor=color.white, location=location.absolute, color=color.new(sell_color, 30), size=size.tiny)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

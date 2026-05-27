@@ -1,0 +1,25 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Miller Boy Custom Study", overlay = true)
+
+// @keywords: money-line, sma-crossover, buy-signal, sell-signal, open-cross, label-shapes, trend-cross, crossover-entry, crossunder-exit, simple-signals, price-cross, ma-filter, belowbar-abovebar, miller-boy, signal-labels, long-short-markers, open-price, sma-105, shape-markers, entry-exit
+
+money_line = ta.sma(close, 105)
+buy_signal = ta.crossover(open, money_line)
+sell_signal = ta.crossunder(open, money_line)
+
+plotshape(buy_signal, title = 'BUY', style = shape.labelup, location = location.belowbar, 
+ color = color.teal, textcolor = color.white, size = size.small, text = 'BUY')
+
+plotshape(sell_signal, title = 'SELL', style = shape.labeldown, location = location.abovebar, 
+ color = color.red, textcolor = color.white, size = size.small, text = 'SELL')
+
+
+
+
+
+
+

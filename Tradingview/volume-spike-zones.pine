@@ -1,0 +1,72 @@
+// © goodgains
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=5
+indicator("Volume Spike Zones", overlay = true)
+
+// @keywords: volume-spike-detection, keltner-style-bands, ema-basis-channel, range-ema-span, session-time-filter, multiplier-threshold, neutral-yellow-spike, bullish-volume-spike, bearish-volume-spike, cluster-mode, lookback-length, hl2-source, intraday-signals, band-upper-lower, volume-anomaly, allowed-signal-window, overlay-bands, spike-highlight, volume-expansion, time-gated-alerts
+
+// inputs
+calcTime = input.session('0940-1530', title = 'Allowed Signal Time', group = 'Calculate')
+length = input.int(100, title="Lookback", group = 'Calculate')
+mult = input.float(4.0, title="Multiplier", group = 'Calculate')
+
+show_yellow = input.bool(true, title = 'Show Neutral Volume Spike', group = 'Other')
+show_clusters = input.bool(false, title = 'Use Volume Spike Cluster', group = 'Other')
+
+
+
+
+//keltner price bands
+f_kc(src, length, mult) =>
+    float basis = ta.ema(src, length)
+    float span = (high - low)
+    float rangeEma = ta.ema(span, length/2)
+    [basis, basis + rangeEma * mult, basis - rangeEma * mult]
+
+[middle, upper, lower] = f_kc(hl2, length, mult)
+
+
+// volume extreme
+var bool volumeSpike = na
+var bool semiVolumeSpike = na
+var bool topVolumeExtreme = na
+var bool botVolumeExtreme = na
+var bool netVolumeExtreme = na
+
+var bool volumeCluster = na
+
+var int lastColor = na
+
+volumeSMA = ta.sma(volume, length)
+volumeSTD = ta.stdev(volume, length)
+upperBound = volumeSMA + (volumeSTD * mult)
+semiUpperBound = volumeSMA + (volumeSTD * (mult*.6))
+volumeSpike := volume > upperBound
+semiVolumeSpike := volume > semiUpperBound
+
+topVolumeExtreme := volumeSpike and high >= upper[1]
+botVolumeExtreme := volumeSpike and low <= lower[1]
+netVolumeExtreme := volumeSpike and not topVolumeExtreme and not botVolumeExtreme
+lastColor := topVolumeExtreme ? 1 : botVolumeExtreme ? -1 : netVolumeExtreme ? 0 : lastColor[1]
+
+volumeCluster := (volumeSpike[1] or volumeCluster[1] or volumeCluster[2])
+ and (semiVolumeSpike and not (high >= middle and low <= middle) and lastColor != 0)
+
+
+// plot
+barcolor(topVolumeExtreme ? color.green
+ : botVolumeExtreme ? color.red 
+ : volumeSpike and show_yellow ? color.yellow 
+ : color.black)
+
+
+u = plot(upper, color=#2962FF, title="Upper")
+plot(middle, color=#2962FF, title="Basis")
+l = plot(lower, color=#2962FF, title="Lower")
+fill(u, l, color=color.rgb(33, 150, 243, 95), title="Background")
+
+
+// bgcolor(volumeCluster ? color.black : na)
+

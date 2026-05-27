@@ -1,8 +1,0 @@
-// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © atraderstoolbox
-
-//@version=5
-indicator("Highlight Month", overlay = true)
-
-cond = weekofyear <= 5 ? true : false
-bgcolor(cond ? color.new(color.yellow, 80) : na)

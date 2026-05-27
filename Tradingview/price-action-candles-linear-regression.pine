@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles with Linear Regression", overlay = false)
+
+// @keywords: linear-regression, linreg-plot, close-regression, trend-line, pane-indicator, simple-linreg, regression-channel, price-trend, ten-period, slope-line, minimal-indicator, regression-forecast, trend-estimate, overlay-false, single-plot, basic-regression, linreg-close, statistical-trend, regression-plot, forecast-line
+
+plot(ta.linreg(close, 10, 0))
+
+

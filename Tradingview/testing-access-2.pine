@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Testing Access 2")
+
+// @keywords: testing-access, close-plot, minimal-test, private-script, simple-plot, access-test, debug-indicator, single-line, placeholder, pane-plot, test-script, basic-close, experimental, access-check, plot-close, minimal-indicator, sandbox, verification-script, access-verification, test-indicator
+
+plot(close)
+
+

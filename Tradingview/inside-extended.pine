@@ -1,0 +1,46 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Inside Extended", overlay = true)
+
+// @keywords: inside-bar, inside-extended, breakout, breakdown, range-high, range-low, bar-before-inside, bar-coloring, background-highlight, inside-candle, consolidation, range-break, yellow-inside, breakout-bg, breakdown-bg, price-range, nested-bar, expansion-signal, range-plot, inside-pattern
+
+var bool inside = na
+inside := math.max(close,open) < high[1] and math.min(close,open) > low[1]
+
+var bool bar_before_inside_broken = true
+bar_before_inside_broken := bar_index == 0 ? true : inside and bar_before_inside_broken[1] == true ? false : bar_before_inside_broken[1] 
+
+var bool breakdown = false
+var bool breakout = false
+var float bar_before_inside_high = na
+var float bar_before_inside_low = na
+
+if bar_before_inside_broken == false
+    if bar_before_inside_broken[1] == true
+        bar_before_inside_high := high[1]
+        bar_before_inside_low := low[1] 
+    else 
+        breakdown := close < bar_before_inside_low
+        breakout := close > bar_before_inside_high
+        bar_before_inside_high := bar_before_inside_high[1]
+        bar_before_inside_low := bar_before_inside_low[1]
+        bar_before_inside_broken := bar_index == 0 ? true : breakdown or breakout ? true : bar_before_inside_broken[1]
+else 
+    breakdown := false
+    breakout := false
+    bar_before_inside_high := na
+    bar_before_inside_low := na
+
+
+color_candles = input.bool(true, title = 'Color Candles')
+color_bg = input.bool(true, title = 'Color BG')
+barcolor(color_candles and inside ? color.yellow : na)
+bgcolor(color_bg and breakout ? color.new(color.green,80) : color_bg and breakdown ? color.new(color.red,80) : na)
+
+plot(bar_before_inside_high, title = 'Range High', color = color.gray, offset = -1, style = plot.style_linebr, linewidth = 3)
+plot(bar_before_inside_low , title = 'Range Low', color = color.gray, offset = -1, style = plot.style_linebr, linewidth = 3)
+
+

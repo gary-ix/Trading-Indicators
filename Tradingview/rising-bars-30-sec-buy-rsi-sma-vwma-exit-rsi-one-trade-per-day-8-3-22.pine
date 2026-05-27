@@ -1,0 +1,312 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy(title="Rising/bars/30/sec/buy/rsi/sma/vwma/exit/rsi/one/trade/per/day/8-3-22", overlay=true, calc_on_every_tick=true)
+
+// @keywords: rising-bars, rsi-entry, rsi-exit, vwma-cross, sma-filter, volume-oscillator, one-trade-per-day, strategy-entry, strategy-exit, trailing-stop, profit-target, hard-stop, session-entry, bar-delay, swing-exit, volume-minimum, rsi-ma-filter, multi-filter, ema-sma, trade-limit
+
+usaSma= input.bool(true,title='Use SMA3 close above/below condition')
+usaVwma=  input.bool(true, title='Use Cross Up/Down VWMA ')
+buy_delay =  input.bool(true, title='Entry delayed one bar')
+rsi_sell_button = input.bool(true, title='Sell using RSI condition')
+
+//Strategy Inputs
+entry_use_TradingHours = input.bool(false, title = " ", tooltip = "This is ignored if the chart timeframe is greater than or equal to the daily timeframe.", group = "Additional Trade Settings",inline = '1')
+entry_trading_time = input.session("0934-0936", title = "Entry Trading Time", tooltip = "This uses Eastern Time Zone or U.S. NY Market Hours.", group = "Additional Trade Settings",inline = '1')
+entry_trading_hours_cond = not entry_use_TradingHours or time("",entry_trading_time, "America/New_York")
+
+exit_use_TradingHours = input.bool(false, title = " ", tooltip = "This is ignored if the chart timeframe is greater than or equal to the daily timeframe.", group = "Additional Trade Settings",inline = '2')
+exit_trading_time = input.session("0930-1555", title = "Exit Trading Time", tooltip = "This uses Eastern Time Zone or U.S. NY Market Hours.", group = "Additional Trade Settings",inline = '2')
+exit_trading_hours_cond = not exit_use_TradingHours or time("",exit_trading_time, "America/New_York")
+
+long_trades = input.bool(true, title = "Long Trades", tooltip = "Do we want to take long trades?" , group = "Additional Trade Settings",inline = '3')
+short_trades = input.bool(true, title = "Short Trades", tooltip = "Do we want to take short trades?" , group = "Additional Trade Settings",inline = '3')
+
+use_profit_target = input.bool(true, title = "Profit Target", tooltip = "Do we want to use a profit target?" , group = "Additional Trade Settings",inline = '4')
+pt_amount = input.float(5.00, minval = 0.00, maxval = 99.0, step = 0.25,  title = " ", group = "Additional Trade Settings", inline = '4')
+
+use_stop = input.bool(true, title = "Stop", tooltip = "Do we want to use a hard stop loss?" , group = "Additional Trade Settings",inline = '5')
+stop_amount = input.float(4.00, minval = 0.00, maxval = 99.0, step = 0.25, title = " ", group = "Additional Trade Settings", inline = '5')
+
+use_trailing_stop = input.bool(true, title = "Trailing Stop", tooltip = "Do we want to use a trailing stop loss?" , group = "Additional Trade Settings",inline = '6')
+trailing_stop_amount = input.float(2.50, minval = 0.00, maxval = 99.0, step = 0.25, title = " ", group = "Additional Trade Settings", inline = '6')
+
+
+//rsi
+rsi_length = input.int(14, minval = 1, title = 'RSI Length', group = 'Indicator Settings', inline = '1')
+rsi_begin_level = input.int(60, minval = 1, title = 'RSI Begin Level', group = 'Indicator Settings', inline = '2')
+rsi_end_level = input.int(81, minval = 1, title = 'RSI End Level', group = 'Indicator Settings', inline = '2')
+rsi = ta.rsi(close, rsi_length)
+
+rsi_buy = rsi >= rsi_begin_level and rsi <= rsi_end_level
+rsi_sell = rsi <= rsi_begin_level and rsi >= rsi_end_level
+
+rsi_sell_level = input.int(6, minval = 1, title = 'RSI Drop Minimum', group = 'Indicator Settings', inline = '2')
+rsi_runup_min = input.int(67, minval = 55, title = 'RSI Run-Up Minimum', group = 'Indicator Settings', inline = '2')
+
+rsi_sell_condition = rsi_sell_button ? rsi < rsi_runup_min and rsi <= (rsi[1] - rsi_sell_level): na
+
+//vol osc
+var cumVol = 0.
+cumVol += nz(volume)
+if barstate.islast and cumVol == 0
+    runtime.error("No volume is provided by the data vendor.")
+shortlen = input.int(5, minval=1, title = "Vol Osc. Short Length", group = 'Indicator Settings', inline = '3')
+longlen = input.int(10, minval=1, title = "Vol Osc. Long Length", group = 'Indicator Settings', inline = '4')
+osc_begin_level = input.int(10, title = 'Vol Osc. Begin Level', group = 'Indicator Settings', inline = '5')
+osc_end_level = input.int(81, title = 'Vol Osc. End Level', group = 'Indicator Settings', inline = '5')
+short = ta.ema(volume, shortlen)
+long = ta.ema(volume, longlen)
+osc = 100 * (short - long) / long
+
+vol_osc_buy = osc >= osc_begin_level and osc <= osc_end_level
+vol_osc_sell = osc <= osc_begin_level and osc >= osc_end_level
+
+
+// vwma
+len = input.int(20, "Length", minval=1,group='VWMA')
+offset = input.int(0, "Offset", minval = -500, maxval = 500)
+src = input(close, "Candle Close - VWMA Source")
+entrysrc = input(close, "Candle Open - VWMA Source")
+src_low = input(low, "Candle Close - VWMA Source")
+
+candle_close = ta.highest(close,1)
+candle_open = ta.lowest(open,1)
+
+vwma_close = ta.vwma(src, len)
+vwma_open = ta.vwma(entrysrc, len)
+vwma_low = ta.vwma(src_low, len)
+
+plot(usaVwma ? vwma_close : na, title="VWMA", color=#2962FF, offset = offset)
+
+vwma_buy = usaVwma ? candle_open < vwma_open and candle_close >= vwma_close: close
+vwma_sell = usaVwma ? vwma_close < vwma_open and candle_open >= vwma_open : close
+
+// Volume
+volume_min = input.int(90000, minval = 20, title = 'Minimum Volume', group = 'Indicator Settings', inline = '6')
+
+volume_buy = volume >= volume_min
+volume_sell = volume >= volume_min
+
+//RSI-MA//
+ma(source, length, type) =>
+    switch type
+        "SMA" => ta.sma(source, length)
+        "Bollinger Bands" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+maTypeInput = input.string("SMA", title="MA Type", options=["SMA", "Bollinger Bands", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="MA Settings")
+maLengthInput = input.int(14, title="MA Length", group="MA Settings")
+rsiMA_min = input.int(45, minval=1, title="rsiMA Minimum", group="MA Settings")
+rsiMA_max = input.int(68, minval=1, title="rsiMA Maximum", group="MA Settings")
+
+up = ta.rma(math.max(ta.change(rsiSourceInput), 0), rsiLengthInput)
+down = ta.rma(-math.min(ta.change(rsiSourceInput), 0), rsiLengthInput)
+rsi4ma = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+rsiMA = ma(rsi4ma, maLengthInput, maTypeInput)
+
+buy_rsiMA = rsiMA >= rsiMA_min and rsiMA <= rsiMA_max
+
+
+//SMA and EMA code
+smaInput1 = input(9, title='SMA1', group = 'Indicator Settings', inline = '9')
+smaInput2 = input(50, title='SMA2', group = 'Indicator Settings', inline = '10')
+smaInput3 = input(180, title='SMA3', group = 'Indicator Settings', inline = '11')
+emaInput1 = input(20, title='EMA1', group = 'Indicator Settings', inline = '12')
+sma1 = ta.sma(close, smaInput1)
+sma2 = ta.sma(close, smaInput2)
+sma3 = ta.sma(close, smaInput3)
+EMA1 = ta.ema(close, emaInput1)
+
+sma1_buy = close > sma1
+sma1_sell = close < sma1
+
+sma3_buy = usaSma ? close > sma3 : close
+sma3_sell = usaSma ? close < sma3 : close
+
+ema1_buy = close > EMA1
+ema1_sell = close < EMA1
+
+
+//plot(sma1, color=color.new(color.red, 0), title='SMA1')
+//plot(sma2, color=color.new(color.blue, 0), title='SMA2')
+plot(sma3, color=color.new(color.purple, 0), title='SMA3')
+//plot(EMA1, color=color.new(color.yellow, 0), title='EMA1')
+no = input(3, title='BUY/SELL Swing bars to exit')
+Barcolor = input(false, title='BUY/SELL Bar Color')
+Bgcolor = input(false, title='BUY/SELL Background Color')
+res = ta.highest(high, no)
+sup = ta.lowest(low, no)
+iff_1 = close < sup[1] ? -1 : 0
+avd = close > res[1] ? 1 : iff_1
+avn = ta.valuewhen(avd != 0, avd, 0)
+tsl = avn == 1 ? sup : res
+
+
+//Bar Index - 0 equal the 1st trade
+
+in_time_range = (time(timeframe.period, entry_trading_time))
+
+//if in_time_range
+one_day_trade = bar_index == 0
+
+//Number of bars rising required for entry
+rising_bars = input(1, title='Rising bars for entry', group = 'Indicator Settings', inline = '7')
+bar_condition_buy = ta.rising(close, rising_bars)
+
+
+//Buy = ta.crossover(close, tsl) and entry_trading_hours_cond
+Sell_bars = ta.crossunder(close, tsl) and exit_trading_hours_cond
+Sell_vwma = close < vwma_close
+Sell = rsi_sell_condition and exit_trading_hours_cond
+
+//plotshape(Buy, title='Buy', color=color.new(color.green, 0), style=shape.arrowup, location=location.belowbar, text='Buy')
+//plotshape(Sell, title='Sell', color=color.new(color.red, 0), style=shape.arrowdown, text='Sell')
+colr = close >= tsl ? color.green : close <= tsl ? color.red : na
+//plot(tsl, color=colr, linewidth=3, title='BUY/SELL Chart Line')
+barcolor(Barcolor ? color.new(colr,80) : na)
+bgcolor(Bgcolor ? color.new(colr,80) : na)
+
+//Delay button input
+delay_bars = buy_delay ? 1 : 0
+
+// Create inputs
+session  = input.session("0400-1600", title="Session")
+timeZone = input.string("GMT-4", title="Time Zone")
+
+// first candle of the day
+isNewDay = time("D",session) != time("D")[1]
+bgcolor(isNewDay ? color.new(color.black, 60) : na)
+
+
+// BARS IN SESSION
+// IsSessionStart() returns 'true' when the current bar is the first one
+// inside the specified session, adjusted to the given time zone (optional).
+// Returns 'false' for other bars inside the session, bars outside the
+// session, and when the time frame is 1 day or higher.
+IsSessionStart(sessionTime, sessionTimeZone=syminfo.timezone) =>
+    inSess = not na(time(timeframe.period, sessionTime, sessionTimeZone))
+    inSess and not inSess[1]
+    
+//Verify if the bar happened first in the specified session
+isFirstBarOfSession = IsSessionStart(session, timeZone)
+
+
+//Highlight the first bar of the session with a character
+bgcolor(isFirstBarOfSession ? color.new(color.green, 60) : na)
+
+bars_since_session_start = ta.barssince(isNewDay)
+
+
+use_number_of_trades_per_day = input.bool(true, title = ' ', group = "Additional Trade Settings", inline = '7')
+max_number_of_trades_per_day = input.int(1, title = "Number of Trades per Day", group = "Additional Trade Settings", inline = '7')
+
+var int start_of_day_trades = 0
+start_of_day_trades := dayofmonth != dayofmonth[1] ? strategy.closedtrades : start_of_day_trades[1]
+max_number_of_trades_for_day = start_of_day_trades + max_number_of_trades_per_day
+
+number_of_trades_cond = (use_number_of_trades_per_day and strategy.closedtrades < max_number_of_trades_for_day) or not use_number_of_trades_per_day ? true : false
+
+
+plot(start_of_day_trades)
+
+//CONDITIONS
+var new_buy_cond = false
+var new_buy = false
+new_buy_cond := rsi_buy and vwma_buy and volume_buy and sma3_buy and bar_condition_buy and vol_osc_buy
+new_buy := new_buy_cond[delay_bars] and entry_trading_hours_cond and number_of_trades_cond
+
+var new_sell_cond = false
+var new_sell = false
+new_sell_cond := rsi_sell and vol_osc_sell and vwma_sell and volume_sell
+new_sell := (new_sell_cond and not new_sell_cond[1]) and exit_trading_hours_cond and number_of_trades_cond
+
+
+//ENTRY CONDITIONS
+long_entry = long_trades and new_buy
+long_exit = Sell
+short_entry = short_trades and new_sell
+//short_exit = Buy
+
+var long_price = 0.00
+var short_price = 0.00
+
+var long_mult = 0.00
+var short_mult = 0.00
+
+var short_profitTarget = 0.00
+var long_profitTarget = 0.00
+
+var short_StopPrice = 0.00
+var long_StopPrice = 0.00
+
+var short_trailStopPrice = 0.00
+var long_trailStopPrice = 0.00
+
+var short_stop = 0.00
+var long_stop = 0.00
+
+
+long_price := (strategy.position_size > 0) and (strategy.position_size[1] <= 0) ? open : (strategy.position_size > 0) ? math.max(high,long_price[1]) : na
+short_price := (strategy.position_size < 0) and (strategy.position_size[1] >= 0) ? open : (strategy.position_size < 0) ? math.min(low,short_price[1]) : na    
+
+long_mult := long_price / 100
+short_mult := short_price / 100    
+
+long_profitTarget := use_profit_target and (strategy.position_size > 0) ? strategy.position_avg_price + ((pt_amount/100) * strategy.position_avg_price) : 99999999
+short_profitTarget := use_profit_target and (strategy.position_size < 0) ? strategy.position_avg_price - ((pt_amount/100) * strategy.position_avg_price) : 0.00000
+
+short_StopPrice := strategy.position_avg_price + ((stop_amount/100) * strategy.position_avg_price)
+long_StopPrice := strategy.position_avg_price - ((stop_amount/100) * strategy.position_avg_price)
+
+short_trailStopPrice := short_price + trailing_stop_amount * short_mult
+long_trailStopPrice := long_price - trailing_stop_amount * long_mult
+
+
+if use_stop and use_trailing_stop
+    short_stop := math.min(short_StopPrice, short_trailStopPrice)
+    long_stop := math.max(long_StopPrice, long_trailStopPrice)
+if use_stop and not use_trailing_stop
+    short_stop := short_StopPrice
+    long_stop := long_StopPrice 
+if not use_stop and use_trailing_stop
+    short_stop := short_trailStopPrice
+    long_stop := long_trailStopPrice 
+if not use_stop and not use_trailing_stop
+    short_stop := 999999.99 
+    long_stop := 0.00
+
+
+
+//STRATEGY ORDERS
+
+
+//POSITION MANAGEMENT
+if strategy.position_size > 0 
+    strategy.exit(id="LE", limit = long_profitTarget, stop = long_stop, comment = "profit/loss", alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}')
+    
+if strategy.position_size < 0 
+    strategy.exit(id="SS_E", limit = short_profitTarget, stop = short_stop, comment = "exit")
+
+
+strategy.close("LE",when = long_exit, comment = "rsi/exit", alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}')
+if exit_use_TradingHours and not time("",exit_trading_time, "America/New_York")
+    strategy.close_all(comment = 'time/exit', alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}')
+
+
+//ENTRIES
+strategy.entry("LE", strategy.long,when = long_entry, comment = "entry", alert_message = '{"ticker": "{{ticker}}","action": "{{strategy.order.action}}","price": "{{close}}"}') 
+strategy.entry("SS_E", strategy.short, when = short_entry, comment = "entry") 
+
+
+
+
+
+

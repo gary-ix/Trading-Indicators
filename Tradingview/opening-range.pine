@@ -1,0 +1,335 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Opening Range", overlay = true)
+
+// @keywords: opening-range, macd-stoch, up-down-signals, ema-stack, buy-sell-signals, trend-sequential, stoch-overbought, alert-signals, triple-ema, zigzag-fractals, pivot-scanner, range-breakout, momentum-flip, sequential-macd, trend-length, signal-shapes, range-trading, intraday-signals, ema-alignment, crossover-alerts
+
+trendLength = input.int(5)
+sequentialLength = input.int(3)
+useAlerts = input.bool(false)
+
+fastLength = input.int(5)
+slowLength = input.int(26)
+MACDLength = input.int(9)
+// averageType = input.(AverageType.EXPONENTIAL
+
+overbought = input.int(80)
+oversold = input.int(20)
+KPeriod = input.int(10)
+DPeriod = input.int(10)
+priceH = input.source(high)
+priceL = input.source(low)
+priceC = input.source(close)
+// avgType = input.(AverageType.SIMPLE
+
+
+K = ta.sma(ta.stoch(priceC, priceH, priceL, 3), KPeriod)
+
+macd = ta.ema(close, fastLength) - ta.ema(close, slowLength)
+macdup = math.sum(macd >= macd[1] ? 1 : 0, sequentialLength) == sequentialLength and macd >= macd[trendLength]
+macddown = math.sum(macd < macd[1] ? 1 : 0, sequentialLength) == sequentialLength and macd < macd[trendLength]
+
+upSignal = macddown[1] and macd > macd[1] and K < overbought
+dnSignal = macdup[1] and macd < macd[1] and K > oversold
+plotshape(upSignal,title = 'Up Signal', color = color.green, style = shape.triangleup, location = location.belowbar, size = size.tiny)
+plotshape(dnSignal,title = 'Down Signal', color = color.red, style = shape.triangledown, location = location.abovebar, size = size.tiny)
+
+
+if useAlerts
+    if upSignal 
+        alert("UP",alert.freq_once_per_bar)
+    if dnSignal 
+        alert("DN",alert.freq_once_per_bar)
+
+
+price = close
+superfast_length = 9
+fast_length = 14
+slow_length = 21
+displace = 0
+
+mov_avg9 = ta.ema(price[displace], superfast_length)
+mov_avg14 = ta.ema(price[displace], fast_length)
+mov_avg21 = ta.ema(price[displace], slow_length)
+
+buy = mov_avg9 > mov_avg14 and mov_avg14 > mov_avg21 and low > mov_avg9
+stopbuy = mov_avg9 <= mov_avg14
+buynow = not buy[1] and buy
+
+var buysignal = 0
+buysignal := buynow and not stopbuy ? 1 : buysignal[1] == 1 and stopbuy ? 0 : buysignal[1]
+Buy_Signal = buysignal[1] == 0 and buysignal == 1
+
+
+sell = mov_avg9 < mov_avg14 and mov_avg14 < mov_avg21 and high < mov_avg9
+stopsell = mov_avg9 >= mov_avg14
+sellnow = not sell[1] and sell
+
+var sellsignal = 0
+sellsignal := sellnow and not stopsell ? 1 : sellsignal[1] == 1 and stopsell ? 0 : sellsignal[1]
+Sell_Signal = sellsignal[1] == 0 and sellsignal
+
+Colorbars = buysignal == 1 ? 1 : sellsignal == 1 ? 2 : buysignal == 0 or sellsignal == 0 ? 3 : 0
+
+
+
+////////////////////////ZIG ZAG/////////////////////////////////
+
+
+dev_threshold = input.float(title='reversalAmount', defval=1.00, minval=0.01, maxval=100.0)
+upcolor = input(defval=#388e3c, title='Zig Zag Up Color')
+downcolor = input(defval=#df0000, title='Zig Zag Down Color')
+undefinedcolor = input(defval=#e65100, title='Zig Zag Undefined Color')
+txtcol = input(defval=color.white, title='Text Color')
+zigwidth = input.int(defval=2, title='Zig zag Line Width', minval=1, maxval=10)
+depth = 2
+extend_to_last_bar = input(title='Extend to Last Bar', defval=true)
+display_reversal_price_change = input.bool(title='Display Reversal Price Change', defval=true, inline='price rev')
+
+pivots(src, length, isHigh) =>
+    p = nz(src[length])
+    if length == 0
+        [bar_index, p]
+    else
+        isFound = true
+        for i = 0 to length - 1 by 1
+            if isHigh and src[i] > p
+                isFound := false
+                isFound
+            if not isHigh and src[i] < p
+                isFound := false
+                isFound
+        for i = length + 1 to 2 * length by 1
+            if isHigh and src[i] >= p
+                isFound := false
+                isFound
+            if not isHigh and src[i] <= p
+                isFound := false
+                isFound
+        if isFound and length * 2 <= bar_index
+            [bar_index[length], p]
+        else
+            [int(na), float(na)]
+[iH, pH] = pivots(close, math.floor(depth / 2), true)
+[iL, pL] = pivots(close, math.floor(depth / 2), false)
+
+calc_dev(base_price, price) =>
+    100 * (price - base_price) / base_price
+
+price_rotation_aggregate(price_rotation, pLast) =>
+    str = ''
+    if display_reversal_price_change
+        str += price_rotation
+        str
+    str
+
+caption(isHigh, iLast, pLast, price_rotation) =>
+    price_rotation_str = price_rotation_aggregate(price_rotation, pLast)
+    if display_reversal_price_change
+        if not isHigh
+            label.new(iLast, pLast, text=price_rotation_str, style=label.style_label_up, color=downcolor, textcolor=txtcol)
+        else
+            label.new(iLast, pLast, text=price_rotation_str, style=label.style_label_down, color=upcolor, textcolor=txtcol)
+
+price_rotation_diff(pLast, price) =>
+    if display_reversal_price_change
+        tmp_calc = price - pLast
+        str = (math.sign(tmp_calc) > 0 ? '+' : '-') + str.tostring(math.abs(tmp_calc) * 100 / pLast, format.percent)
+        str := '(' + str + ')'
+        str
+    else
+        ''
+
+var line lineLast = na
+var label labelLast = na
+var int iLast = 0
+var float pLast = 0
+var bool isHighLast = true  // otherwise the last pivot is a low pivot
+var int linesCount = 0
+
+pivotFound(dev, isHigh, index, price) =>
+    if isHighLast == isHigh and not na(lineLast)
+        // same direction
+        if isHighLast ? price > pLast : price < pLast
+            if linesCount <= 1
+                line.set_xy1(lineLast, index, price)
+            line.set_xy2(lineLast, index, price)
+            label.set_xy(labelLast, index, price)
+            label.set_text(labelLast, price_rotation_aggregate(price_rotation_diff(line.get_y1(lineLast), price), price))
+            [lineLast, labelLast, isHighLast, false]
+        else
+            [line(na), label(na), bool(na), false]
+    else
+        // reverse the direction (or create the very first line)
+        if na(lineLast)
+            id = line.new(index, price, index, price, color=upcolor, width=zigwidth)
+            lb = caption(isHigh, index, price, price_rotation_diff(pLast, price))
+            [id, lb, isHigh, true]
+        else
+            // price move is significant
+            if math.abs(dev) >= dev_threshold
+                id = line.new(iLast, pLast, index, price, color=isHigh ? upcolor : downcolor, width=zigwidth)
+                lb = caption(isHigh, index, price, price_rotation_diff(pLast, price))
+                [id, lb, isHigh, true]
+            else
+                [line(na), label(na), bool(na), false]
+
+
+if not na(iH) and not na(iL) and iH == iL
+    dev1 = calc_dev(pLast, pH)
+    [id2, lb2, isHigh2, isNew2] = pivotFound(dev1, true, iH, pH)
+    if isNew2
+        linesCount += 1
+        linesCount
+    if not na(id2)
+        lineLast := id2
+        labelLast := lb2
+        isHighLast := isHigh2
+        iLast := iH
+        pLast := pH
+        pLast
+    dev2 = calc_dev(pLast, pL)
+    [id1, lb1, isHigh1, isNew1] = pivotFound(dev2, false, iL, pL)
+    if isNew1
+        linesCount += 1
+        linesCount
+    if not na(id1)
+        lineLast := id1
+        labelLast := lb1
+        isHighLast := isHigh1
+        iLast := iL
+        pLast := pL
+        pLast
+else
+    if not na(iH)
+        dev1 = calc_dev(pLast, pH)
+        [id, lb, isHigh, isNew] = pivotFound(dev1, true, iH, pH)
+        if isNew
+            linesCount += 1
+            linesCount
+        if not na(id)
+            lineLast := id
+            labelLast := lb
+            isHighLast := isHigh
+            iLast := iH
+            pLast := pH
+            pLast
+    else
+        if not na(iL)
+            dev2 = calc_dev(pLast, pL)
+            [id, lb, isHigh, isNew] = pivotFound(dev2, false, iL, pL)
+            if isNew
+                linesCount += 1
+                linesCount
+            if not na(id)
+                lineLast := id
+                labelLast := lb
+                isHighLast := isHigh
+                iLast := iL
+                pLast := pL
+                pLast
+
+var line extend_line = na
+var label extend_label = na
+if extend_to_last_bar == true and barstate.islast == true
+    isHighLastPoint = not isHighLast
+    curSeries = isHighLastPoint ? close : close
+    if na(extend_line) and na(extend_label)
+        extend_line := line.new(line.get_x2(lineLast), line.get_y2(lineLast), bar_index, curSeries, color=undefinedcolor, width=zigwidth)
+        extend_label := caption(not isHighLast, bar_index, curSeries, price_rotation_diff(line.get_y2(lineLast), curSeries))
+        extend_label
+    line.set_xy1(extend_line, line.get_x2(lineLast), line.get_y2(lineLast))
+    line.set_xy2(extend_line, bar_index, curSeries)
+    label.set_xy(extend_label, bar_index, curSeries)
+    price_rotation = price_rotation_diff(line.get_y1(extend_line), curSeries)
+    label.set_text(extend_label, price_rotation_aggregate(price_rotation, curSeries))
+    label.set_textcolor(extend_label, txtcol)
+    label.set_color(extend_label, undefinedcolor)
+
+EISave = line.get_y1(lineLast)
+// plot(line.get_y1(lineLast))
+
+
+//////////END ZIG ZAG////////////
+
+bubbleoffset = .0005
+percentamount = .01
+revAmount = .05
+atrreversal = 2.0
+atrlength = 5
+pricehigh = high
+pricelow = low
+averagelength = 5
+mah = ta.ema(pricehigh, averagelength)
+mal = ta.ema(pricelow, averagelength)
+
+atr = ta.atr(atrlength)
+reversalAmount = (close * percentamount / 100) > math.max(revAmount < atrreversal ? 1 : 0 * atr, revAmount) ? (close * percentamount / 100) : revAmount < atrreversal * atr ? atrreversal * atr : revAmount
+chg = (EISave == pricehigh ? pricehigh : pricelow) - EISave[1]
+isUp = chg >= 0
+
+var bool isConf = false
+isConf := math.abs(chg) >= reversalAmount or (na(EISave) and isConf[1])
+EId = isUp ? 1 : 0 
+plot(EId <= 1 ? EISave : na, title = 'EnhancedLines', offset = 10)
+
+
+
+var float EIL = na
+var float EIH = na
+EIL := not na(EISave) and not isUp ? pricelow : EIL[1]
+EIH := not na(EISave) and isUp ? pricehigh : EIH[1]
+
+
+var int dir = 0
+dir :=  EIL != EIL[1] or pricelow == EIL[1] and pricelow == EISave ? 1 : EIH  != EIH[1] or pricehigh == EIH[1] and pricehigh == EISave ? -1 : dir[1]
+
+var int signal = 0
+signal :=  dir > 0 and pricelow > EIL ? signal[1] <= 0 ? 1 : signal[1] : dir < 0 and pricehigh < EIH ? signal[1] >= 0 ? -1 : signal[1] : signal[1]
+
+
+showarrows = input.bool(true)
+U1 = showarrows and signal > 0 and signal[1] <= 0 
+D1 = showarrows and signal < 0 and signal[1] >= 0 
+
+plotshape(U1 and Colorbars != 3, title = 'Long', color = color.green, style = shape.triangleup, location = location.belowbar, size = size.normal)
+plotshape(D1 and Colorbars != 3, title = 'Short', color = color.red, style = shape.triangledown, location = location.abovebar, size = size.normal)
+
+
+var float revLineTop = 0.00
+var float revLineBot = 0.00
+
+if D1
+    revLineBot := na
+    revLineTop := high[1]
+else if U1
+    revLineTop := na
+    revLineBot := low[1]
+else if not na(revLineBot[1]) and (Colorbars[2] == 2 or Colorbars[1] == 2)
+    revLineBot := revLineBot[1]
+    revLineTop := na
+else if not na(revLineTop[1]) and (Colorbars[2] == 1 or Colorbars[1] == 1)
+    revLineTop := revLineTop[1]
+    revLineBot := na
+else
+    revLineTop := na
+    revLineBot := na
+
+
+plot(revLineBot, title = 'botLine', color = color.green)
+plot(revLineTop, title = 'topLine', color = color.red)
+
+
+
+// AddChartBubble((barnumber and U1 and colorbars == 3), if isUp then low else high, if showarrows and signal > 0 and signal[1] <= 0 then "BUY" else "" , if Colorbars == 3 then Color.WHITE else Color.UPTICK, no);
+// AddChartBubble((barnumber and D1 and colorbars == 3), if isUp then low else high, if showarrows and signal < 0 and signal[1] >= 0 then "SELL" else "" , if Colorbars == 3 then Color.WHITE else Color.DOWNTICK, yes);
+
+
+
+
+
+
+

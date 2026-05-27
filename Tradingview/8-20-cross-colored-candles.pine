@@ -1,0 +1,17 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+//@version=5
+indicator("8/20 Cross Colored Candles", overlay = true)
+
+// @keywords: ema-cross, ema-crossover, 8-20-ema, 8-20-cross, fast-ema, slow-ema, dual-ema, moving-average-cross, ma-cross, colored-candles, candle-coloring, bar-coloring, trend-direction, bullish-bearish, crossover-trend, ema-trend, momentum-direction, fast-slow-cross, simple-ema, price-trend
+
+ema8 = plot(ta.ema(close,8), color = color.orange)
+ema20 = plot(ta.ema(close,20), color = color.blue)
+
+bar_color = ta.ema(close,8) > ta.ema(close,20) ? 1 : -1
+barcolor(bar_color == 1 ? color.green : color.red)
+
+
+
+

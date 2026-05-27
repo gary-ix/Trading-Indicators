@@ -1,0 +1,24 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Custom Engulfing", overlay = true)
+
+// @keywords: custom-engulfing, engulfing-pattern, bull-engulfing, bear-engulfing, candle-pattern, body-size-filter, mintick-threshold, background-highlight, overlay, price-action, open-close-comparison, bullish-signal, bearish-signal, candle-body, pattern-detection, lightning-threshold, bar-background, engulfing-candles, momentum-candle, reversal-pattern
+
+// lighting signals
+lightning = input.int(50, title = "Lightning")
+dif = math.abs(close - open)
+
+bull_engulfing = close > open and close > open[1] and open[1] > close[1] and dif > lightning * syminfo.mintick
+bear_engulfing = close < open and close < open[1] and open[1] < close[1] and dif > lightning * syminfo.mintick
+
+// bear_engulfing = close < open
+//  and math.min(close, open) < math.min(close[1], open[1])
+//  and math.max(close, open) > math.max(close[1], open[1])
+
+
+bgcolor(bull_engulfing ? color.new(color.green, 20) : bear_engulfing ? color.new(color.red, 20) : na)
+
+

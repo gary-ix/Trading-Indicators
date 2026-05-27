@@ -1,0 +1,47 @@
+// © goodgains
+//@version=5
+indicator(title="Volume Profile", overlay=true, max_lines_count=500)
+
+// @keywords: volume-profile, histogram-bars, poc-level, vp-rows, bar-history, volume-distribution, price-levels, horizontal-histogram, vp-size, overlay-profile, volume-at-price, row-aggregation, highest-lowest-range, profile-lines, liquidity-zones, volume-concentration, bar-index-offset, profile-width, volume-histogram, price-binning
+
+// volume profile settings
+use_vp          = input.bool(true, title = 'Volume Profile', group = 'Volume Profile Settings', inline = '1')
+vp_color        = input.color(color.new(#434651,0), title = '', group = 'Volume Profile Settings', inline = '1')
+vp_length       = input.int(1000, title = 'VP Bar History', group = 'Volume Profile Settings', minval = 10, maxval = 3000, step = 100, tooltip = 'Number of bars back to calculate total volume histogram. (10-3000)')
+vp_location     = input.int(70, title = 'VP Size', group = 'Volume Profile Settings', minval = 30, maxval = 150, step = 10, tooltip = '30-150')
+vp_row          = input.int(200, title = '# of Rows', group = 'Volume Profile Settings', minval = 50, maxval = 200, step = 25, tooltip = '50-200')
+bar_vp_width    = vp_row >= 150 ? 2 : vp_row >= 120 ? 4 : vp_row >= 100 ? 6 : vp_row >= 80 ? 8 : 10
+
+vp_barlocation  = bar_index + vp_location
+vp_highest = ta.highest(vp_length)
+vp_lowest = ta.lowest(vp_length)
+
+line vp_lines = na
+vp_levels = array.new_float(0)
+vp_sumv = array.new_float(0)
+var vp_a = array.new_line()
+
+if use_vp
+    if barstate.isfirst
+        for i = 0 to vp_row - 1 by 1
+            array.push(vp_a, line.new(na, na, na, na, width=2))
+
+    if barstate.islast
+        for i = 0 to vp_row by 1
+            array.push(vp_levels, vp_lowest + i / vp_row * (vp_highest - vp_lowest))
+        for j = 0 to vp_row - 1 by 1
+            vp_sum = 0.
+            for k = 0 to vp_length - 1 by 1
+                vp_sum := high[k] > array.get(vp_levels, j) and low[k] < array.get(vp_levels, j + 1) ? vp_sum + volume[k] : vp_sum
+                vp_sum
+            array.push(vp_sumv, vp_sum)
+        for j = 0 to vp_row - 1 by 1
+            vp_mult = array.get(vp_sumv, j) / array.max(vp_sumv)
+            vp_lines := array.get(vp_a, j)
+            vp_tempget = array.get(vp_levels, j)
+            line.set_xy1(vp_lines, math.min(math.floor(vp_barlocation - (vp_location * vp_mult)) + 20, vp_barlocation-1), array.get(vp_levels, j))
+            line.set_xy2(vp_lines, vp_barlocation , array.get(vp_levels, j))
+            line.set_color(vp_lines,  color.rgb( color.r(vp_color), color.g(vp_color), color.b(vp_color), math.min(100 - vp_mult*100, 80)))
+            line.set_width(vp_lines, bar_vp_width)
+
+

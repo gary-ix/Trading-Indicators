@@ -1,0 +1,17 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("LinearRegressionSlope", overlay = false)
+
+// @keywords: linear-regression-slope, lrs-oscillator, wma-sma-difference, zero-line, slope-momentum, trend-strength, regression-angle, price-slope, oscillator-pane, momentum-indicator, linear-trend, slope-calculation, zero-cross, trend-direction, rate-of-change, regression-line, price-deviation, slope-plot, trend-gauge, pane-overlay
+
+f_linearregressionslope(price, length) =>
+    value =  6 * ( ta.wma(price, length) -  ta.sma(price, length) ) / (length - 1)
+    
+    
+LRS = f_linearregressionslope(close, 14)
+plot(LRS, title = 'LRS', color = color.yellow, linewidth = 2)
+plot(0, title = 'Zero', color = color.gray)
+

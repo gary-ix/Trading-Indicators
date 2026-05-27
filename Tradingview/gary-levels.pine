@@ -1,0 +1,122 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Gary - Levels", overlay = true)
+
+// @keywords: session-vwap, rth-vwap, full-session-vwap, overnight-high-low, rth-session-lines, session-background, custom-vwap-calc, ny-session-times, extending-session-lines, multi-session-overlay, fs-vwap-trend, overnight-range, rth-range-box, equity-session-markers, anchored-vwap-periods, time-based-vwap-reset, line-extension, session-highlighting, institutional-levels, market-hours-zones
+
+
+// rth vwap settings
+use_rth_vwap    = input.bool(true, title = 'RTH VWAP', group = 'RTH VWAP', inline = '1')
+rth_vwap_sess   = input.session('0930-1600', title = '', group = 'RTH VWAP', inline = '1')
+
+
+// vwap settings
+use_fs_vwap     = input.bool(true, title = 'FS VWAP', group = 'VWAP', inline = '1')
+fs_vwap_sess    = input.session('1600-1559', title = '', group = 'VWAP', inline = '1')
+
+
+// on lines
+use_on          = input.bool(true, title = 'ON Lines/Labels', group = 'Overnight', inline = '1')
+on_sess         = input.session('1800-0930', title = '', group = 'Overnight', inline = '1')
+
+// rth lines
+use_rth         = input.bool(true, title = 'RTH Lines/Labels', group = 'RTH', inline = '1')
+rth_sess        = input.session('0930-1600', title = '', group = 'RTH', inline = '1')
+
+
+
+
+
+
+f_vwap(src, is_time) =>
+	var float sumSrcVol     = na
+	var float sumVol        = na
+    var float sumSrcSrcVol  = na
+
+    isNewPeriod     = is_time and not is_time[1]
+	sumSrcVol       := isNewPeriod ? src * volume : src * volume + sumSrcVol[1]
+	sumVol          := isNewPeriod ? volume : volume + sumVol[1]
+	sumSrcSrcVol    := isNewPeriod ? volume * math.pow(src, 2) : volume * math.pow(src, 2) + sumSrcSrcVol[1]
+	_vwap           = not is_time ? na : sumSrcVol / sumVol
+
+	_vwap    
+
+
+
+f_draw_lines(is_sess, sess_css, sess_thick) =>
+    var float sess_high     = na
+    var float sess_low      = na
+
+    var line line_high      = na
+    var line line_low       = na
+
+    if not is_sess
+        false
+    else
+        if not is_sess[1]
+            sess_high   := high
+            sess_low    := low
+
+            line_high := line.new(time, sess_high, time+1, sess_high, xloc = xloc.bar_time,
+             extend = extend.none, color = sess_css, width = sess_thick)
+            line_low := line.new(time, sess_low, time+1, sess_low, xloc = xloc.bar_time,
+             extend = extend.none, color = sess_css, width = sess_thick)
+            false
+        else
+            sess_high   := math.max(sess_high[1], high)
+            sess_low    := math.min(sess_low[1], low)
+
+            line.set_x2(line_high, time)
+            line.set_x2(line_low, time)
+            line.set_y1(line_high, sess_high)
+            line.set_y2(line_high, sess_high)
+            line.set_y1(line_low, sess_low)
+            line.set_y2(line_low, sess_low)
+            false
+
+
+
+// calc rth vwap
+is_rth      = time(timeframe.period, rth_vwap_sess, 'America/New_York')
+rth_vwap    = use_rth_vwap ? f_vwap(close, is_rth) : na
+plot(rth_vwap, title = 'RTH VWAP', style = plot.style_linebr, color = color.rgb(89, 96, 101, 39))
+
+
+// calc fs vwap
+is_fs       = time(timeframe.period, fs_vwap_sess, 'America/New_York')
+fs_vwap     = use_fs_vwap ? f_vwap(close, is_fs) : na
+plot(fs_vwap, title = 'FS VWAP', style = plot.style_linebr,
+ color = fs_vwap > fs_vwap[3] ? color.rgb(0, 205, 185, 55) : color.rgb(255, 0, 0, 49))
+
+
+
+// previous day labels
+
+
+
+
+
+// calc on lines
+is_on       = time(timeframe.period, on_sess, 'America/New_York')
+f_draw_lines(is_on, color.new(#48505a, 30), 1)
+bgcolor(is_on ? color.new(#48505a,82) : na)
+
+
+// calc rth lines
+f_draw_lines(is_rth, color.new(#48505a, 30), 3)
+
+
+
+// custom vp
+
+
+
+
+
+
+// if barstate.islast
+//     label.new(chart.right_visible_bar_time, 4600, text = 'testint123', xloc = xloc.bar_time)
+

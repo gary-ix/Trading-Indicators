@@ -1,0 +1,27 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Gary - Oscillator", overlay = false)
+
+// @keywords: volume-ratio, vwma-oscillator, buy-sell-volume, body-wick-weighting, column-histogram, momentum-oscillator, close-open-ratio, volume-weighted-flow, oscillator-pane, bullish-columns, bearish-columns, normalized-volume, price-volume-imbalance, smoothed-ratio, fourteen-period, lower-pane, zero-cross, trend-strength, raw-volume-split, hlc-weighting
+
+
+green_candle    = close > close[1]
+red_candle      = not green_candle
+
+top_wick        = high - math.max(open, close)
+bottom_wick     = math.min(open, close) - low
+body_size       = math.abs(close-open)
+
+buy_volume      = green_candle ? volume * body_size : volume * (bottom_wick)
+sell_volume     = red_candle ? volume * body_size : volume * (top_wick)
+
+// ratio = volume * ((hlc3 - open) / (hlc3 + open))
+ratio = volume * ((close - open) / (close + open))
+VR_MA = ta.vwma(ratio * 100, 14)    
+
+plot(VR_MA, style = plot.style_columns, title = 'Oscillator',
+ color = VR_MA > 0 ? color.rgb(0, 216, 194) : color.rgb(230, 6, 6))
+

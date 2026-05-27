@@ -1,0 +1,80 @@
+// © goodgains
+//@version=5
+indicator('2 EMA cross 10 EMA', overlay=true)
+
+// @keywords: ema, exponential-moving-average, ema-crossover, ema-crossunder, moving-average, sma, fast-slow-ema, multi-ema, two-ema-cross, crossover-signals, entry-exit-signals, long-entry, short-entry, long-exit, short-exit, triangle-markers, alert-conditions, price-confirmation, trade-signals, trend-following
+
+// Exponential Moving Averages
+blueEma = ta.ema(close, 1)
+redEma = ta.ema(close, 15)
+greenEma = ta.ema(close, 21)
+whiteEma = ta.sma(close, 5)
+
+// EMA Crossover
+crossover = ta.crossover(blueEma, redEma)
+exitCross = ta.crossover(redEma, whiteEma)
+
+// color variables
+blue = color.blue
+red = color.red
+green = color.green
+
+// Plot EMA lines
+plot(blueEma, color=color.new(blue, 0), linewidth=2)
+plot(redEma, color=color.new(red, 0), linewidth=2)
+plot(greenEma, color=color.new(green, 0), linewidth=2)
+
+// Long Entry
+longCondition = crossover and blueEma 
+longConfirm = close[1] < close
+longEntry = longCondition and longConfirm ? blueEma : na
+// plot(longEntry, color=color.new(green, 0), linewidth=2, title='Long Entry')
+
+// Short Entry
+shortCondition = ta.crossunder(blueEma, redEma)
+shortConfirm = close[1] > close
+shortEntry = shortCondition and shortConfirm ? blueEma : na
+// plot(shortEntry, color=color.new(red, 0), linewidth=2, title='Short Entry')
+
+
+
+// --MAIN CODE-- //
+var in_trade = false
+var trade_side = 0
+var entry_price = 0.00
+
+var long_entry = false
+var short_entry = false
+
+var long_exit = false
+var short_exit = false
+
+
+
+
+long_entry := longCondition and longConfirm and trade_side != 1
+short_entry := shortCondition and shortConfirm and trade_side != -1
+
+entry_price := long_entry[1] or short_entry[1] ? open :  in_trade == true ? entry_price[1] : na
+trade_side := long_entry[1] ? 1 : short_entry[1] ? -1 : in_trade == false ? 0 : trade_side[1]
+
+long_exit := (exitCross) and in_trade[1] == true and trade_side[1] == 1
+short_exit := (ta.crossover(blueEma, redEma)) and in_trade[1] == true and trade_side[1] == -1   
+
+
+alertcondition(long_entry, title='Long Entry Alert', message='Long Entry')
+alertcondition(short_entry, title='Short Entry Alert', message='Short Entry')
+alertcondition(long_exit, title='Long Exit Alert', message='Long Exit')
+alertcondition(short_exit, title='Short Exit Alert', message='Short Exit')
+
+
+// --PLOT SIGNALS-- //
+plotshape(long_entry[1] , style = shape.triangleup, location = location.belowbar, color=color.new(color.green, 30), size=size.small, title = 'Long Entry')
+plotshape(short_entry[1] , style = shape.triangledown, location = location.abovebar, color=color.new(color.red, 30), size=size.small, title = 'SS Entry')
+
+plotshape(short_exit, style = shape.triangleup, location = location.belowbar, color=color.new(color.gray, 30), size=size.small, title = 'SS Exit')
+plotshape(long_exit, style = shape.triangledown, location = location.abovebar, color=color.new(color.gray, 30), size=size.small, title = 'Long Exit')
+
+
+// --PLOT SIGNALS-- //
+

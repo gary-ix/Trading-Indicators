@@ -1,0 +1,21 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles", overlay = false)
+
+// @keywords: price-action-candles, custom-obv, volume-obv, obv-calculation, sign-volume, lower-pane-oscillator, cumulative-volume, obv-plot, price-action, volume-flow, signed-volume, rolling-obv, overlay-false, volume-indicator, obv-period, net-volume, volume-direction, panel-indicator, obv-sum, action-candles
+
+f_obv(length) =>
+    value = 0.00
+    for i = 1 to length
+        value += math.sign(close[i] - close[i+1]) * volume
+    value
+
+obv_time = 20
+obv = f_obv(obv_time)
+
+plot(obv)
+
+

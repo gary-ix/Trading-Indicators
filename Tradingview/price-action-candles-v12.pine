@@ -1,0 +1,13 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles")
+
+// @keywords: simple-moving-average, sma-plot, show-last-bars, price-action, candles-indicator, limited-display, close-sma, test-input, overlay-none, basic-plot, minimal-indicator, moving-average, price-series, bar-limit, action-candles, version-twelve, placeholder, sma-length, trend-line, price-smoothing
+
+test_val = input.int(10)
+plot(ta.sma(close,20), show_last = test_val)
+
+

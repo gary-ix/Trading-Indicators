@@ -1,0 +1,153 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("GARY Fair-Value GAPS", overlay = true, max_labels_count = 500, max_boxes_count = 500, max_lines_count = 500, max_bars_back = 1000)
+
+// @keywords: fair-value-gaps, fvg, bullish-fvg, bearish-fvg, gap-boxes, imbalance-zones, body-sensitivity, gap-merge, gap-fill, filled-fvg, zone-management, bar-coloring, supply-demand-gap, gap-detection, box-array, gap-tracking, price-imbalance, gap-outline, gap-minimize, gap-delete
+
+//--FAIR VALUE GAP INPUTS--//
+show_fvg = input(true, 'Fair Value Gaps', group = 'Fair-Value Gaps', inline = '1')
+fvg_sensitivity = input.int(150, title = 'FVG Sensitivity', group = 'Fair-Value Gaps', inline = '2', minval = 100, maxval = 500, step = 25)
+
+bull_fvg_css = input.color(color.new(#000000, 70), 'Bull FVG BG', group = 'Fair-Value Gaps', inline = '3')
+bear_fvg_css = input.color(color.new(#000000, 70), 'Bear FVG BG', group = 'Fair-Value Gaps', inline = '3')
+
+bull_fvgb_css = input.color(color.new(#41ff00, 20), 'Bull FVG Outline', group = 'Fair-Value Gaps', inline = '4')
+bear_fvgb_css = input.color(color.new(#ff0000, 20), 'Bear FVG Outline', group = 'Fair-Value Gaps', inline = '4')
+
+fvg_minimize_onfill = input.bool(true, title = 'Adjust FVG Box As It Fills', group = 'Fair-Value Gaps', inline = '5')
+fvg_delete_filled = input.bool(false, title = 'Delete Filled FVGs', group = 'Fair-Value Gaps', inline = '6')
+//--FAIR VALUE GAP INPUTS--//
+
+
+//-----FUNCTIONS-----//
+//--FUNCTION TO ADD NEW AND REMOVE LAST IN ARRAY--//
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+//--FUNCTION TO ADD NEW AND REMOVE LAST IN ARRAY--//
+
+//--FUNCTION TO DRAW NEW FVGS--//
+f_new_fvg(box_array, box_type) =>
+    box_left = bar_index - 1
+    box_right = bar_index + 3
+
+    box_top = box_type == 1 ? low : math.max( (high[1] + low[1])/2, low[2] ) 
+    box_bottom = box_type == 1 ? math.min( (high[1] + low[1])/2, high[2] ) : high
+    
+    if box_type == 1
+        box.delete( array.get(box_array, array.size(box_array) - 1) )
+        f_array_add_pop(box_array, box.new( left = box_left, top = box_top, right = box_right, bottom = box_bottom, border_color = bull_fvgb_css,
+          bgcolor = bull_fvg_css, extend = extend.none, text = 'FVG', text_halign = text.align_center, text_valign = text.align_bottom, 
+          text_color = color.new(bull_fvgb_css,20), text_size = size.small, xloc = xloc.bar_index, border_style = line.style_solid, border_width  = 1))
+    if box_type == -1
+        f_array_add_pop(box_array, box.new( left = box_left, top = box_top, right = box_right, bottom = box_bottom, border_color = bear_fvgb_css,
+          bgcolor = bear_fvg_css, extend = extend.none, text = 'FVG', text_halign = text.align_center, text_valign = text.align_top,
+          text_color = color.new(bear_fvgb_css,20), text_size = size.small, xloc = xloc.bar_index, border_style = line.style_solid, border_width  = 1))
+//--FUNCTION TO DRAW NEW FVGS--//
+
+//--FUNCTION TO COMBINE FVGS--//
+f_merge_fvg(box_array, box_type) =>
+    if box_type == 1
+        box.set_top(array.get(box_array,0), low)
+    if box_type == -1
+        box.set_bottom(array.get(box_array,0), high)
+//--FUNCTION TO COMBINE FVGS--//
+
+
+//--FUNCTION TO MANAGE FVGS--//
+f_manage_fvg(box_array, finished_box_array, box_type) =>
+    // loop to move broken fvgs to finished and extend unbroken ones
+    for i = 0 to array.size(box_array) - 1
+        box_top = box.get_top(array.get(box_array,i))
+        box_bottom = box.get_bottom(array.get(box_array,i))
+
+        if box_type == 1
+            if low < box_bottom
+                if not fvg_delete_filled
+                    copied_box = box.copy(array.get(box_array,i))
+                    f_array_add_pop(finished_box_array, copied_box)
+
+                    box.set_extend(array.get(finished_box_array,0), extend.none)
+                    box.set_right(array.get(finished_box_array,0),bar_index)
+                    box.set_text(array.get(finished_box_array,0), 'FVG')
+                    box.set_text_color(array.get(finished_box_array,0), color.new(bull_fvgb_css, 40))
+                    box.set_border_color(array.get(finished_box_array,0), color.new(bull_fvgb_css, 40))
+                    box.set_border_width(array.get(finished_box_array,0),0)
+                    box.set_text_size(array.get(finished_box_array,0), size.small)
+                box.delete( array.get(box_array, i) )
+            else if fvg_minimize_onfill and low < box_top
+                box.set_top( array.get(box_array,i), low)
+            else
+                box.set_right(array.get(box_array,i),bar_index)
+
+        if box_type == -1
+            if high > box_top
+                if not fvg_delete_filled
+                    copied_box = box.copy(array.get(box_array,i))
+                    f_array_add_pop(finished_box_array, copied_box)
+
+                    box.set_extend(array.get(finished_box_array,0), extend.none)
+                    box.set_right(array.get(finished_box_array,0),bar_index)
+                    box.set_text(array.get(finished_box_array,0), 'FVG')
+                    box.set_text_color(array.get(finished_box_array,0), color.new(bear_fvgb_css, 40))
+                    box.set_border_color(array.get(finished_box_array,0), color.new(bear_fvgb_css, 40))
+                    box.set_border_width(array.get(finished_box_array,0),0)
+                    box.set_text_size(array.get(finished_box_array,0), size.small)
+                box.delete( array.get(box_array, i) )
+            else if fvg_minimize_onfill and high > box_bottom
+                box.set_bottom( array.get(box_array,i), high)
+            else
+                box.set_right(array.get(box_array,i),bar_index)
+//--FUNCTION TO MANAGE FVGS--//
+
+//-----FUNCTIONS-----//
+
+
+
+
+
+// fvg logic
+abody = math.round_to_mintick(ta.sma(math.abs(close-open), 20))
+abody_pct_value = math.round(math.abs(close-open) / abody * 100,0)
+abody_bull = abody_pct_value > fvg_sensitivity and close > open ? 1 : 0 
+abody_bear = abody_pct_value > fvg_sensitivity and close < open ? 1 : 0 
+
+var bool fvg_bull = false 
+var bool fvg_bear = false 
+
+fvg_bull := abody_bull[1] and low > (high[1] + low[1]) / 2 and low > high[2]
+fvg_bear := abody_bear[1] and high < (high[1] + low[1]) / 2 and high < low[2]
+barcolor(fvg_bull ? color.green : fvg_bear ? color.red : na, offset = -1)
+
+
+//--ARRAYS FOR FVGS--//
+var fvg_bull_box = array.new_box(20, na)
+var fvg_bear_box = array.new_box(20, na)
+
+var fvg_finishedbull_box = array.new_box(100, na)
+var fvg_finishedbear_box = array.new_box(100, na)
+//--ARRAYS FOR FVGS--//
+
+if show_fvg
+    if fvg_bull 
+        if not fvg_bull[1]
+            f_new_fvg(fvg_bull_box, 1)
+        else
+            f_merge_fvg(fvg_bull_box, 1)
+
+    if fvg_bear
+        if not fvg_bear[1]
+            f_new_fvg(fvg_bear_box, -1)
+        else
+            f_merge_fvg(fvg_bear_box, -1)
+
+f_manage_fvg(fvg_bull_box, fvg_finishedbull_box, 1) 
+f_manage_fvg(fvg_bear_box, fvg_finishedbear_box, -1) 
+
+
+// fvg logic
+
+

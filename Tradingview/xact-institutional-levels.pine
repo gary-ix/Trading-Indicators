@@ -1,0 +1,337 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Xact Institutional Levels", overlay = true, max_lines_count = 500, max_labels_count = 500)
+
+// @keywords: institutional-levels, prior-day-high, prior-day-low, prior-day-close, prior-week-levels, session-high-low, anchored-vwap, prior-mid, horizontal-lines, pdh-pdl-pdc, pwh-pwl-pwc, session-mid, extend-right, timeframe-filter, level-lines, vwap-from-level, day-tracking, week-tracking, session-tracking, label-vwaps
+
+show_label_on_vwaps = input.bool(true, title = 'Show Labels on Anchored VWAPS')
+
+// prior day settings
+pd_display_max = 'D'
+
+use_pdh_levels = input.bool(true, title = 'PDH', group = 'Prior Day Settings', inline = '1')
+css_pdh = input.color(color.new(color.gray,35), title = '', group = 'Prior Day Settings', inline = '1')
+style_pdh = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Day Settings', inline = '1')
+width_pdh = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Day Settings', inline = '1')
+_pdh_vwap = input.bool(true, title = 'VWAP', group = 'Prior Day Settings', inline = '1',
+ tooltip = 'Draws an anchored vwap from the prior days high.')
+
+
+use_pdl_levels = input.bool(true, title = 'PDL', group = 'Prior Day Settings', inline = '2')
+css_pdl = input.color(color.new(color.gray,35), title = '', group = 'Prior Day Settings', inline = '2')
+style_pdl = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Day Settings', inline = '2')
+width_pdl = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Day Settings', inline = '2')
+_pdl_vwap = input.bool(true, title = 'VWAP', group = 'Prior Day Settings', inline = '2',
+ tooltip = 'Draws an anchored vwap from the prior days low.')
+
+use_pdc_levels = input.bool(true, title = 'PDC', group = 'Prior Day Settings', inline = '3')
+css_pdc = input.color(color.new(color.gray,35), title = '', group = 'Prior Day Settings', inline = '3')
+style_pdc = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Day Settings', inline = '3')
+width_pdc = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Day Settings', inline = '3')
+_pdc_vwap = input.bool(true, title = 'VWAP', group = 'Prior Day Settings', inline = '3',
+ tooltip = 'Draws an anchored vwap from the prior days close.')
+
+use_pdm_levels = input.bool(false, title = 'PDM', group = 'Prior Day Settings', inline = '4')
+css_pdm = input.color(color.new(color.gray,35), title = '', group = 'Prior Day Settings', inline = '4')
+style_pdm = input.string('Dotted', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Day Settings', inline = '4')
+width_pdm = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Day Settings', inline = '4')
+
+
+// prior week settings
+pw_display_max = 'W'
+
+use_pwh_levels = input.bool(false, title = 'PWH', group = 'Prior Week Settings', inline = '1')
+css_pwh = input.color(color.new(color.yellow,35), title = '', group = 'Prior Week Settings', inline = '1')
+style_pwh = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Week Settings', inline = '1')
+width_pwh = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Week Settings', inline = '1')
+_pwh_vwap = input.bool(false, title = 'VWAP', group = 'Prior Week Settings', inline = '1',
+ tooltip = 'Draws an anchored vwap from the prior weeks high.')
+
+use_pwl_levels = input.bool(false, title = 'PWL', group = 'Prior Week Settings', inline = '2')
+css_pwl = input.color(color.new(color.yellow,35), title = '', group = 'Prior Week Settings', inline = '2')
+style_pwl = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Week Settings', inline = '2')
+width_pwl = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Week Settings', inline = '2')
+_pwl_vwap = input.bool(false, title = 'VWAP', group = 'Prior Week Settings', inline = '2',
+ tooltip = 'Draws an anchored vwap from the prior weeks low.')
+
+use_pwc_levels = input.bool(false, title = 'PWC', group = 'Prior Week Settings', inline = '3')
+css_pwc = input.color(color.new(color.yellow,35), title = '', group = 'Prior Week Settings', inline = '3')
+style_pwc = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Week Settings', inline = '3')
+width_pwc = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Week Settings', inline = '3')
+_pwc_vwap = input.bool(false, title = 'VWAP', group = 'Prior Week Settings', inline = '3',
+ tooltip = 'Draws an anchored vwap from the prior weeks close.')
+
+use_pwm_levels = input.bool(false, title = 'PWM', group = 'Prior Week Settings', inline = '4')
+css_pwm = input.color(color.new(color.yellow,35), title = '', group = 'Prior Week Settings', inline = '4')
+style_pwm = input.string('Dashed', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Prior Week Settings', inline = '4')
+width_pwm = input.int(1, title = '', minval = 1, maxval = 5, group = 'Prior Week Settings', inline = '4')
+
+
+
+// session settings
+sess_display_max = '30'
+session_time = input.session('0930-1600', title = 'Session Time', group = 'Session Settings', inline = 'a')
+
+use_sessh_levels = input.bool(true, title = 'Session H', group = 'Session Settings', inline = '1')
+css_sessh = input.color(color.new(color.blue,35), title = '', group = 'Session Settings', inline = '1')
+style_sessh = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Session Settings', inline = '1')
+width_sessh = input.int(1, title = '', minval = 1, maxval = 5, group = 'Session Settings', inline = '1')
+_sessh_vwap = input.bool(true, title = 'VWAP', group = 'Session Settings', inline = '1',
+ tooltip = 'Draws an anchored vwap from the current days high.')
+
+use_sessl_levels = input.bool(true, title = 'Session L', group = 'Session Settings', inline = '2')
+css_sessl = input.color(color.new(color.blue,35), title = '', group = 'Session Settings', inline = '2')
+style_sessl = input.string('Solid', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Session Settings', inline = '2')
+width_sessl = input.int(1, title = '', minval = 1, maxval = 5, group = 'Session Settings', inline = '2')
+_sessl_vwap = input.bool(true, title = 'VWAP', group = 'Session Settings', inline = '2',
+ tooltip = 'Draws an anchored vwap from the current days low.')
+
+use_sessm_levels = input.bool(false, title = 'Session M', group = 'Session Settings', inline = '4')
+css_sessm = input.color(color.new(color.blue,35), title = '', group = 'Session Settings', inline = '4')
+style_sessm = input.string('Dashed', title = '', options = ['Solid', 'Dotted', 'Dashed'], group = 'Session Settings', inline = '4')
+width_sessm = input.int(1, title = '', minval = 1, maxval = 5, group = 'Session Settings', inline = '4')
+
+// calc prior levels
+tf_sec = timeframe.in_seconds('')
+pd_can_display = tf_sec <= timeframe.in_seconds(pd_display_max) 
+pw_can_display = tf_sec <= timeframe.in_seconds(pw_display_max)
+sess_can_display = tf_sec <= timeframe.in_seconds(sess_display_max)
+
+var float   track_pdh = 0.00
+var int     track_pdhbn = 0
+var float   track_pdl = 0.00
+var int     track_pdlbn = 0
+
+var float   track_pwh = 0.00
+var int     track_pwhbn = 0
+var float   track_pwl = 0.00
+var int     track_pwlbn = 0
+
+var float   pdh = 0.00
+var int     pdhbn = 0
+var float   pdl = 0.00
+var int     pdlbn = 0
+var float   pdc = 0.00
+var int     pdcbn = 0
+var float   pdm = 0.00
+
+var float   pwh = 0.00
+var int     pwhbn = 0
+var float   pwl = 0.00
+var int     pwlbn = 0
+var float   pwc = 0.00
+var int     pwcbn = 0
+var float   pwm = 0.00
+
+new_day = ta.change(time('D'))
+new_week = ta.change(time('W'))
+
+track_pdh   := new_day ? high : high > track_pdh[1]  ? high : track_pdh[1]
+track_pdhbn := new_day ? time : high > track_pdh[1]  ? time : track_pdhbn[1]
+track_pdl   := new_day ? low : low < track_pdl[1] ? low : track_pdl[1]
+track_pdlbn := new_day ? time : low < track_pdl[1]  ? time : track_pdlbn[1]
+
+track_pwh   := new_week ? high : high > track_pwh[1]  ? high : track_pwh[1]
+track_pwhbn := new_week ? time : high > track_pwh[1]  ? time : track_pwhbn[1]
+track_pwl   := new_week ? low : low < track_pwl[1] ? low : track_pwl[1]
+track_pwlbn := new_week ? time : low < track_pwl[1]  ? time : track_pwlbn[1]
+
+pdh     := new_day ? track_pdh[1] : pdh[1]
+pdhbn   := new_day ? track_pdhbn[1] : pdhbn[1]
+pdl     := new_day ? track_pdl[1] : pdl[1]
+pdlbn   := new_day ? track_pdlbn[1] : pdlbn[1]
+pdc     := new_day ? close[1] : pdc[1]
+pdcbn   := new_day ? time[1] : pdcbn[1]
+pdm     := (pdh + pdl) / 2
+
+pwh     := new_week ? track_pwh[1] : pwh[1]
+pwhbn   := new_week ? track_pwhbn[1] : pwhbn[1]
+pwl     := new_week ? track_pwl[1] : pwl[1]
+pwlbn   := new_week ? track_pwlbn[1] : pwlbn[1]
+pwc     := new_week ? close[1] : pwc[1]
+pwcbn   := new_week ? time[1] : pwcbn[1]
+pwm     := (pwh + pwl) / 2
+
+
+
+is_session = time(timeframe.period, str.format('{0}:1234567', session_time), 'America/New_York')
+var float sess_high = 0.0
+var int sessh_bn = 0
+
+var float sess_low = 0.0
+var int sessl_bn = 0
+
+var sess_mid = 0.0
+var int sess_bn = 0
+
+var line l_sess_high = na
+var line l_sess_low = na
+var line l_sess_mid = na
+
+if is_session
+    if not is_session[1]
+        sess_low := low
+        sess_high := high
+        sess_bn := time
+        sessl_bn := time
+        sessh_bn := time
+    else 
+        sess_low := math.min(low, sess_low)
+        sess_high := math.max(high, sess_high)
+        sessl_bn := low == sess_low ? time : sessl_bn[1]
+        sessh_bn := high == sess_high ? time : sessh_bn[1]
+else if not is_session
+    sess_low := sess_low[1]
+    sess_high := sess_high[1]
+    sessl_bn := sessl_bn[1]
+    sessh_bn := sessh_bn[1]
+
+    
+sess_mid := (sess_high + sess_low) / 2
+
+
+
+// calc anchored vwaps
+f_calc_vwap(calculate, reset_cond, src) =>
+	var float sumSrcVol = na
+	var float sumVol = na
+    var float sumSrcSrcVol = na
+    var float vwap_value = na
+
+    if calculate
+        sumSrcVol := reset_cond ? src * volume : src * volume + sumSrcVol[1]
+        sumVol := reset_cond ? volume : volume + sumVol[1]
+        sumSrcSrcVol := reset_cond ? volume * math.pow(src, 2) : volume * math.pow(src, 2) + sumSrcSrcVol[1]
+        vwap_value := sumSrcVol / sumVol
+    else
+        vwap_value := na
+
+    vwap_value
+
+
+
+
+
+// sessh_vwap = f_calc_vwap(_sessh_vwap, time == sessh_bn, high)
+
+display_time = barstate.islast ? sessh_bn : na
+display_cond = time >= display_time
+
+// bgcolor(display_cond ? color.yellow : color.new(color.white, 90))
+// plot(sessh_vwap, color = display_cond ? color.blue : na)
+
+futureClose = request.security(syminfo.tickerid, "", f_calc_vwap(_sessh_vwap, time == sessh_bn, high), lookahead=barmerge.lookahead_on)
+plot(futureClose)
+
+// label.new(bar_index, close, text = str.tostring(last_bar_time), yloc = yloc.abovebar)
+// label.new(bar_index, close, text = str.tostring(display_time), yloc = yloc.belowbar, style = label.style_label_up)
+
+
+// display levels
+var line pdh_line = na
+var line pdl_line = na
+var line pdc_line = na
+var line pdm_line = na
+
+var line pwh_line = na
+var line pwl_line = na
+var line pwc_line = na
+var line pwm_line = na
+
+f_styles(style_input) =>
+    return_style = switch style_input
+        "Solid" => line.style_solid
+        "Dotted" => line.style_dotted
+        "Dashed" => line.style_dashed
+
+
+// draw on chart load
+if barstate.islastconfirmedhistory
+    if pd_can_display
+        if use_pdh_levels
+            pdh_line := line.new(x1 = pdhbn, y1 = pdh, x2 = time+1, y2 = pdh, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pdh, width = width_pdh, style = f_styles(style_pdh))
+        if use_pdl_levels
+            pdl_line := line.new(x1 = pdlbn, y1 = pdl, x2 = time+1, y2 = pdl, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pdl, width = width_pdl, style = f_styles(style_pdl))
+        if use_pdc_levels
+            pdc_line := line.new(x1 = pdcbn, y1 = pdc, x2 = time+1, y2 = pdc, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pdc, width = width_pdc, style = f_styles(style_pdc))
+        if use_pdm_levels
+            pdm_line := line.new(x1 = pdcbn, y1 = pdm, x2 = time+1, y2 = pdm, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pdm, width = width_pdm, style = f_styles(style_pdm))
+         
+    if pw_can_display
+        if use_pwh_levels
+            pwh_line := line.new(x1 = pwhbn, y1 = pwh, x2 = time+1, y2 = pwh, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pwh, width = width_pwh, style = f_styles(style_pwh))
+        if use_pwl_levels
+            pwl_line := line.new(x1 = pwlbn, y1 = pwl, x2 = time+1, y2 = pwl, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pwl, width = width_pwl, style = f_styles(style_pwl))
+        if use_pwc_levels
+            pwc_line := line.new(x1 = pwcbn, y1 = pwc, x2 = time+1, y2 = pwc, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pwc, width = width_pwc, style = f_styles(style_pwc))
+        if use_pwm_levels
+            pwm_line := line.new(x1 = pwcbn, y1 = pwm, x2 = time+1, y2 = pwm, xloc = xloc.bar_time,
+             extend = extend.right, color = css_pwm, width = width_pwm, style = f_styles(style_pwm))
+
+
+    if sess_can_display         
+        if use_sessh_levels
+            l_sess_high := line.new(x1 = sessh_bn, y1 = sess_high, x2 = time+1, y2 = sess_high, xloc = xloc.bar_time,
+             extend = extend.right, color = css_sessh, width = width_sessh, style = f_styles(style_sessh))
+        if use_sessl_levels
+            l_sess_low := line.new(x1 = sessl_bn, y1 = sess_low, x2 = time+1, y2 = sess_low, xloc = xloc.bar_time,
+             extend = extend.right, color = css_sessl, width = width_sessl, style = f_styles(style_sessl))
+        if use_sessm_levels
+            l_sess_mid := line.new(x1 = sess_bn, y1 = sess_mid, x2 = time+1, y2 = sess_mid, xloc = xloc.bar_time,
+             extend = extend.right, color = css_sessm, width = width_sessm, style = f_styles(style_sessm))
+
+
+// update on new day or week session
+if barstate.islast
+    if pd_can_display
+        if new_day
+            if use_pdh_levels
+                line.set_xy1(pdh_line, pdhbn, pdh)
+                line.set_xy2(pdh_line, time+1, pdh)
+            if use_pdl_levels
+                line.set_xy1(pdl_line, pdlbn, pdl)
+                line.set_xy2(pdl_line, time+1, pdl)
+            if use_pdc_levels
+                line.set_xy1(pdc_line, pdcbn, pdc)
+                line.set_xy2(pdc_line, time+1, pdc)
+            if use_pdm_levels
+                line.set_xy1(pdm_line, pdcbn, pdm)
+                line.set_xy2(pdm_line, time+1, pdm)
+
+    if pw_can_display
+        if new_week
+            if use_pwh_levels
+                line.set_xy1(pwh_line, pwhbn, pwh)
+                line.set_xy2(pwh_line, time+1, pwh)
+            if use_pwl_levels
+                line.set_xy1(pwl_line, pwlbn, pwl)
+                line.set_xy2(pwl_line, time+1, pwl)
+            if use_pwc_levels
+                line.set_xy1(pwc_line, pwcbn, pwc)
+                line.set_xy2(pwc_line, time+1, pwc)
+            if use_pwm_levels
+                line.set_xy1(pwm_line, pwcbn, pwm)
+                line.set_xy2(pwm_line, time+1, pwm)
+
+    if sess_can_display
+        if use_sessh_levels
+            line.set_xy1(l_sess_high, sessh_bn, sess_high)
+            line.set_xy2(l_sess_high, time+1, sess_high)
+        if use_sessl_levels
+            line.set_xy1(l_sess_low, sessl_bn, sess_low)
+            line.set_xy2(l_sess_low, time+1, sess_low)
+        if use_sessm_levels
+            line.set_xy1(l_sess_mid, sess_bn, sess_mid)
+            line.set_xy2(l_sess_mid, time+1, sess_mid)
+
+

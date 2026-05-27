@@ -1,0 +1,13 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Alert Test")
+
+// @keywords: alert-test, alert-debug, alert-trigger, close-threshold, price-threshold, close-above-level, alert-condition, conditional-alert, once-per-bar-alert, alert-frequency, alert-message, simple-alert, price-alert, bar-close-check, threshold-alert, alert-example, alert-demo, close-comparison, level-trigger, alert-setup
+
+if close > 3000
+    alert("close is greater than 3000", alert.freq_once_per_bar)
+
+

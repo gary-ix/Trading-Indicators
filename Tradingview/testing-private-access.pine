@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Testing Private Access", overlay = true)
+
+// @keywords: testing-private-access, private-script-test, hidden-close-plot, access-test, minimal-indicator, plot-none, overlay-test, stub-indicator, development-test, no-calculations, private-access, test-placeholder, hidden-display, single-plot, basic-overlay, script-test, empty-indicator, access-verification, close-hidden, minimal-overlay
+
+plot(close, display = display.none)
+
+

@@ -1,0 +1,20 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Price Action Candles", overlay = true)
+
+// @keywords: price-action-candles, dual-ema, ema-nine-twenty, sum-of-emas, orange-composite-line, three-plot-lines, simple-trend-proxy, moving-average-sum, plotted-emas, minimal-candles-v7, trend-lines, no-signals, no-alerts, basic-ma-plots, ema-cross-proxy, price-smoothing, combined-ma-sum, version-seven, lightweight-indicator, ema-stack
+
+
+ma_value1 = ta.ema(close, 9)
+ma_value2 = ta.ema(close, 20)
+
+value_3 = ma_value1 + ma_value2
+
+
+plot(ma_value1)
+plot(ma_value2)
+plot(value_3, color = color.orange)
+

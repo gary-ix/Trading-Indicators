@@ -1,0 +1,17 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Volume Rewrite", format=format.volume, overlay=false)
+
+// @keywords: volume-histogram, bar-volume, volume-columns, volume-threshold, background-highlight, volume-plot, high-volume-marker, volume-spike, fixed-reference-line, column-chart, volume-pane, raw-volume, threshold-filter, volume-bars, simple-volume, volume-display, volume-indicator, volume-rewrite, reference-level, highlight-threshold
+
+value = volume
+plot(value, style = plot.style_columns)
+
+
+plot(12950)
+bgcolor(volume > 1000 ? color.yellow : na)
+
+

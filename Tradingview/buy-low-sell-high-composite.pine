@@ -1,0 +1,57 @@
+// © goodgains
+//@version=5
+indicator(title='Buy Low Sell High Composite', shorttitle='BLSH')
+
+// @keywords: buy-low-sell-high-composite, composite-oscillator, normalized-oscillator, multi-indicator-oscillator, rsi, relative-strength-index, money-flow-index, macd, macd-histogram, macd-signal, macd-crossover, ema, ema-spread, average-true-range, oscillator-aggregation, momentum-composite, volume-flow, area-plot, crossover-markers, oscillator-normalization
+
+// normalize values into the range -1 to +1
+normalize_1(value, minValue, maxValue) =>
+    range_1 = maxValue - minValue == 0 ? 0.0001 : maxValue - minValue
+    -1 + (value - minValue) / range_1 * 2
+
+atrValue = ta.atr(9)
+priceRange = 2 * atrValue
+
+// RSI
+rsiValue = ta.rsi(close, 14)
+rsiValueNormalized = normalize_1(rsiValue, 25, 75)
+rsiColor = rsiValueNormalized <= 0 ? color.orange : color.yellow
+
+// Elliot Wave
+emaDiff = ta.ema(close, 5) - ta.ema(close, 35)
+emaDiffNormalized = normalize_1(emaDiff, -priceRange, priceRange)
+emaColor = emaDiff <= 0 ? color.red : color.lime
+
+// MACD
+fastMovingAverage = ta.ema(close, 12)
+slowMovingAverage = ta.ema(close, 26)
+macd = fastMovingAverage - slowMovingAverage
+macdSignal = ta.sma(macd, 9)
+macdHistogram = macd - macdSignal
+macdNormalized = normalize_1(macd, -priceRange, priceRange)
+macdSignalNormalized = normalize_1(macdSignal, -priceRange, priceRange)
+macdHistogramNormalized = normalize_1(macdHistogram, -priceRange, priceRange)
+
+isMACDAbove = macd >= macdSignal
+crossoverColor = isMACDAbove ? color.lime : color.red
+crossoverValue = ta.cross(macd, macdSignal) ? macdSignalNormalized : na
+
+// MFI
+positiveFlow = math.sum(volume * (ta.change(hlc3) <= 0 ? 0 : hlc3), 14)
+negativeFlow = math.sum(volume * (ta.change(hlc3) >= 0 ? 0 : hlc3), 14)
+mfiValue = 100.0 - 100.0 / (1.0 + positiveFlow / negativeFlow)
+mfiValueNormalized = normalize_1(mfiValue, 25, 75)
+
+// Composite
+compositeValue = emaDiffNormalized + rsiValueNormalized + macdHistogramNormalized + mfiValueNormalized
+compositeNormalized = normalize_1(compositeValue, -4, 4)
+compositeColor = compositeValue <= 0 ? color.red : color.lime
+compositeStyle = plot.style_histogram
+
+// Plots
+plot(compositeNormalized, title='Composite', color=color.new(compositeColor,60), style=plot.style_area, linewidth=2)
+plot(macdSignalNormalized, title='MacD Signal', style=plot.style_line, linewidth=1, color=crossoverColor)
+plot(crossoverValue, title='Crossover', style=plot.style_circles, linewidth=3, color=crossoverColor)
+
+
+

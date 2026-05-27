@@ -1,0 +1,22 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+
+
+
+
+
+
+
+
+
+
+
+// @keywords: untitled-script, close-threshold-alert, price-above-3000, once-per-bar-alert, conditional-alert-trigger, minimal-alert-script, no-indicator-declaration, simple-price-check, alert-message-output, single-condition-logic, access-test-pattern, threshold-monitor, bar-close-alert, unparsed-stub-script, alert-frequency-once, close-greater-than, barebones-alert, script-without-title, inline-alert-block, placeholder-script
+
+if close > 3000
+    alert("close is greater than 3000", alert.freq_once_per_bar)
+
+

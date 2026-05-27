@@ -1,0 +1,13 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Highlight Month", overlay = true)
+
+// @keywords: highlight-month, week-of-year, seasonal-highlight, background-shading, early-year, first-weeks, calendar-weeks, yearly-cycle, overlay-shading, week-filter, january-february, seasonal-zone, time-based-highlight, weekofyear, annual-period, chart-background, simple-filter, weekly-calendar, seasonal-marker, period-highlight
+
+cond = weekofyear <= 5 ? true : false
+bgcolor(cond ? color.new(color.yellow, 80) : na)
+
+

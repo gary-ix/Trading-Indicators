@@ -1,0 +1,354 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Premium Dashboard", overlay = true)
+
+// @keywords: confluence-dashboard, ma-scoring, oscillator-scoring, price-action-scoring, buy-sell-summary, multi-indicator, trend-table, awesome-oscillator, chaikin-flow, chande-momentum, detrended-price, bull-bear-power, true-strength-index, pivot-swings, higher-highs, lower-lows, gradient-scoring, percent-summary, dashboard-table, mtf-ma
+
+// table settings
+var dashboard_settings = "Dashboard MA Settings"
+_table_size = input.string("Small", title = 'Dashboard Size', options = ["Small", "Medium", "Large"], group = dashboard_settings, inline = '0')
+table_size = _table_size == "Small" ? size.tiny : _table_size == "Medium" ? size.small : size.normal
+
+_table_bgcolor      = color.new(#181819, 0)
+_table_bordercolor  = color.new(#151515, 0)
+
+dbbull_color    = color.rgb(128, 215, 206)
+dbbear_color    = color.rgb(252, 112, 112)
+dbneutral_color = color.rgb(195, 195, 195)
+
+dbbuy_color     = color.rgb(83, 187, 171)
+dbsell_color    = color.rgb(252, 112, 112)
+dbneut_color    = color.blue
+
+// ma settings
+var ma_settings = "Dashboard MA Settings"
+
+maLength1    = input.int(title="MA #1 ", defval=20, minval=1, step=10, group=dashboard_settings, inline = '1')
+maLength2    = input.int(title="MA #2 ", defval=50, minval=0, step=10, group=dashboard_settings, inline = '2')
+maLength3    = input.int(title="MA #3 ", defval=100, minval=0, step=10, group=dashboard_settings, inline = '3')
+maLength4    = input.int(title="MA #4 ", defval=200, minval=0, step=10, group=dashboard_settings, inline = '4')
+maLength5    = input.int(title="MA #5 ", defval=20, minval=0, step=10, group=dashboard_settings, inline = '5')
+maLength6    = input.int(title="MA #6 ", defval=50, minval=0, step=10, group=dashboard_settings, inline = '6')
+maLength7    = input.int(title="MA #7 ", defval=100, minval=0, step=10, group=dashboard_settings, inline = '7')
+maLength8    = input.int(title="MA #8 ", defval=200, minval=0, step=10, group=dashboard_settings, inline = '8')
+maLength9    = input.int(title="MA #9 ", defval=20, minval=0, step=10, group=dashboard_settings, inline = '9')
+maLength10   = input.int(title="MA #10", defval=10, minval=0, step=10, group=dashboard_settings, inline = '10')
+
+maType1      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '1')
+maType2      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '2')
+maType3      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '3')
+maType4      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '4')
+maType5      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '5')
+maType6      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '6')
+maType7      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '7')
+maType8      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '8')
+maType9      = input.string(title="", defval="EMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '9')
+maType10     = input.string(title="", defval="HMA", options=["EMA", "SMA", "HMA", "WMA", "DEMA", "VWMA"], group=dashboard_settings, inline = '10')
+
+
+ma_tf1       = input.timeframe(title="", defval="", group=dashboard_settings, inline = '1') 
+ma_tf2       = input.timeframe(title="", defval="", group=dashboard_settings, inline = '2') 
+ma_tf3       = input.timeframe(title="", defval="", group=dashboard_settings, inline = '3') 
+ma_tf4       = input.timeframe(title="", defval="", group=dashboard_settings, inline = '4') 
+ma_tf5       = input.timeframe(title="", defval="60", group=dashboard_settings, inline = '5') 
+ma_tf6       = input.timeframe(title="", defval="60", group=dashboard_settings, inline = '6') 
+ma_tf7       = input.timeframe(title="", defval="60", group=dashboard_settings, inline = '7') 
+ma_tf8       = input.timeframe(title="", defval="60", group=dashboard_settings, inline = '8') 
+ma_tf9       = input.timeframe(title="", defval="240", group=dashboard_settings, inline = '9') 
+ma_tf10      = input.timeframe(title="", defval="", group=dashboard_settings, inline = '10') 
+
+
+
+getMA(_maType, _maLength) =>
+    if _maLength== 0
+        na
+    else
+        switch _maType 
+            "SMA" => ta.sma(close, _maLength)
+            "HMA" => ta.hma(close, _maLength)
+            "WMA" => ta.wma(close, _maLength)
+            "VWMA" => ta.vwma(close, _maLength)
+            "DEMA" =>
+                e1 = ta.ema(close, _maLength)
+                e2 = ta.ema(e1, _maLength)
+                2 * e1 - e2
+            => ta.ema(close, _maLength)
+
+
+
+ma1_value = request.security(syminfo.ticker, ma_tf1, getMA(maType1, maLength1)[1], lookahead = barmerge.lookahead_on)
+ma2_value = request.security(syminfo.ticker, ma_tf2, getMA(maType2, maLength2)[1], lookahead = barmerge.lookahead_on)
+ma3_value = request.security(syminfo.ticker, ma_tf3, getMA(maType3, maLength3)[1], lookahead = barmerge.lookahead_on)
+ma4_value = request.security(syminfo.ticker, ma_tf4, getMA(maType4, maLength4)[1], lookahead = barmerge.lookahead_on)
+ma5_value = request.security(syminfo.ticker, ma_tf5, getMA(maType5, maLength5)[1], lookahead = barmerge.lookahead_on)
+ma6_value = request.security(syminfo.ticker, ma_tf6, getMA(maType6, maLength6)[1], lookahead = barmerge.lookahead_on)
+ma7_value = request.security(syminfo.ticker, ma_tf7, getMA(maType7, maLength7)[1], lookahead = barmerge.lookahead_on)
+ma8_value = request.security(syminfo.ticker, ma_tf8, getMA(maType8, maLength8)[1], lookahead = barmerge.lookahead_on)
+ma9_value = request.security(syminfo.ticker, ma_tf9, getMA(maType9, maLength9)[1], lookahead = barmerge.lookahead_on)
+ma10_value = request.security(syminfo.ticker, ma_tf10, getMA(maType10, maLength10)[1], lookahead = barmerge.lookahead_on)
+
+ma1_buy = low > ma1_value ? 1 : 0
+ma2_buy = low > ma2_value ? 1 : 0
+ma3_buy = low > ma3_value ? 1 : 0
+ma4_buy = low > ma4_value ? 1 : 0
+ma5_buy = low > ma5_value ? 1 : 0
+ma6_buy = low > ma6_value ? 1 : 0
+ma7_buy = low > ma7_value ? 1 : 0
+ma8_buy = low > ma8_value ? 1 : 0
+ma9_buy = low > ma9_value ? 1 : 0
+ma10_buy = low > ma10_value ? 1 : 0
+
+ma1_sell = high < ma1_value ? 1 : 0
+ma2_sell = high < ma2_value ? 1 : 0
+ma3_sell = high < ma3_value ? 1 : 0
+ma4_sell = high < ma4_value ? 1 : 0
+ma5_sell = high < ma5_value ? 1 : 0
+ma6_sell = high < ma6_value ? 1 : 0
+ma7_sell = high < ma7_value ? 1 : 0
+ma8_sell = high < ma8_value ? 1 : 0
+ma9_sell = high < ma9_value ? 1 : 0
+ma10_sell = high < ma10_value ? 1 : 0
+
+ma1_neutral = ma1_buy != 1 and ma1_sell != 1 ? 1 : 0
+ma2_neutral = ma2_buy != 1 and ma2_sell != 1 ? 1 : 0
+ma3_neutral = ma3_buy != 1 and ma3_sell != 1 ? 1 : 0
+ma4_neutral = ma4_buy != 1 and ma4_sell != 1 ? 1 : 0
+ma5_neutral = ma5_buy != 1 and ma5_sell != 1 ? 1 : 0
+ma6_neutral = ma6_buy != 1 and ma6_sell != 1 ? 1 : 0
+ma7_neutral = ma7_buy != 1 and ma7_sell != 1 ? 1 : 0
+ma8_neutral = ma8_buy != 1 and ma8_sell != 1 ? 1 : 0
+ma9_neutral = ma9_buy != 1 and ma9_sell != 1 ? 1 : 0
+ma10_neutral = ma10_buy != 1 and ma10_sell != 1 ? 1 : 0
+
+
+ma_buys = ma1_buy + ma2_buy + ma3_buy + ma4_buy + ma5_buy + ma6_buy + ma7_buy + ma8_buy + ma9_buy + ma10_buy
+ma_sells = ma1_sell + ma2_sell + ma3_sell + ma4_sell + ma5_sell + ma6_sell + ma7_sell + ma8_sell + ma9_sell + ma10_sell
+ma_neutrals = ma1_neutral + ma2_neutral + ma3_neutral + ma4_neutral + ma5_neutral + ma6_neutral + ma7_neutral + ma8_neutral + ma9_neutral + ma10_neutral
+
+mas_bullcolor = color.from_gradient(ma_buys, 0, 10, _table_bgcolor, dbbull_color)
+mas_bearcolor = color.from_gradient(ma_sells, 0, 10, _table_bgcolor, dbbear_color)
+mas_color = ma_neutrals >= math.max(ma_buys, ma_sells) ? _table_bgcolor : ma_buys >= ma_sells ? mas_bullcolor : mas_bearcolor
+// barcolor(mas_color)
+
+
+
+// oscillators
+// macd
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+macd_buy = histLine > 0 and histLine[2] > 0 ? 1 : 0
+macd_sell = histLine < 0 and histLine[2] < 0 ? 1 : 0
+macd_neutral = macd_buy != 1 and macd_sell != 1 ? 1 : 0
+
+// awesome
+ao = ta.sma(hl2,20) - ta.sma(hl2,50)
+ao_buy = ao > 0 ? 1 : 0
+ao_sell = ao < 0 ? 1 : 0
+ao_neutral = ao_buy != 1 and ao_sell != 1 ? 1 : 0
+
+// rsi
+rsi= ta.rsi(hl2, 35)
+rsi_buy = rsi >= 60  ? 1 : 0
+rsi_sell = rsi <= 40  ? 1 : 0
+rsi_neutral = rsi_buy != 1 and rsi_sell != 1 ? 1 : 0
+
+// cci
+cci = ta.cci(hlc3, 100)
+cci_buy = cci >= 50  ? 1 : 0
+cci_sell = cci <= -50  ? 1 : 0
+cci_neutral = not cci_buy and not cci_sell ? 1 : 0
+
+// chaikin
+chaikin = ta.ema(ta.accdist, 20) - ta.ema(ta.accdist, 50)
+chaikin_buy = chaikin > 0 ? 1 : 0
+chaikin_sell = chaikin < 0 ? 1 : 0
+chaikin_neutral = chaikin_buy != 1 and chaikin_sell != 1 ? 1 : 0
+
+// chande
+momm = ta.change(hl2)
+f1(m) => m >= 0.0 ? m : 0.0
+f2(m) => m >= 0.0 ? 0.0 : -m
+m1 = f1(momm)
+m2 = f2(momm)
+sm1 = math.sum(m1, 50)
+sm2 = math.sum(m2, 50)
+percent(nom, div) => 100 * nom / div
+chandeMO = percent(sm1-sm2, sm1+sm2)
+chandeMO_buy = chandeMO >= 25  ? 1 : 0
+chandeMO_sell = chandeMO <= -25 ? 1 : 0
+chandeMO_neutral = chandeMO_buy != 1 and chandeMO_sell != 1 ? 1 : 0
+
+// detrended price
+ma = ta.sma(close, 30)
+dpo = close - ma[30]
+dpo_buy = dpo > 0 ? 1 : 0
+dpo_sell = dpo < 0 ? 1 : 0
+dpo_neutral = dpo_buy != 1 and dpo_sell != 1 ? 1 : 0
+
+// rsi2
+rsi2 = ta.rsi(hl2, 100)
+rsi2_buy = rsi2 >= 60  ? 1 : 0
+rsi2_sell = rsi2 <= 40  ? 1 : 0
+rsi2_neutral = rsi2_buy != 1 and rsi2_sell != 1 ? 1 : 0
+
+// bull bear power
+bullPower = high - ta.ema(close, 20)
+bearPower = low - ta.ema(close, 20)
+power = bullPower + bearPower
+power_buy = power > 0 ? 1 : 0
+power_sell = power < 0 ? 1 : 0
+power_neutral = power_buy != 1 and power_sell != 1 ? 1 : 0
+
+// true strength index
+tsi = ta.tsi(hl2, 15, 35) * 100
+tsi_buy = tsi >= 10  ? 1 : 0
+tsi_sell = tsi <= -10  ? 1 : 0
+tsi_neutral = tsi_buy != 1 and tsi_sell != 1 ? 1 : 0
+
+osc_buys = macd_buy + ao_buy + rsi_buy + cci_buy + chaikin_buy + chandeMO_buy + dpo_buy + rsi2_buy + power_buy + tsi_buy
+osc_sells = macd_sell + ao_sell + rsi_sell + cci_sell + chaikin_sell + chandeMO_sell + dpo_sell + rsi2_sell + power_sell + tsi_sell
+osc_neutrals = macd_neutral + ao_neutral + rsi_neutral + cci_neutral + chaikin_neutral + chandeMO_neutral + dpo_neutral + rsi2_neutral + power_neutral + tsi_neutral
+
+osc_bullcolor = color.from_gradient(osc_buys, 0, 10, _table_bgcolor, dbbull_color)
+osc_bearcolor = color.from_gradient(ma_sells, 0, 10, _table_bgcolor, dbbear_color)
+osc_color = osc_neutrals > math.max(osc_buys, osc_sells) ? _table_bgcolor : osc_buys >= osc_sells ? mas_bullcolor : mas_bearcolor
+// barcolor(osc_color)
+
+
+
+// price action
+var float csh = na
+var float csl = na
+var float psh = na
+var float psl = na
+swing_length = 3
+
+ph = ta.pivothigh(high, swing_length, swing_length)
+pl = ta.pivotlow(low, swing_length, swing_length)
+
+csh := not na(ph) ? high[swing_length] : csh[1]
+csl := not na(pl) ? low[swing_length] : csl[1]
+psh := not na(ph) ? csh[1] : csh[1]
+psl := not na(pl) ? csl[1] : csl[1]
+
+var int sh_1 = na
+var int sh_2 = na
+var int sh_3 = na
+var int sh_4 = na
+var int sh_5 = na
+var int sh_6 = na
+var int sh_7 = na
+var int sh_8 = na
+var int sh_9 = na
+var int sh_10 = na
+
+sh_1 := not na(ph) ? (csh > psh ? 1 : 0) : sh_1[1]
+sh_2 := not na(ph) ? sh_1[1] : sh_2[1]
+sh_3 := not na(ph) ? sh_2[1] : sh_3[1]
+sh_4 := not na(ph) ? sh_3[1] : sh_4[1]
+sh_5 := not na(ph) ? sh_4[1] : sh_5[1]
+sh_6 := not na(ph) ? sh_5[1] : sh_6[1]
+sh_7 := not na(ph) ? sh_6[1] : sh_7[1]
+sh_8 := not na(ph) ? sh_7[1] : sh_8[1]
+sh_9 := not na(ph) ? sh_8[1] : sh_9[1]
+sh_10 := not na(ph) ? sh_9[1] : sh_10[1]
+
+var int sl_1 = na
+var int sl_2 = na
+var int sl_3 = na
+var int sl_4 = na
+var int sl_5 = na
+var int sl_6 = na
+var int sl_7 = na
+var int sl_8 = na
+var int sl_9 = na
+var int sl_10 = na
+
+sl_1 := not na(pl) ? (csl < psl ? 1 : 0) : sl_1[1]
+sl_2 := not na(pl) ? sl_1[1] : sl_2[1]
+sl_3 := not na(pl) ? sl_2[1] : sl_3[1]
+sl_4 := not na(pl) ? sl_3[1] : sl_4[1]
+sl_5 := not na(pl) ? sl_4[1] : sl_5[1]
+sl_6 := not na(pl) ? sl_5[1] : sl_6[1]
+sl_7 := not na(pl) ? sl_6[1] : sl_7[1]
+sl_8 := not na(pl) ? sl_7[1] : sl_8[1]
+sl_9 := not na(pl) ? sl_8[1] : sl_9[1]
+sl_10 := not na(pl) ? sl_9[1] : sl_10[1]
+
+pa_buys = sh_1 + sh_2 + sh_3 + sh_4 + sh_5 + sh_6 + sh_7 + sh_8 + sh_9 + sh_10
+pa_sells = sl_1 + sl_2 + sl_3 + sl_4 + sl_5 + sl_6 + sl_7 + sl_8 + sl_9 + sl_10
+// pa_neutrals = macd_neutral + ao_neutral + rsi_neutral + cci_neutral + chaikin_neutral + chandeMO_neutral + dpo_neutral + rsi2_neutral + power_neutral + tsi_neutral
+
+pa_bullcolor = color.from_gradient(pa_buys, 0, 10, _table_bgcolor, dbbull_color)
+pa_bearcolor = color.from_gradient(ma_sells, 0, 10, _table_bgcolor, dbbear_color)
+pa_color = pa_buys == pa_sells ? _table_bgcolor : pa_buys > pa_sells ? pa_bullcolor : pa_bearcolor
+// barcolor(pa_color)
+
+
+
+// summary
+total = 30
+total_buys = math.round((ma_buys + pa_buys + osc_buys) / total * 100 ,2)
+total_sells = math.round((ma_sells + pa_sells + osc_sells) / total * 100,2)
+
+top = math.max(total_buys, total_sells)
+middle = math.round(100 - (total_buys+total_sells), 2)
+bottom = math.min(total_buys, total_sells)
+
+top_color = total_buys > total_sells ? dbbuy_color : dbsell_color
+bottom_color = total_buys > total_sells ? dbsell_color : dbbuy_color
+
+trend_text = total_buys == total_sells ? "NONE" : total_buys > total_sells ? "BUY" : "SELL"
+
+
+
+// table 
+var table = table.new(position = position.top_right, columns = 10, rows = 4, bgcolor = _table_bgcolor, border_width = 1, border_color = _table_bordercolor, frame_color = _table_bordercolor, frame_width = 1)
+if barstate.islast
+    table.clear(table, 0, 0, 9, 3)
+
+    // row 1
+    table.cell(table_id = table, column = 0, row = 0, text = trend_text, text_color = color.white, bgcolor = top_color, text_halign = text.align_center, text_size = table_size)
+    table.merge_cells(table_id = table, start_column = 0, end_column = 9, start_row = 0, end_row = 0)
+
+
+    // row 2
+    table.cell(table_id = table, column = 0, row = 1, text = "MAs", text_color = color.white, bgcolor = _table_bgcolor, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 3, row = 1, text = "Price-Action", text_color = color.white, bgcolor = _table_bgcolor, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 6, row = 1, text = "Oscillators", text_color = color.white, bgcolor = _table_bgcolor, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 9, row = 1, text = str.tostring(top, format.percent), text_color = color.white, bgcolor = top_color, text_halign = text.align_center, text_size = table_size)
+
+    table.merge_cells(table_id = table, start_column = 0, end_column = 2, start_row = 1, end_row = 1)
+    table.merge_cells(table_id = table, start_column = 3, end_column = 5, start_row = 1, end_row = 1)
+    table.merge_cells(table_id = table, start_column = 6, end_column = 8, start_row = 1, end_row = 1)
+
+
+
+    // row 3
+    table.cell(table_id = table, column = 0, row = 2, text = "Buy", text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 1, row = 2, text = "Neutral", text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 2, row = 2, text = "Sell", text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 3, row = 2, text = "HH's", text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 4, row = 2, text = " - ", text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 5, row = 2, text = "LL's", text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 6, row = 2, text = "Buy", text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 7, row = 2, text = "Neutral", text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 8, row = 2, text = "Sell", text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 9, row = 2, text = str.tostring(middle, format.percent), text_color = color.white, bgcolor = dbneut_color, text_halign = text.align_center, text_size = table_size)
+
+
+    // row 4
+    table.cell(table_id = table, column = 0, row = 3, text = str.tostring(ma_buys), text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 1, row = 3, text = str.tostring(ma_neutrals), text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 2, row = 3, text = str.tostring(ma_sells), text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 3, row = 3, text = str.tostring(pa_buys), text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 4, row = 3, text = "", text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 5, row = 3, text = str.tostring(pa_sells), text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 6, row = 3, text = str.tostring(osc_buys), text_color = dbbull_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 7, row = 3, text = str.tostring(osc_neutrals), text_color = dbneutral_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 8, row = 3, text = str.tostring(osc_sells), text_color = dbbear_color, text_halign = text.align_center, text_size = table_size)
+    table.cell(table_id = table, column = 9, row = 3, text = str.tostring(bottom, format.percent), text_color = color.white, bgcolor = bottom_color, text_halign = text.align_center, text_size = table_size)
+
+

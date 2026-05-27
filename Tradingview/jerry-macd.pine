@@ -1,0 +1,110 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Jerry_MACD", overlay = false)
+
+// @keywords: jerry-macd, macd-histogram, signal-line, per-symbol-threshold, zero-line-cross, bullish-bearish-labels, symbol-mapping, custom-entry-level, histogram-columns, crossover-signal, dashboard-table, macd-settings, histogram-bubbles, multi-symbol-config, momentum-oscillator, pane-indicator, fast-slow-signal, symbol-dashboard, histogram-cross, entry-threshold
+
+// symbol settings
+other_entry = input.float(0.01, title = 'All Other Symbols         ', group = 'Symbols', inline = '1', step = 0.1)
+
+
+input_symbol1 = input.symbol('SPY', title = 'Symbol 1', group = 'Symbols', inline = '2')
+symbol1_entry = input.float(0.30, title = '', group = 'Symbols', inline = '2', step = 0.1)
+
+input_symbol2 = input.symbol('QQQ', title = 'Symbol 2', group = 'Symbols', inline = '3')
+symbol2_entry = input.float(0.25, title = '', group = 'Symbols', inline = '3', step = 0.1)
+
+input_symbol3 = input.symbol('IWM', title = 'Symbol 3', group = 'Symbols', inline = '4')
+symbol3_entry = input.float(0.15, title = '', group = 'Symbols', inline = '4', step = 0.1)
+
+input_symbol4 = input.symbol('TSLA', title = 'Symbol 4', group = 'Symbols', inline = '5')
+symbol4_entry = input.float(0.5, title = '', group = 'Symbols', inline = '5', step = 0.1)
+
+input_symbol5 = input.symbol('AAPL', title = 'Symbol 5', group = 'Symbols', inline = '6')
+symbol5_entry = input.float(0.5, title = '', group = 'Symbols', inline = '6', step = 0.1)
+
+input_symbol6 = input.symbol('AAPL', title = 'Symbol 6', group = 'Symbols', inline = '7')
+symbol6_entry = input.float(0.5, title = '', group = 'Symbols', inline = '7', step = 0.1)
+
+input_symbol7 = input.symbol('AAPL', title = 'Symbol 7', group = 'Symbols', inline = '8')
+symbol7_entry = input.float(0.5, title = '', group = 'Symbols', inline = '8', step = 0.1)
+
+input_symbol8 = input.symbol('AAPL', title = 'Symbol 8', group = 'Symbols', inline = '9')
+symbol8_entry = input.float(0.5, title = '', group = 'Symbols', inline = '9', step = 0.1)
+
+input_symbol9 = input.symbol('AAPL', title = 'Symbol 9', group = 'Symbols', inline = '10')
+symbol9_entry = input.float(0.5, title = '', group = 'Symbols', inline = '10', step = 0.1)
+
+input_symbol10 = input.symbol('AAPL', title = 'Symbol 10', group = 'Symbols', inline = '11')
+symbol10_entry = input.float(0.5, title = '', group = 'Symbols', inline = '11', step = 0.1)
+
+
+// macd settings
+macd_fastlength = input.int(12, title = 'Fast Length ', group = 'MACD Settings', inline = '1')
+macd_slowlength = input.int(26, title = 'Slow Length ', group = 'MACD Settings', inline = '2')
+macd_length = input.int(5, title = 'MACD Length', group = 'MACD Settings', inline = '3')
+
+
+// function to calculate macd
+[macdLine, signalLine, histLine] = ta.macd(close, macd_fastlength, macd_slowlength, macd_length)
+
+map_symbol = syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol1)  ? 1 :
+     syminfo.ticker(syminfo.tickerid)  == syminfo.ticker(input_symbol2)  ? 2 :
+     syminfo.ticker(syminfo.tickerid)  == syminfo.ticker(input_symbol3)  ? 3 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol4)  ? 4 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol5)  ? 5 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol6)  ? 6 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol7)  ? 7 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol8)  ? 8 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol9)  ? 9 :
+     syminfo.ticker(syminfo.tickerid) == syminfo.ticker(input_symbol10)  ? 10 :
+      0
+
+ZeroLine_Positive = map_symbol == 1 ? symbol1_entry : 
+     map_symbol == 2 ? symbol2_entry :
+     map_symbol == 3 ? symbol3_entry :
+     map_symbol == 4 ? symbol4_entry :
+     map_symbol == 5 ? symbol5_entry :
+     map_symbol == 6 ? symbol6_entry :
+     map_symbol == 7 ? symbol7_entry :
+     map_symbol == 8 ? symbol8_entry :
+     map_symbol == 9 ? symbol9_entry :
+     map_symbol == 10 ? symbol10_entry :
+      other_entry
+
+plot(ZeroLine_Positive, "+ Zero Line", color=color.new(#787B86, 0))
+plot(-ZeroLine_Positive, "- Zero Line", color=color.new(#787B86, 0))
+plot(histLine, title="Histogram", style=plot.style_columns, color=(histLine>=0 ? (histLine[1] < histLine ? color.new(#26A69A,0) : color.new(#B2DFDB,0)) : (histLine[1] < histLine ? color.new(#FF5252,0) : color.new(#FFCDD2,0))))
+plot(macdLine, title="MACD", color=color.new(#2962FF,0))
+plot(signalLine, title="Signal", color=color.new(#FF6D00,0))
+
+show_signal_bubbles = input.bool(true, title = 'Show Signal Bubbles', group = 'MACD Settings', inline = '4')
+upsignal = ta.crossover(histLine, ZeroLine_Positive)
+downsignal = ta.crossunder(histLine, -ZeroLine_Positive)
+plotshape(show_signal_bubbles and upsignal ? macdLine : na, title = 'Bearish', location = location.absolute, color = color.red,
+      text = 'Bearish', style = shape.labeldown, textcolor = color.white)
+plotshape(show_signal_bubbles and downsignal ? macdLine : na, title = 'Bullish', location = location.absolute, color = color.green,
+      text = 'Bullish', style = shape.labelup, textcolor = color.white)
+     
+LabelSize = input.string(defval="small", options=["small", "medium", "large"], group = "Dashboard Settings", title = "Label Size", inline = '1')
+label_size = LabelSize == "small" ? size.small : LabelSize == "medium" ? size.normal : LabelSize == "large" ? size.large : size.small
+
+var table = table.new(position = position.bottom_right, columns = 4, rows = 1, border_width = 1)
+if barstate.islast
+    table.cell(table_id = table, column = 0, row = 0, text = "CHART SYMBOL: " + str.tostring(syminfo.ticker) + " #" + str.tostring(map_symbol),
+     bgcolor = color.yellow, text_color = color.black, text_size = label_size)
+
+    table.cell(table_id = table, column = 1, row = 0, text = histLine > 0 ? "MACD BULLISH" : histLine < 0 ? "MACD BEARISH" : "",
+      bgcolor = histLine > 0 ? color.green : histLine < 0 ? color.red : color.black, text_color = color.black, text_size = label_size)
+
+    table.cell(table_id = table, column = 2, row = 0, text = "Best " + str.tostring(syminfo.ticker) + " signals are near zero & dash lines",
+     bgcolor = color.white, text_color = color.black, text_size = label_size)
+
+
+
+
+
+

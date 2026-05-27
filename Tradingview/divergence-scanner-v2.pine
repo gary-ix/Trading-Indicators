@@ -1,0 +1,105 @@
+// © goodgains
+//@version=4
+
+// ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+// ║                                                                                                                                              ║
+// ║ © goodgains                                                                                                                                  ║
+// ║                                                                                                                                              ║
+// ║ Hull Moving Average Concavity and Turning Points                                                                                             ║
+// ║  or                                                                                                                                          ║
+// ║ The Second Derivative of the Hull Moving Average                                                                                             ║
+// ║                                                                                                                                              ║
+// ║                                                                                                                                              ║
+// ║ This plots the Hull Moving Average Turning Points and Concavity                                                                              ║
+// ║ with the addition of colored segments representing concavity and turning points: maxima, minima and inflection.                              ║
+// ║ a fast way to determine the trend direction and possible reversals based on concavity of the trend                                           ║
+// ║                                                                                                                                              ║
+// ║ Dark Green: Concave Up but HMA decreasing. The 'mood' has changed and the declining trend of the HMA is slowing.                             ║
+// ║ Light Green: Concave up and HMA increasing. Price is increasing, and since the curve is still concave up, it is accelerating upward.         ║
+// ║ Orange: Concavity is now downward, and though price is still increasing, the rate has slowed, perhaps the mood has become less enthusiastic. ║
+// ║ Red: Concave down and HMA decreasing.                                                                                                        ║
+// ║                                                                                                                                              ║
+// ║ Buy signals generated when Hull turns from Dark Green -> Light Green                                                                         ║
+// ║ Sell signals generated when Hull turns from Orange -> Red                                                                                    ║
+// ║                                                                                                                                              ║
+// ║                                                                                                                                              ║
+// ║                                                                                                                                              ║
+// ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+study("Divergence Scanner", overlay=true)
+
+// @keywords: hull-moving-average, hma-concavity, turning-points, trend-direction, second-derivative, concave-up, concave-down, minima-maxima, inflection-points, buy-sell-arrows, hull-support, hull-resistance, crossover-alerts, colored-segments, trend-reversal, momentum-shift, acceleration, deceleration, divergence-label, overlay
+
+// ————— Inputs
+price = input(hl2, title="Source")
+
+//for charting the indicator on higher aggregation periods eg. hourly hull on 15 min chart
+//comment out the price variable above, and uncomment code below
+//note: syminfo.tickerid doesn't work when you are charting a ratio of different tickers eg. ETH/BTC*100
+
+//res = input(title="Resolution",type=input.resolution,defval="60")
+//src = input(hl2, title="Source")
+//price = security(syminfo.tickerid,res,src)
+
+HMA_Length = input(21, "HMA Length", type=input.integer)
+lookback = input(2, "lookback", type=input.integer)
+ShowHullSupResLines = input(false, "ShowHullSup/ResLines", type=input.bool)
+ShowBuySellArrows = input(false, "ShowBuySellArrows", type=input.bool)
+ShowDivergenceLabel = input(false, "ShowDivergenceLabel", type=input.bool)
+ExtendSupResLines = input(false, "ExtendLocalSup/ResLines", type=input.bool)
+
+// ————— Calculations
+HMA = hma(price, HMA_Length)
+
+delta = HMA[1] - HMA[lookback + 1]
+delta_per_bar = delta/lookback
+
+next_bar = HMA[1] + delta_per_bar
+
+concavity = HMA > next_bar ? 1 : -1
+
+//turningpoint = concavity[1] != concavity ? HMA[1] : na
+//plot(turningpoint, "turningpoint", color=color.white, linewidth=1, style=plot.style_circles, offset=-1)
+
+O_R = HMA > HMA[1] ? color(#ff7f00) : color(#ff0000)
+DG_G = HMA < HMA[1] ? color(#025f02) : color(#00fa03)
+
+// ————— Plots
+plot(HMA, "HMA", color=concavity != -1 ? DG_G : O_R, linewidth=3)
+
+//MA_Min and MA_Max Points only
+MA_Min = HMA > HMA[1] and HMA[1] < HMA[2] ? HMA[1] : na
+MA_Max = HMA < HMA[1] and HMA[1] > HMA[2] ? HMA[1] : na
+
+//MA_Min and MA_Max Series
+saveMA_Min = valuewhen(HMA > HMA[1] and HMA[1] < HMA[2], HMA[1], 0)
+saveMA_Max = valuewhen(HMA < HMA[1] and HMA[1] > HMA[2], HMA[1], 0)
+
+//Draw MA_Min/MA_Max as lines from series or just points
+plot(ShowHullSupResLines ? saveMA_Min : MA_Min, "MA_Min/Hull Support", style = plot.style_circles, color = color(#00fa03), linewidth=1, trackprice=ExtendSupResLines, offset=-1)
+plot(ShowHullSupResLines ? saveMA_Max : MA_Max, "MA_Max/Hull Resistance", style = plot.style_circles, color = color(#ff0000), linewidth=1, trackprice=ExtendSupResLines, offset=-1)
+
+//Draw Arrows at MA_Min/MA_Max
+plotshape(ShowBuySellArrows ? MA_Min : na, "Buy", shape.triangleup, location.belowbar, color.green, text="Buy", offset=-1)
+plotshape(ShowBuySellArrows ? MA_Max : na, "Sell", shape.triangledown, location.abovebar, color.red, text="Sell", offset=-1)
+
+//Divergence Label
+divergence = round(HMA-next_bar, precision=4)
+divergenceColor = if concavity<0 and divergence[1] > divergence
+    color.red
+else if concavity<0 and divergence[1] < divergence
+    color.fuchsia
+else if concavity>0 and divergence[1] < divergence
+    color.green
+else
+    color.yellow
+
+labelText = "Divergence:\n" + tostring(divergence)
+divergenceLabel = ShowDivergenceLabel ? label.new(x=bar_index,y=close,text=labelText,yloc=yloc.belowbar,color=divergenceColor,textcolor=color.black,style=label.style_label_up,size=size.normal) : na
+
+label.delete(divergenceLabel[1])
+
+// ————— Alerts
+alertcondition(crossover(HMA,saveMA_Min), title="Buy Signal",message="Hull Crossing above MA_Min, Bullish")
+alertcondition(crossunder(HMA,saveMA_Max), title="Sell Signal",message="Hull Crossing below MA_Max, Bearish")
+

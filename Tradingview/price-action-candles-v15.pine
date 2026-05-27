@@ -1,0 +1,14 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("Price Action Candles")
+
+// @keywords: price-action-candles, stub-indicator, runtime-error, close-plot, backtest-placeholder, broken-strategy, placeholder-script, minimal-implementation, non-functional, error-stub, unfinished-script, test-strategy, single-plot, error-on-run, incomplete-candles, work-in-progress, debug-script, strategy-stub, non-operational, version-fifteen
+
+plot(close)
+
+if true
+     runtime.error("this should be working")
+

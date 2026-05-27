@@ -1,0 +1,22 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Buy & Sell Volume", overlay = false)
+
+// @keywords: buy-sell-volume, buy-volume, sell-volume, volume-split, volume-distribution, volume-decomposition, candle-volume, bar-volume, volume-histogram, candle-body, candle-wicks, bullish-candle, bearish-candle, volume-pressure, buying-pressure, selling-pressure, order-flow-estimate, volume-allocation, intrabar-volume, volume-delta
+
+top_wick    = high - math.max(close, open)
+bottom_wick = math.min(close, open) - low
+body_size   = math.abs(close-open)
+
+buy_v_calc  =  0.5 * (top_wick + bottom_wick + (open <= close ? 2 * body_size : 0)) / (top_wick + bottom_wick + body_size)
+sell_v_calc =  0.5 * (top_wick + bottom_wick + (open > close ? 2 * body_size : 0)) / (top_wick + bottom_wick + body_size)
+buy_v       = volume * (nz(buy_v_calc) == 0 ? 0.5 : buy_v_calc)
+sell_v      = volume * (nz(sell_v_calc) == 0 ? 0.5 : sell_v_calc)
+
+
+plot(math.round(buy_v,0), title = 'Buy Volume', style = plot.style_histogram, color = color.green, linewidth = 3)
+plot(math.round(-sell_v,0), title = 'Sell Volume', style = plot.style_histogram, color = color.red, linewidth = 3)
+

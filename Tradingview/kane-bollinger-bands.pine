@@ -1,0 +1,20 @@
+// © goodgains
+//@version=5
+indicator(shorttitle="kane-BB", title="kane-Bollinger Bands", overlay=true, timeframe="", timeframe_gaps=true)
+
+// @keywords: kane-bollinger-bands, bollinger-basis, upper-band, lower-band, sma-basis, standard-deviation, band-width, deviation-multiplier, band-expansion, percent-change, overlay-bands, channel-width, volatility-bands, price-envelope, stddev-multiple, band-squeeze, mean-reversion, trend-channel, band-offset, price-bands
+
+length = input.int(20, minval=1)
+src = input(close, title="Source")
+mult = input.float(2.0, minval=-50, maxval=50, title="StdDev")
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+offset = input.int(0, "Offset", minval = -500, maxval = 500)
+plot(basis, "Basis", color=#1bcf0a, offset = offset)
+p1 = plot(upper, "Upper", color=#2962FF, offset = offset)
+
+bollinger_abv_percent = upper > upper[1] ? ((upper - upper[1])/((upper + upper[1])/2)) * 100 : na
+p3 = plot(bollinger_abv_percent, "Percentage", color=#ff4229, offset = offset)
+

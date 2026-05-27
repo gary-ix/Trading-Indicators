@@ -1,0 +1,39 @@
+// © goodgains
+//@version=4
+
+study(title="ATR TRAILING", overlay = true)
+
+// @keywords: atr-trailing-stop, average-true-range, trailing-stop, volatility-stop, dynamic-stop-loss, atr-based-stop, stop-distance, trend-following, crossover-buy, crossunder-sell, buy-signals, sell-signals, buy-sell-labels, stop-line-plot, bar-coloring, trend-direction, long-short-position, price-cross-stop, alert-conditions, trailing-exit
+
+src = close 
+ 
+keyvalue = input(3, title = "Key Vaule. 'This changes the sensitivity'", step = .5)
+atrperiod = input(10, title="ATR Period")
+xATR = atr(atrperiod)
+nLoss = keyvalue * xATR
+
+xATRTrailingStop = 0.0
+xATRTrailingStop := iff(src > nz(xATRTrailingStop[1], 0) and src[1] > nz(xATRTrailingStop[1], 0), max(nz(xATRTrailingStop[1]), src - nLoss),
+   iff(src < nz(xATRTrailingStop[1], 0) and src[1] < nz(xATRTrailingStop[1], 0), min(nz(xATRTrailingStop[1]), src + nLoss), 
+   iff(src > nz(xATRTrailingStop[1], 0), src - nLoss, src + nLoss)))
+ 
+pos = 0   
+pos :=	iff(src[1] < nz(xATRTrailingStop[1], 0) and src > nz(xATRTrailingStop[1], 0), 1,
+   iff(src[1] > nz(xATRTrailingStop[1], 0) and src < nz(xATRTrailingStop[1], 0), -1, nz(pos[1], 0))) 
+   
+xcolor = pos == -1 ? color.red: pos == 1 ? color.green : color.blue
+
+plot(xATRTrailingStop, color = xcolor, title = "Trailing Stop")
+buy = crossover(src,xATRTrailingStop)
+sell = crossunder(src,xATRTrailingStop)
+barcolor = src > xATRTrailingStop 
+
+plotshape(buy, title = "Buy", text = 'Buy', style = shape.labelup, location = location.belowbar, color= color.green,textcolor = color.white, transp = 0, size = size.tiny)
+plotshape(sell, title = "Sell", text = 'Sell', style = shape.labeldown, color= color.red,textcolor = color.white, transp = 0, size = size.tiny)
+
+barcolor(barcolor? color.green:color.red)
+
+alertcondition(buy, title='Buy', message='Buy')
+alertcondition(sell, title='Sell', message='Sell')
+
+

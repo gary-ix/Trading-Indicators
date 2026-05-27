@@ -1,0 +1,12 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("Testing Access 1")
+
+// @keywords: testing-access-1, close-price-plot, alert-threshold-test, price-above-3000, once-per-bar-alert, simple-indicator-stub, access-test-script, conditional-alert, overlay-close-line, alert-frequency-once, minimal-test-indicator, single-condition-alert, price-level-trigger, test-alert-system, basic-close-monitor, threshold-alert-message, private-script-test, single-plot-output, alert-on-condition, access-verification
+
+plot(close)
+
+

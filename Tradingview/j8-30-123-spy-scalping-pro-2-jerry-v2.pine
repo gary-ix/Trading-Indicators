@@ -1,0 +1,619 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+strategy("J8_30_123_SPY_Scalping_PRO_2_Jerry_V2", overlay=true, margin_long=100, margin_short=100, default_qty_value = 100)
+
+// @keywords: spy, scalping, supertrend, ema, rsi, macd, bollinger-bands, iron-condor, bull-put-spread, bear-call-spread, zlsma, linear-regression, atr-trailing-stop, multi-timeframe, hull-moving-average, credit-spread, strategy-dashboard, barcolor, alerts, eod-exit
+
+// ma function
+getMA(src, len, type) =>
+    ma_value = type == 'MA' ? ta.sma(src, len) : type == 'WMA' ? ta.wma(src, len) : type == 'VWMA' ? ta.vwma(src, len) : type == 'EMA' ? ta.ema(src, len) : type == 'HMA' ? ta.hma(src, len) : ta.sma(src, len)
+    ma_value
+
+
+// function to calculate supertrend side
+f_mtf_st(st_mult, atr_length, st_type) =>
+
+    float mtf_atr = switch st_type
+        "MA" => ta.sma(ta.tr(false), atr_length)
+        "WMA" => ta.wma(ta.tr(false), atr_length)
+        "VWMA" => ta.vwma(ta.tr(false), atr_length)
+        "EMA" => ta.ema(ta.tr(false), atr_length)
+        "HMA" => ta.hma(ta.tr(false), atr_length)
+
+    mtf_up = hl2 + (st_mult * mtf_atr)
+    mtf_down = hl2 + (-st_mult * mtf_atr)
+    
+    var float mtf_st = na
+    mtf_st := close < mtf_st[1] ? mtf_up : mtf_down
+
+    var int mtf_st_side = na
+    mtf_st_side := close > mtf_st ? 1 : close < mtf_st ? -1 : mtf_st_side[1]
+
+    mtf_st_side
+
+
+// inputs
+show_dash_labels = input.bool(true, title = 'Show Dash Labels', group = 'Settings', inline = '1', tooltip = 'Turn on or off all dash labels. Default = YES to show labels.')
+show_daytrading_labels = input.bool(true, title = 'Show Day Trade Labels', group = 'Settings', inline = '2', tooltip = 'Select YES for Daytrading to turn off most DASH labels that are not needed')
+paint_bars = input.bool(true, title = 'Paint Bars', group = 'Settings', inline = '3', tooltip = 'Yes to PAINT the trend candlesticks.  Default YES')
+use_alerts = input.bool(true, title = 'Use Alerts', group = 'Settings', inline = '4', tooltip = 'Default NO. Turns on alert for Bear and Bull Spreads.')
+
+
+// color inputs
+up_color = input.color(color.green, title = 'Up⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '1')
+dn_color = input.color(color.red, title = '⠀⠀⠀⠀⠀⠀Down⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '1')
+label_color = input.color(#ffffff, title = 'Label⠀⠀⠀⠀', group = 'Color Settings', inline = '2')
+transition_color = input.color(color.yellow, title = '⠀⠀⠀⠀⠀⠀Transition⠀⠀⠀', group = 'Color Settings', inline = '2')
+
+maxxed_color = input.color(color.new(#32C8FF, 0),  title = 'Maxxed⠀⠀⠀', group = 'Color Settings', inline = '3')
+rising_color = input.color(color.new(#00FF00, 0),  title = '⠀⠀⠀⠀⠀⠀Rising⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '3')
+bear_color = input.color(color.new(#E10000,0),  title = 'Bear⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '4')
+pretrend_color = input.color(color.new(#C87DFF,0),  title = '⠀⠀⠀⠀⠀⠀Pretrend⠀⠀⠀', group = 'Color Settings', inline = '4')
+
+ob_color = input.color(color.new(#ABABE1,0),  title = 'OB⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '5')
+os_color = input.color(color.new(#DCDC80,0),  title = '⠀⠀⠀⠀⠀⠀OS⠀⠀⠀⠀⠀⠀⠀', group = 'Color Settings', inline = '5')
+
+
+
+
+
+// trade inputs
+input_price = input.source(close, title = 'Price', group = 'Trade Settings')
+use_z_exits = input.bool(true, title = 'Use Z Exits', group = 'Trade Settings', tooltip = ' Must select 1 or 2 exit strategies. DEFAULT YES')
+use_ts_exits = input.bool(true, title = 'Use Trailing Stop Exits', group = 'Trade Settings', tooltip = 'Must select 1 or 2 exit strategies. DEFAULT YES')
+use_close_eod = input.bool(true, title = 'Use EOD Exits', group = 'Trade Settings', tooltip = 'Yes for daytrading.')
+
+spreads_credit_target = input.float(0.20, title = ' Spread Credit Target', group = 'Trade Settings', tooltip = 'Normally .20 - .25. Goal Risk $70 to Make $30. This will vary based on VIX volatility so adjust it as needed based on the current market')
+spreads_size = input.float(10.00, title = ' Spread Size', group = 'Trade Settings', tooltip = 'How big of a spread do you want? Default=10. If entering later (> 12:00 PM) consider 8')
+wings = input.float(1.00, title = 'Wings', group = 'Trade Settings', tooltip = 'How big is each wing? Default 1 (Small wings = smaller profits with higher probability) >>NORMALLY .1-.3 DELTA<<')
+
+
+// supertrend
+AtrMult = input.float(1.0, title = 'ATR Mult', group = 'Supertrend', inline = '1' , tooltip = 'This is a trend setting. Default = 1')
+nATR = input.int(4, title = 'nATR', group = 'Supertrend', inline = '2' , tooltip = 'This is a trend setting. Default = 4')
+AvgType_ST = input.string(title='AvgType ST', defval='HMA', options=['MA', 'WMA', 'VWMA', 'EMA', 'HMA'], group = 'Supertrend', inline = '3') 
+
+
+true_range = ta.tr(false)
+atr = getMA(true_range, nATR, AvgType_ST)
+ST_UP = hl2 + (AtrMult * atr)
+ST_DN = hl2 + (-AtrMult * atr)
+var float ST = na
+ST := close < ST[1] ? ST_UP : ST_DN
+plot(ST, title = 'Supertrend', color = close < ST ? dn_color : up_color, display = display.none)
+barcolor(not paint_bars ? na : close < ST ? dn_color : close > ST ? up_color : na)
+
+
+// limit count
+show_arrows = input.bool(true, title = 'Show Arrows', group = 'Settings', inline = '4', tooltip = 'Shows most recent cross over when price crosses the trend.')
+limit_arrow_count = input.int(2, title = '' ,group = 'Settings', inline = '4', minval = 0)
+var arr_arrows = array.new_label(limit_arrow_count, na) 
+
+show_arrowbubble = input.bool(false, title = 'Show Bubbles', group = 'Settings', inline = '5', tooltip = 'Default NO.')
+var arr_arrowsbubble = array.new_label(limit_arrow_count, na) 
+
+
+if show_arrows
+    if ta.crossover(close, ST)
+        array.unshift(arr_arrows, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.belowbar, color = up_color, style = label.style_triangleup, size = size.small))
+        last = array.pop(arr_arrows)
+        label.delete(last)
+    if ta.crossunder(close, ST)
+        array.unshift(arr_arrows, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.abovebar, color = dn_color, style = label.style_triangledown, size = size.small))
+        last = array.pop(arr_arrows)
+        label.delete(last)
+
+if show_arrowbubble
+    if ta.crossover(close, ST)
+        array.unshift(arr_arrowsbubble, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.belowbar, color = up_color, style = label.style_label_up, size = size.small, text = str.tostring(high[1])))
+        last = array.pop(arr_arrowsbubble)
+        label.delete(last)
+    if ta.crossunder(close, ST)
+        array.unshift(arr_arrowsbubble, label.new(x = bar_index, y = low, xloc = xloc.bar_index, yloc = yloc.abovebar, color = dn_color, style = label.style_label_down, size = size.small,text = str.tostring(low[1])))
+        last = array.pop(arr_arrowsbubble)
+        label.delete(last)
+
+
+
+
+// iron condor vars
+IC_Buy_Put2   = math.round(close, 0) - (spreads_size / 2) 
+IC_Sell_Puts2 = math.round(close, 0) - (spreads_size / 2 - wings)
+IC_Sell_Call2 = math.round(close, 0) + (spreads_size / 2 - wings)
+IC_Buy_Call2 = math.round(close, 0) + (spreads_size / 2)
+Width = spreads_size - (2 * (wings))
+
+
+// criteria 1 supertrend cond
+Buy_Signal_Supertrend1 = close > ST
+Sell_Signal_Supertrend1 = close < ST
+
+
+// criteria 2 ema trend direction
+ema_length1 = input.int(13, title = 'EMA Length 1', group = 'EMA Trend Settings', inline = '1', tooltip = 'Default 13 scalping. Can try 10 for scalping')
+ema_length2 = input.int(50, title = 'EMA Length 2', group = 'EMA Trend Settings', inline = '2', tooltip = 'Default 50 scalping. Long Term 50, 100, 200. Short Term = 2, 5, 8, 20')
+ema_length3 = input.int(75, title = 'EMA Length 3', group = 'EMA Trend Settings', inline = '3', tooltip = 'Default 75 scalping. Try 100 for fewer signals')
+avgtype_EMA = input.string(title ='Avg Type', defval='EMA', options=['MA', 'WMA', 'VWMA', 'EMA', 'HMA'], group = 'EMA Trend Settings', inline = '4')
+
+ma1 = getMA(input_price, ema_length1, avgtype_EMA)
+ma2 = getMA(input_price, ema_length2, avgtype_EMA)
+ma3 = getMA(input_price, ema_length3, avgtype_EMA)
+
+plot(ma1, title = 'MA 1', color = color.aqua)
+plot(ma2, title = 'MA 2', color = color.red)
+plot(ma3, title = 'MA 3', color = color.fuchsia)
+
+
+// ema condition statement
+// #----- Bullish Criteria
+ECondition1 = ma1 > ma2 and ma1 > ma3 ? 1 : 0
+Econdition2 = ma2 > ma3 ? 1 : 0
+Econdition3 = ma1 > ma1[1] and ma1[1] > ma1[2] ? 1 : 0
+Econdition4 = ma2 > ma2[1] ? 1 : 0
+Econdition5 = ma3 > ma3[1] ? 1 : 0
+ECondition6 = close > ma1 ? 1 : 0
+
+
+// #----- Bearish Criteria
+ECondition10 = ma1 < ma2 and ma1 < ma3 ? 1 : 0
+Econdition11 = ma2 < ma3 ? 1 : 0
+Econdition12 = ma1 < ma1[1] and ma1[1] < ma1[2] ? 1 : 0
+Econdition13 = ma2 < ma2[1] ? 1 : 0
+Econdition14 = ma3 < ma3[1] ? 1 : 0
+ECondition15 = close < ma1 ? 1 : 0
+
+
+// #----- Criteria 2.0 EMA Conditions (THIS ONE TESTED BETTER)
+EMA_Bullish =  ma1 > ma2 and ma1 > ma3 and ma3 > ma3[1]
+EMA_Bearish =  ma1 < ma2  and ma1 < ma3 and ma3 < ma3[1] 
+
+
+// #----- Criteria 2.1 EMA Conditions (DID NOT TEST WELL - Was too limiting)
+// EMA_bullish = econdition1 + econdition2 +econdition3 + econdition4 + econdition5 + econdition6 == 6
+// EMA_Bearish = econdition10 + econdition11 +econdition12 + econdition13 + econdition14 + econdition15 == 6
+
+
+// criteria 3 rsi
+show_RSI_label = input.bool(false, title = 'Show RSI Label', group = 'RSI Settings', inline = '1', tooltip = 'Default No')
+rsi_ob = input.int(70, title = 'RSI OB', group = 'RSI Settings', inline = '2', tooltip = 'Default 70. Consider entering spreads between  ? OB and OS range.')
+rsi_os = input.int(35, title = 'RSI OS', group = 'RSI Settings', inline = '2', tooltip = 'Default 70. Consider entering spreads between  ? OB and OS range.')
+rsi_length = input.int(12, title = 'RSI Length', group = 'RSI Settings', inline = '2', tooltip = 'Default 12. Consdier 14 for testing')
+
+rsi_value = ta.rsi(input_price, rsi_length)
+plot(rsi_value, title = 'RSI', color = rsi_value > rsi_ob ? maxxed_color : rsi_value < rsi_os ? pretrend_color : rsi_value > rsi_value[1] ? rising_color : bear_color, display = display.none)
+plot(rsi_ob, title = 'Overbought', display = display.none, color = ob_color)
+plot(rsi_os, title = 'Oversold', display = display.none, color = os_color)
+
+
+plotshape(ta.crossover(rsi_value, rsi_os) ? rsi_os : na, title = 'RSI Cross OS', style = shape.triangleup, 
+     size = size.normal, location = location.absolute, display = display.none, color = up_color)
+plotshape(ta.crossunder(rsi_value, rsi_ob) ? rsi_ob : na, title = 'RSI Cross OB', style = shape.triangledown, 
+     size = size.normal, location = location.absolute, display = display.none, color =  dn_color)
+
+rsi_label = rsi_value > rsi_ob ? "3 Maxxed" 
+     : rsi_value < rsi_os ? "3 Pre-trend" 
+     : rsi_value > rsi_value[1] ? "3 Bull " + str.tostring(math.round(rsi_value, 0)) 
+     : "3 Bear " + str.tostring(math.round(rsi_value, 0))
+
+rsi_label_color = rsi_value > rsi_ob ? maxxed_color 
+     : rsi_value < rsi_os ? pretrend_color 
+     : rsi_value > rsi_value[1] ? rising_color 
+     : bear_color
+
+rsi_condition = rsi_value > rsi_ob ? 1 : rsi_value < rsi_os ? 2 : rsi_value > rsi_value[1] ? 3 : 4
+
+RSI_Maxxed = rsi_condition == 1
+RSI_Pretrend = rsi_condition == 2
+RSI_Bullish = rsi_condition == 3
+RSI_Bearish = rsi_condition == 4
+
+
+// criteria 4 macd dots 
+bb_length = input.int(10, title = 'BB Length', group = 'MACD Dots', inline = '1', tooltip = 'Default 10')
+bb_dev = input.float(1.0, title = 'BB Deviation', group = 'MACD Dots', inline = '2', tooltip = 'Default 1')
+macd_fast = input.int(12, title = 'MACD Fast', group = 'MACD Dots', inline = '3', tooltip = 'Default 12')
+macd_slow = input.int(26, title = 'MACD Slow', group = 'MACD Dots', inline = '4', tooltip = 'Default 26')
+macd_length = input.int(5, title = 'MACD Length', group = 'MACD Dots', inline = '5', tooltip = 'Default 5')
+
+[MACD_Line, signalLine, histLine] = ta.macd(close, macd_fast, macd_slow, macd_length)
+[BB_middle, BB_Upper, BB_Lower] = ta.bb(MACD_Line, bb_length, bb_dev)
+
+
+plot(MACD_Line, title = 'MACD Dots', display = display.none, 
+     color = MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line < 0 ? color.yellow 
+     : MACD_Line > MACD_Line[1] and MACD_Line > 0 ? color.green 
+     : MACD_Line < MACD_Line[1] and MACD_Line > BB_Upper ? color.new(#097209,0) 
+     : MACD_Line < MACD_Line[1] and MACD_Line < BB_Lower ? color.red 
+     : MACD_Line > MACD_Line[1] and MACD_Line < BB_Lower ? color.new(#8a0a0a,0) 
+     : color.gray)
+plot(MACD_Line, title = 'MACD Line', display = display.none)
+
+plot(BB_middle, title = 'BB Middle', display = display.none)
+plot(BB_Upper, title = 'BB Upper', display = display.none)
+plot(BB_Upper, title = 'BB Lower', display = display.none)
+
+
+// #----- Jerry MACD Dot Color: 1 = yellow, 2 = green, 3 = dark green, 4 = red, 5 = dark red, 6 = gray
+MACD_Dot_Color = MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line < 0  ? 1 
+     : MACD_Line > MACD_Line[1] and MACD_Line > BB_Upper and MACD_Line > 0  ? 2
+     : MACD_Line < MACD_Line[1] and MACD_Line > BB_Upper  ? 3
+     : MACD_Line < MACD_Line[1] and MACD_Line < BB_Lower  ? 4 
+     : MACD_Line > MACD_Line[1] and MACD_Line < BB_Lower  ? 5 
+     : 6
+
+
+// #----- MACD Dot Color used for determining momentum
+MACD_dot_not_red = MACD_Dot_Color != 4 and MACD_Dot_Color != 5
+// #MACD_dot_not_green = macd_Dot_Color != 2 and macd_Dot_Color != 3 and macd_Dot_Color != 1  #and yellow
+MACD_dot_not_green = MACD_Dot_Color > 3
+
+
+// #---------- Iron Condor Entry Criteria----------#
+show_IC_label = input.bool(false, title = 'Show Iron Condor Label', group = 'Iron Condor Settings', inline = '1'
+     , tooltip = 'Default NO. This labels shows enter or exit IC')
+use_ic_alerts = input.bool(false, title = 'Alerts', group = 'Iron Condor Settings', inline = '2')
+IC_MACDDotValue = input.float(0.25, title = 'IC MACD Dot Value', group = 'Iron Condor Settings', inline = '3', 
+     tooltip = 'MACD dots must be between this value and the - value. Default .25')
+IC_MACDDotEXITValue = input.float(0.50, title = 'IC MACD Dot Value', group = 'Iron Condor Settings', inline = '4',
+     tooltip = 'Consider exiting iron condor if above this value.')
+
+MACDDot0 = MACD_Line > -IC_MACDDotValue and MACD_Line < IC_MACDDotValue
+MACDDot1 = MACDDot0[1]
+MACDDot2 = MACDDot0[2]
+MACDDot3 = MACDDot0[3]
+MACDDot4 = MACDDot0[4]
+
+
+// #----- Criteria 4 Iron Condor Condition. APPLIES ONLY TO SPY Ticker
+Spy_IC = syminfo.ticker(syminfo.tickerid)  == "SPY" ? true : false
+
+IronCondor = Spy_IC and MACDDot0 and MACDDot1 and MACDDot2 and MACDDot3 and MACDDot4
+Exit_Iron_Condor = Spy_IC and ta.crossover(MACD_Line,IC_MACDDotEXITValue)
+ic_label = IronCondor ? "Enter IC" 
+     : Exit_Iron_Condor ? "Exit IC"
+     : na 
+ic_label_color = IronCondor ? color.white 
+     : Exit_Iron_Condor ? color.red
+     : color.gray
+
+if use_ic_alerts and barstate.islast
+    if IronCondor
+        alert('Iron Condor Entry', alert.freq_once_per_bar_close)
+    if Exit_Iron_Condor
+        alert('Exit Iron Condor', alert.freq_once_per_bar_close)
+
+
+// criteria 5 1minute
+min1_st_mult = 1.0
+min1_st_atr_length = 4
+min1_st_avgtype = 'HMA'
+min1_st_timeframe = '1'
+min1_st_array = request.security_lower_tf(syminfo.tickerid, min1_st_timeframe, f_mtf_st(min1_st_mult, min1_st_atr_length, min1_st_avgtype))
+
+var float min1_st_side = na
+min1_st_side := array.size(min1_st_array) > 0 ? array.last(min1_st_array) : 0
+// bgcolor(min1_st_side == 1 ? color.new(color.green,50) : min1_st_side == -1 ? color.new(color.red,80) : na)
+// label.new(bar_index, high, str.tostring(min1_st_array))
+
+
+
+// Buy Signals Defined
+mtf1_st_mult = 1.0
+mtf1_st_atr_length = 4
+mtf1_st_timeframe = '30'
+
+mtf_st_side = request.security(syminfo.tickerid, mtf1_st_timeframe, f_mtf_st(mtf1_st_mult, mtf1_st_atr_length, 'HMA')[1], lookahead = barmerge.lookahead_on)
+
+Bull_Put_Spread = Buy_Signal_Supertrend1 and EMA_Bullish and rsi_value >= 50 and MACD_dot_not_red and mtf_st_side == 1 and min1_st_side == 1
+Bear_Call_Spread = Sell_Signal_Supertrend1 and EMA_Bearish and  rsi_value <= 50 and MACD_dot_not_green and mtf_st_side == -1 and min1_st_side == -1
+
+
+if use_alerts and barstate.islast
+    if Bull_Put_Spread
+        alert('SELL Bull Spread', alert.freq_once_per_bar_close)
+    if Bear_Call_Spread
+        alert('SELL Bear Call Spread', alert.freq_once_per_bar_close)
+
+
+// ZLSMA Exit
+length_Z_exit = input.int(50, title = 'Z Exit Length', group = 'ZLSMA Settings', inline = '1')
+length2_Z_exit = input.int(5, title = 'Z Exit Length 2', group = 'ZLSMA Settings', inline = '2')
+
+lsma = ta.linreg(close, length_Z_exit,0)
+lsma2 = ta.linreg(lsma, length_Z_exit,0)
+b = lsma - lsma2
+z_2 = lsma + b
+trig2 = ta.ema(z_2, length2_Z_exit)
+
+// #----- Exit Strategy 1 Conditions
+ZLSMA_Buy_Exit = use_z_exits and ta.crossunder(z_2, trig2)
+ZLSMA_Sell_Exit = use_z_exits and  ta.crossover(z_2, trig2)
+
+
+
+
+
+
+// create signals
+strategy_start = input.time(timestamp("01 January 2020 00:00:00 UTC-5"), "Strategy Start Date", group = "Additional Strategy Settings")
+use_trading_hours = input.bool(false, title = "Use Trading Hours", tooltip = "This is ignored if the chart timeframe is greater than or equal to the daily timeframe.", group = "Additional Strategy Settings")
+trading_time = input.session("1000-1557", title = "Trading Time", tooltip = "This uses Eastern Time Zone or U.S. NY Market Hours.", group = "Additional Strategy Settings")
+trading_hours_cond = not use_trading_hours or time("",trading_time, "America/New_York")
+past_strategy_start_date = time >= strategy_start ? true : false
+
+long_trades = input.bool(true, title = "Long Trades", tooltip = "Do we want to take long trades?" , group = "Additional Strategy Settings")
+short_trades = input.bool(true, title = "Short Trades", tooltip = "Do we want to take short trades?" , group = "Additional Strategy Settings")
+
+long_entry = long_trades and trading_hours_cond and Bull_Put_Spread
+long_exit = long_trades and trading_hours_cond and ZLSMA_Buy_Exit
+
+short_entry = short_trades and trading_hours_cond and Bear_Call_Spread
+short_exit = short_trades and trading_hours_cond and ZLSMA_Sell_Exit
+
+
+// trailing stop
+atr_trailing_stop = input.bool(true, title = 'ATR Trailing Stop', group = 'Trailing Stop', inline = '1')
+atr_mult = input.float(2.00, title = 'ATR Mult', group = 'Trailing Stop', inline = '2')
+atr_length = input.int(14, title = 'ATR Length', group = 'Trailing Stop', inline = '3')
+
+atr_calculation = ta.atr(atr_length) * atr_mult
+J8_TS = atr_calculation / close * 100 * atr_mult
+entryPrice = strategy.position_avg_price
+plot(entryPrice, title = 'Average Price', color = color.gray, style = plot.style_circles, display = display.none)
+
+var float long_ts_price = na
+var float short_ts_price = na
+
+long_ts_price := long_entry[1] ? entryPrice - atr_calculation : entryPrice > 0 ? math.max(long_ts_price[1], high - atr_calculation)
+     : na
+short_ts_price := short_entry[1] ? entryPrice + atr_calculation : entryPrice > 0 ? math.min(short_ts_price[1], low + atr_calculation)
+     : na
+plot(long_ts_price > 0 ? long_ts_price : short_ts_price > 0 ? short_ts_price : na, title = 'Trailing Stop', 
+     color = color.fuchsia, style = plot.style_circles, display = display.none)
+
+long_ts = use_ts_exits and atr_trailing_stop and low <= long_ts_price
+short_ts = use_ts_exits and atr_trailing_stop and high >= short_ts_price
+
+if past_strategy_start_date
+    if trading_hours_cond
+        if long_entry
+            strategy.entry(id = 'LE', comment  = "SELL BULL PS", direction = strategy.long) 
+        if short_entry
+            strategy.entry(id = 'SS_E', comment  = "SELL BEAR CS", direction = strategy.short) 
+
+    if long_exit
+        strategy.close(id = 'LE', comment = 'Closed')
+    if short_exit
+        strategy.close(id = 'SS_E', comment = 'Closed')
+
+    if long_ts
+        strategy.close(id = 'LE', comment = 'L_TS')
+    if short_ts
+        strategy.close(id = 'SS_E', comment = 'SS_TS')
+
+    if use_trading_hours and not trading_hours_cond
+        strategy.close_all(comment = 'EOD', immediately = true)
+
+
+
+
+
+
+
+
+// DASHBOARD
+
+initial_capital = strategy.initial_capital
+LabelSize = input.string(defval="small", options=["small", "medium", "large"], group = "Dashboard Settings", title = "Label Size", inline = '1')
+label_size = LabelSize == "small" ? size.small : LabelSize == "medium" ? size.normal : LabelSize == "large" ? size.large : size.small
+dashboard_text_color = input.color(color.new(#000000, 0 ), "Text Color", group = "Dashboard Settings", inline = '2')
+bull_color = input.color(color.new(#04fc04,0), "Bull Color", group = "Dashboard Settings", inline = '2')
+dash_bear_color = input.color(color.new(#fc0404,0), "Bear Color", group = "Dashboard Settings", inline = '2')
+neutral_color = input.color(color.new(color.white,0), "Neutral Color", group = "Dashboard Settings", inline = '2')
+var table d = table.new(position.bottom_right, 1, 20, border_width = 1, frame_color = #000000)
+
+//trade size function
+get_trade_size() =>
+    total_contracts = 0.00
+    
+    for i = 0 to strategy.closedtrades-1
+        total_contracts += math.abs(strategy.closedtrades.size(i))
+    total_contracts
+
+trade_size = math.round(get_trade_size() / strategy.closedtrades,0)
+    
+//lots of values
+get_dashboard_values_function() =>
+    
+    combined_dollars_f = 0.00
+    trades_pnl_f = array.new_float(0)
+    winning_trade_sum_f = array.new_float(0)
+    wins_combined_dollars_f = 0.00
+    losing_trade_sum_f = array.new_float(0)
+    loss_combined_dollars_f = 0.00
+    
+    for i = 0 to strategy.closedtrades-1
+    
+        combined_dollars_f += strategy.closedtrades.entry_price(i) * trade_size
+        array.push(trades_pnl_f, strategy.closedtrades.profit(i))
+        
+        if strategy.closedtrades.profit(i) > 0 
+            array.push(winning_trade_sum_f, strategy.closedtrades.profit(i))
+            wins_combined_dollars_f += strategy.closedtrades.entry_price(i) * trade_size
+        
+        if strategy.closedtrades.profit(i) < 0
+            array.push(losing_trade_sum_f, strategy.closedtrades.profit(i))
+            loss_combined_dollars_f += strategy.closedtrades.entry_price(i) * trade_size
+            
+    max_win_f = array.max(trades_pnl_f)
+    max_loss_f = array.min(trades_pnl_f)
+    
+    win_trade_sum_f = array.sum(winning_trade_sum_f)
+    loss_trade_sum_f = array.sum(losing_trade_sum_f)
+        
+    [combined_dollars_f, max_win_f, max_loss_f, win_trade_sum_f, wins_combined_dollars_f, loss_trade_sum_f, loss_combined_dollars_f]
+
+// Buy and Hold
+buyAndHoldReturnInAccount(from) =>
+    if time >= from
+        money = open * syminfo.pointvalue
+        var begin = strategy.convert_to_account(money)
+        (strategy.convert_to_account(money) - begin) / begin * 100
+        percent = (close - begin) / begin * 100
+
+//max win/loss stuff     
+find_entry_value_win_loss(value) =>
+    entryP = 0.00
+    for i = 0 to strategy.closedtrades-1
+        if value == strategy.closedtrades.profit(i) 
+            entryP := strategy.closedtrades.entry_price(i)
+    entryP
+ 
+//avg bars in tradetable
+avgBarsInTrade() =>
+    result = 0
+    win_result = 0
+    loss_result = 0
+    for i = 0 to strategy.closedtrades-1
+        result += strategy.closedtrades.exit_bar_index(i) - strategy.closedtrades.entry_bar_index(i) + 1
+        
+        if strategy.closedtrades.profit(i) > 0 
+            win_result += strategy.closedtrades.exit_bar_index(i) - strategy.closedtrades.entry_bar_index(i) + 1
+            
+        if strategy.closedtrades.profit(i) < 0 
+            loss_result += strategy.closedtrades.exit_bar_index(i) - strategy.closedtrades.entry_bar_index(i) + 1
+        
+    avg_return = math.round(strategy.closedtrades > 0 ? result / strategy.closedtrades : na)
+    win_return = math.round(strategy.closedtrades > 0 ? win_result / strategy.wintrades : na)
+    loss_return = math.round(strategy.closedtrades > 0 ? loss_result / strategy.losstrades : na)
+    
+    [avg_return, win_return, loss_return]
+    
+// #buy and hold return
+show_buy_and_hold = input.bool(true, "Show Buy & Hold Return", group = "Dashboard Settings", inline = '8')
+buy_hold_timeframe = input.time(timestamp("01 July 2021 00:00:00 UTC-5"), "Start Date", group = "Dashboard Settings", inline = '8')
+new_bh_return = math.round(buyAndHoldReturnInAccount(buy_hold_timeframe),0)
+    
+if (barstate.isconfirmed or barstate.islast)
+    //#total closed trades
+    show_total_closed_trades = input.bool(true, "Show Total Closed Trades", group = "Dashboard Settings", inline = '3')
+    total_closed_orders = strategy.closedtrades
+    
+    // #total winning/losing trades
+    show_winning_losing_trades_counter = input.bool(true, "Show Total W/L Trades", group = "Dashboard Settings", inline = '4')
+    winning_trades = strategy.wintrades
+    losing_trades = strategy.losstrades
+    win_lose_color = winning_trades > losing_trades ? bull_color : dash_bear_color
+    
+    // #profit factor
+    show_profit_factor = input.bool(true, "Show Profit Factor", group = "Dashboard Settings", inline = '5')
+    target_profit_factor = input.float(1.50, " | Target Profit Factor", group = "Dashboard Settings", tooltip = 'A profit factor of 1.5 means that if you invest $1, you can expect to earn $1.5. The profit factor is the ratio between gross profits and gross losses.', inline = '5') 
+    profit_factor = math.round(strategy.grossprofit / strategy.grossloss,2)
+    profit_factor_color = profit_factor > target_profit_factor ? bull_color : dash_bear_color
+    
+    // #win rate
+    show_percent_profitable = input.bool(true,"Show Percent Profitable", group = "Dashboard Settings", inline = '6')
+    target_win_rate = input.float(50.00, " | Target Win %", group = "Dashboard Settings", inline = '6') 
+    win_rate = math.round(winning_trades / total_closed_orders * 100, 1)
+    win_rate_color = win_rate >= target_win_rate ? bull_color : dash_bear_color
+    
+    [combined_dollars, max_win, max_loss, winning_trade_sum, wins_combined_dollars, losing_trade_sum, loss_combined_dollars] = get_dashboard_values_function()
+    
+    // #net profit on capital$ and % - % is based off account size
+    show_net_profit = input.bool(true,"Show Net Profit", group = "Dashboard Settings", inline = '7')
+    target_roi_on_capital = input.float(20.00, " | Target ROI %", group = "Dashboard Settings", inline = '7', tooltip = 'What roi on your trading capital do you want? (this will color net profit white if condition is met)')
+    net_profit = math.round(strategy.netprofit,0)
+    avg_trade_size = math.round(combined_dollars/total_closed_orders,0)
+    net_profit_roi_pct = math.round(net_profit / avg_trade_size * 100 ,1)
+    net_profit_roi_pct_color = net_profit > 0 and net_profit_roi_pct < target_roi_on_capital ? color.white : net_profit_roi_pct >= target_roi_on_capital ? bull_color : dash_bear_color
+    
+    // #largest winning trade - % is based off position size
+    show_max_win_trade = input.bool(true, "Show Largest Winning Trade", group = "Dashboard Settings", inline = '9')
+    max_win_entry = find_entry_value_win_loss(max_win)
+    max_win_pct = math.round((max_win / (max_win_entry * trade_size) * 100),1)
+    
+    // #largest losing trade - % is based off position size
+    show_max_loss_trade = input.bool(true, "Show Largest Losing Trade", group = "Dashboard Settings", inline = '10')
+    max_loss_entry = find_entry_value_win_loss(max_loss)
+    max_loss_pct = math.round((max_loss / (max_loss_entry * trade_size) * 100),1)
+    
+    // #avg trade 
+    show_avg_trade = input.bool(true, "Show Avg. Trade", group = "Dashboard Settings", inline = '11')
+    avg_trade = math.round(net_profit / total_closed_orders,2)
+    avg_trade_roi = math.round((net_profit / combined_dollars *100),1)
+    [avg_duration,avg_win_duration, avg_loss_duration] = avgBarsInTrade()
+    avg_trade_color = avg_trade > 0 ? bull_color : dash_bear_color
+    
+    // #avg winning trade
+    show_avg_winning_trade = input.bool(true, "Show Avg. Winning Trade", group = "Dashboard Settings", inline = '12')
+    target_roi_on_wins = input.float(5.00, " | Target ROI %", group = "Dashboard Settings", inline = '12', tooltip = 'What roi on your trading capital do you want? (this will color net profit white if condition is met)')
+    avg_winning_trade =  math.round(winning_trade_sum/winning_trades,2)
+    win_trade_roi = math.round((winning_trade_sum / wins_combined_dollars *100) ,1)
+    avg_win_color = win_trade_roi >= target_roi_on_wins and profit_factor > target_profit_factor ? neutral_color : bull_color 
+    
+    // #avg losing trade
+    show_avg_losing_trade = input.bool(true, "Show Avg. Losing Trade", group = "Dashboard Settings", inline = '13')
+    avg_losing_trade =  math.round(losing_trade_sum/losing_trades,2)
+    loss_trade_roi = math.round((losing_trade_sum / loss_combined_dollars *100) ,1)
+    avg_loss_color = dash_bear_color 
+    
+    // #MAX DRAWDOWN - % is based off account size
+    show_max_dd = input.bool(true, "Show Max DD", group = "Dashboard Settings", inline = '14')
+    max_dd = strategy.max_drawdown
+    max_dd_pct = math.round(max_dd / initial_capital * 100, 2)
+    
+    // #OPEN TRADE PNL
+    show_open_trade = input.bool(true, "Show Open Trade", group = "Dashboard Settings", inline = '15')
+    show_open_trade_fixed = show_open_trade and strategy.opentrades != 0
+    open_trade_pnl = strategy.openprofit
+    open_trade_pct = math.round(open_trade_pnl / (strategy.position_avg_price * trade_size) * 100,2)
+    open_trade_color = open_trade_pnl > 0 ? bull_color : dash_bear_color
+
+
+    // STRATEGY
+    if show_RSI_label
+        table.cell(d, 0, 1, text = rsi_label, width = 0, bgcolor = rsi_label_color, text_size = label_size, text_color = dashboard_text_color)
+    if show_IC_label
+        table.cell(d, 0, 2, text = ic_label, width = 0, bgcolor = ic_label_color, text_size = label_size, text_color = dashboard_text_color)
+    table.cell(d, 0, 0, text = "J8 TS: " + str.tostring(math.round(J8_TS,2)) + "%", width = 0, bgcolor = color.new(#ffafaf,0), text_size = label_size, text_color = dashboard_text_color)
+
+
+    //FOR DASHBOARD
+    if show_total_closed_trades 
+        table.cell(d, 0, 3, text = "Total: " + str.tostring(total_closed_orders), width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)
+    if show_winning_losing_trades_counter
+        table.cell(d, 0, 4, text ="W: " + str.tostring(winning_trades) + " | L: " + str.tostring(losing_trades) , width = 0, bgcolor = win_lose_color, text_size = label_size, text_color = dashboard_text_color)
+    if show_net_profit
+        table.cell(d, 0, 5, text = "Net Profit: $" + str.tostring(net_profit) + " on $" + str.tostring(avg_trade_size) + " | ROI " + str.tostring(net_profit_roi_pct) + "%" , width = 0, bgcolor = net_profit_roi_pct_color, text_size = label_size, text_color = dashboard_text_color)  
+    if show_buy_and_hold
+        table.cell(d, 0, 6, text ="B&H: " + str.tostring(new_bh_return) + "%", width = 0, bgcolor = neutral_color, text_size = label_size, text_color = dashboard_text_color)  
+    
+    if show_daytrading_labels
+        if show_profit_factor
+            table.cell(d, 0, 7, text = "Profit Factor: " + str.tostring(profit_factor) + "x" , width = 0, bgcolor = profit_factor_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_percent_profitable
+            table.cell(d, 0, 8, text = "WinRate: " + str.tostring(win_rate) + "%" , width = 0, bgcolor = win_rate_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_max_win_trade
+            table.cell(d, 0, 9, text =  "MaxWin: $" + str.tostring(max_win) + " | " + str.tostring(max_win_pct) + "%", width = 0, bgcolor = bull_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_max_loss_trade
+            table.cell(d, 0, 10, text = "MaxLoss: $" + str.tostring(max_loss) + " | " + str.tostring(max_loss_pct) + "%", width = 0, bgcolor = dash_bear_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_avg_trade
+            table.cell(d, 0, 11, text = "Avg trade: $" + str.tostring(math.round(avg_trade,0)) + " | "  +  str.tostring(avg_trade_roi) + "%" + " | " + str.tostring(avg_duration) + "bars", width = 0, bgcolor = avg_trade_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_avg_winning_trade
+            table.cell(d, 0, 12, text = "Avg Win: $" + str.tostring(math.round(avg_winning_trade,0)) + " | "  +  str.tostring(win_trade_roi) + "%" + " | " + str.tostring(avg_win_duration) + "bars", width = 0, bgcolor = avg_win_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_avg_losing_trade
+            table.cell(d, 0, 13, text = "Avg Loss: $" + str.tostring(math.round(avg_losing_trade,0)) + " | "  +  str.tostring(loss_trade_roi) + "%" + " | " + str.tostring(avg_loss_duration) + "bars" , width = 0, bgcolor = avg_loss_color, text_size = label_size, text_color = dashboard_text_color)  
+        if show_max_dd
+            table.cell(d, 0, 14, text = "Max DD: $" + str.tostring(math.round(max_dd,0)) + " | "  +  str.tostring(max_dd_pct) + "%", width = 0, bgcolor = dash_bear_color, text_size = label_size, text_color = dashboard_text_color)  
+        
+    if show_open_trade_fixed
+        table.cell(d, 0, 15, text = "OpenT: $" + str.tostring(open_trade_pnl) + " | "  +  str.tostring(open_trade_pct) + "%" , width = 0, bgcolor = open_trade_color, text_size = label_size, text_color = dashboard_text_color)
+
+
+
+
+
+

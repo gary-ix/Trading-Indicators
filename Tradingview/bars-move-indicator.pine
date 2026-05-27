@@ -1,0 +1,276 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © goodgains
+
+
+//@version=5
+indicator("bars%move indicator", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500)
+
+// @keywords: bars-move, bars-move-indicator, swing-range, percent-movement, price-movement, lookback-bars, highest-high, lowest-low, buy-the-dip, sell-the-rally, buy-signals, sell-signals, long-entry, short-entry, stop-loss, take-profit, position-boxes, trading-session, inverse-signals, alerts
+
+// signal settings
+takeLongs            = input.bool(true, title = 'Buy Signals', group = 'Buy Signal Settings', inline = '0')
+long_minBarsSignal   = input.int(100, title = 'Buy Movement Bars', group = 'Buy Signal Settings', inline = '1')
+long_movementType    = input.string("Percent", options = ['Percent', 'Price'], title = 'Movement', group = 'Buy Signal Settings', inline = '2')
+long_movementAmount  = input.float(10.00, title = '', group = 'Buy Signal Settings', inline = '2')
+
+takeShorts            = input.bool(true, title = 'Sell Signals', group = 'Sell Signal Settings', inline = '0')
+short_minBarsSignal   = input.int(100, title = 'Sell Movement Bars', group = 'Sell Signal Settings', inline = '1')
+short_movementType    = input.string("Percent", options = ['Percent', 'Price'], title = 'Movement', group = 'Sell Signal Settings', inline = '2')
+short_movementAmount  = input.float(-10.00, title = '', group = 'Sell Signal Settings', inline = '2')
+
+
+// trade settings
+inverse_settings    = input.bool(true, title = 'Inverse Signals', group = 'Trade Settings', inline = '1')
+long_to_short_lock  = input.bool(false, title = 'Next Trade Cannot Be Same Side', group = 'Trade Settings', inline = '1')
+use_sess            = input.bool(false, title = '', group = 'Trade Settings', inline = '4')
+trading_session     = input.session("0900-1600", title = 'Trading Session', group = 'Trade Settings', inline = '4')
+
+
+// risk management settings
+use_tp      = input.bool(false, title = 'Target⠀⠀ ⠀⠀⠀⠀⠀', group = 'Risk Management', inline = '2')
+tp_amount   = input.float(1.0, title = '', group = 'Risk Management', inline = '2')
+tp_type     = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '2')
+
+use_sl      = input.bool(true, title = 'Stop Loss⠀ ⠀⠀⠀⠀', group = 'Risk Management', inline = '3')
+sl_amount   = input.float(1.00, title = '', group = 'Risk Management', inline = '3')
+sl_type     = input.string('Percent', title = '', options = ['Percent', 'Price'], group = 'Risk Management', inline = '3')
+
+
+// error catching
+if long_to_short_lock and not (takeLongs and takeShorts)
+    runtime.error("You cannot require the next trade to be a different side if only Buy Signals or only Sell Signals is checked.")
+
+
+// position lines
+line_showing    = input.string('None', title = 'Position Tool', options = ['None', 'Current', 'Current & Past'], group = 'Position Line Settings', inline = '1')
+css_targetline  = input.color(color.new(color.green,80), title = 'Profit', group = 'Position Line Settings', inline = '2')
+css_stopline    = input.color(color.new(color.red,80), title = 'Loss', group = 'Position Line Settings', inline = '2')
+css_toolcolor   = input.color(color.white, title = 'Text', group = 'Position Line Settings', inline = '2')
+
+// timeframe
+is_trade_sess = (time == time(timeframe.period, str.format('{0}:1234567', trading_session), 'America/New_York')) or not use_sess
+
+
+
+
+// create buy/sell condition Signals
+var float long_highestHigh      = na
+var float long_lowestLow        = na
+var int   long_highestHighBN    = na
+var int   long_lowestLowBN      = na
+
+var float long_movement         = na
+var float long_MovementPCT      = na
+
+var float short_highestHigh      = na
+var float short_lowestLow        = na
+var int   short_highestHighBN    = na
+var int   short_lowestLowBN      = na
+
+var float short_movement         = na
+var float short_MovementPCT      = na
+
+
+// buy condition
+long_highestHigh    := ta.highest(high, long_minBarsSignal)
+long_lowestLow      := ta.lowest(low, long_minBarsSignal)
+long_highestHighBN  := math.abs(ta.highestbars(high, long_minBarsSignal))
+long_lowestLowBN    := math.abs(ta.lowestbars(low, long_minBarsSignal))
+
+lookForLongs        = long_lowestLowBN < long_highestHighBN
+long_movement       := long_highestHigh - long_lowestLow
+long_MovementPCT    := (long_highestHigh - long_lowestLow) / long_lowestLow * 100
+
+long_movementCond   = takeLongs and (long_movementType == 'Percent' and (long_MovementPCT >= long_movementAmount) or (long_movementType == 'Price' and long_movement > long_movementAmount))
+buyCond             = is_trade_sess and lookForLongs and long_movementCond
+
+
+
+
+// sell condition
+short_highestHigh    := ta.highest(high, short_minBarsSignal)
+short_lowestLow      := ta.lowest(low, short_minBarsSignal)
+short_highestHighBN  := math.abs(ta.highestbars(high, short_minBarsSignal))
+short_lowestLowBN    := math.abs(ta.lowestbars(low, short_minBarsSignal))
+
+lookForShorts        = short_lowestLowBN > short_highestHighBN
+short_movement       := short_highestHigh - short_lowestLow
+short_MovementPCT    := (short_lowestLow - short_highestHigh) / short_highestHigh * 100
+
+short_movementCond   = takeShorts and (short_movementType == 'Percent' and (short_MovementPCT <= short_movementAmount) or (short_movementType == 'Price' and short_movement > short_movementAmount))
+shortCond             = is_trade_sess and lookForShorts and short_movementCond
+
+
+
+// debug buy plotting
+// plot(long_highestHigh, color = lookForLongs ? color.green : color.green, style = plot.style_stepline, linewidth = 3)
+// plot(long_lowestLow, color = lookForLongs ? color.red : color.red, style = plot.style_stepline, linewidth = 3)
+// plot(long_MovementPCT, color = lookForLongs ? color.yellow : color.yellow)
+// // debug short plotting
+// plot(short_highestHigh, color = lookForShorts ? color.red : na, style = plot.style_stepline, linewidth = 3)
+// plot(short_lowestLow, color = lookForShorts ? color.red : na, style = plot.style_stepline, linewidth = 3)
+// plot(short_MovementPCT, color = lookForShorts ? color.red : color.gray)
+// // debug bg
+// bgcolor(buyCond and shortCond ? color.rgb(175, 165, 76, 90) : buyCond ? color.rgb(76, 175, 79, 90) : shortCond ? color.rgb(175, 76, 76, 90) : na)
+// barcolor(is_trade_sess ? color.white : na)
+
+
+//  define vars
+var bool in_trade = false
+var int trade_side = 0
+var int last_trade = na
+
+var float target = 99999999.99
+var float stop = 0.000000
+var float entry_price = 0.00
+
+var bool long_entry = false
+var bool short_entry = false
+
+var bool tgt_hit = false
+var bool stop_hit = false
+
+var bool long_exit = false
+var bool short_exit = false
+
+
+// define entry
+long_trade_side = long_to_short_lock ? (last_trade == -1 or na(last_trade)) : trade_side != 1 
+short_trade_side = long_to_short_lock ? (last_trade == 1 or na(last_trade)) : trade_side != -1 
+
+long_conditions     = (buyCond and not buyCond[1])
+short_conditions    = (shortCond and not shortCond[1])
+
+long_entry :=  (inverse_settings ? short_conditions : long_conditions) and long_trade_side and not long_entry[1]
+short_entry := (inverse_settings ? long_conditions : short_conditions) and short_trade_side and not short_entry[1]
+
+
+// define position
+entry_price := long_entry[1] or short_entry[1] ? open :  in_trade == true ? entry_price[1] : na
+trade_side := long_entry[1] ? 1 : short_entry[1] ? -1 : in_trade == false ? 0 : trade_side[1]
+last_trade := (trade_side != 0 and trade_side != trade_side[1]) ? trade_side : last_trade[1]
+
+
+// define targets and stops
+if use_tp
+    target := trade_side == 1 ? (tp_type == 'Percent' ? (entry_price + (entry_price * (tp_amount/100))) : entry_price + tp_amount ) 
+     : trade_side == -1 ? (tp_type == 'Percent' ? (entry_price - (entry_price * (tp_amount/100))) : entry_price - tp_amount ) : na
+else
+    target := na
+    
+if use_sl    
+    stop := trade_side == 1 ?  ( sl_type == 'Percent' ? (entry_price - (entry_price * (sl_amount/100))) : entry_price - sl_amount ) : trade_side == -1 ? ( sl_type == 'Percent' ? (entry_price + (entry_price * (sl_amount/100))) : entry_price + sl_amount ) : na
+else    
+    stop := na
+
+
+// update position management
+tgt_hit := trade_side == 1 and high >= target or trade_side == -1 and low <= target
+stop_hit := trade_side == 1 and low <= stop or trade_side == -1 and high >= stop
+
+long_exit := ( (tgt_hit or stop_hit or not is_trade_sess) ) and in_trade[1] == true and trade_side[1] == 1
+short_exit := ( (tgt_hit or stop_hit or not is_trade_sess)) and in_trade[1] == true and trade_side[1] == -1   
+in_trade := long_entry or short_entry ? true : long_exit or short_exit ?  false : in_trade[1]
+
+
+// plot signals
+plotshape(long_entry[1] , style = shape.triangleup, location = location.belowbar, color=color.new(color.green, 30), size=size.small, title = 'Long Entry')
+plotshape(short_entry[1] , style = shape.triangledown, location = location.abovebar, color=color.new(color.red, 30), size=size.small, title = 'SS Entry')
+
+plotshape(short_exit, style = shape.triangleup, location = location.belowbar, color=color.new(color.gray, 30), size=size.small, title = 'SS Exit')
+plotshape(long_exit, style = shape.triangledown, location = location.abovebar, color=color.new(color.gray, 30), size=size.small, title = 'Long Exit')
+
+
+
+//  calculate variables for text
+profit_pct  = math.abs(math.round((target - entry_price) / entry_price * 100,2))
+stop_pct    = math.abs(math.round((stop - entry_price) / entry_price * 100,2))
+
+target_text = 'TGT: ' + str.tostring(math.round_to_mintick(target)) + ' (' + str.tostring(profit_pct) + '%)'
+stoploss_text = 'SL: ' + str.tostring(math.round_to_mintick(stop)) + ' (' + str.tostring(stop_pct) + '%)'
+
+
+// --TRADE POSIITION LINES-- //
+var line current_entryline = na
+var line current_targetline = na
+var line current_stopline = na
+
+previous_entrylines = array.new_line(50, na)
+previous_targetlines = array.new_line(50, na)
+previous_stoplines = array.new_line(50, na)
+
+var box profit_box = na
+var box loss_box = na
+
+previous_profit_box = array.new_box(50,na)
+previous_loss_box = array.new_box(50,na)
+
+show_position_tool = line_showing != 'None' 
+show_previous = line_showing == 'Past' or line_showing == 'Current & Past'
+
+
+f_array_add_pop(array, new_value_to_add) =>
+    array.unshift(array, new_value_to_add)
+    array.pop(array)
+
+
+f_copy_n_store(current_line, storing_array) =>
+
+    if show_previous
+        copied_line = line.copy(current_line)
+        line.set_extend(copied_line, extend.none)
+        line.set_x2(copied_line, bar_index)
+        f_array_add_pop(storing_array, copied_line)
+
+    line.delete(current_line)
+
+
+f_copy_n_storebox(current_box, storing_array, box_type, valign_type) =>
+
+    if show_previous
+        copied_box = box.copy(current_box)
+        box.set_extend(copied_box, extend.none)
+        box.set_right(copied_box, bar_index)
+        box.set_text(copied_box, box_type == 1 ? target_text : stoploss_text)
+        box.set_text_color(copied_box, css_toolcolor)
+        box.set_text_size(copied_box, size.small)
+        box.set_text_valign(copied_box, valign_type == 1 ? text.align_top : text.align_bottom)
+    
+        f_array_add_pop(storing_array, copied_box)
+
+    box.delete(current_box)
+
+
+
+// new lines
+if long_entry[1] or short_entry[1] and show_position_tool
+
+    // if we were in a trade and flipped side
+    if entry_price[1] != 0
+
+        f_copy_n_storebox(profit_box, previous_profit_box, 1,long_entry[1] ? 1 : -1)
+        f_copy_n_storebox(loss_box, previous_loss_box, -1, long_entry[1] ? -1 : 1)
+
+    profit_box := box.new(left = bar_index, top = target, right = bar_index + 1, bottom = entry_price, border_color = color.new(css_targetline, 50), border_width = 1, border_style = line.style_solid,
+     extend = extend.right, bgcolor = css_targetline, text = target_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign = long_entry[1] ? text.align_top : text.align_bottom)
+    
+    loss_box := box.new(left = bar_index, top = entry_price, right = bar_index + 1, bottom = stop, border_color = color.new(css_stopline, 50), border_width = 1, border_style = line.style_solid,
+     extend = extend.right, bgcolor = css_stopline, text = stoploss_text, text_size = size.small, text_color = css_toolcolor, text_halign = text.align_center, text_valign =  long_entry[1] ?text.align_bottom : text.align_top)
+    
+
+// manage lines
+if long_exit or short_exit
+    f_copy_n_storebox(profit_box, previous_profit_box, 1, long_exit ? 1 : -1)
+    f_copy_n_storebox(loss_box, previous_loss_box, -1, long_exit ? -1 : 1)
+else
+    box.set_right(profit_box, bar_index)
+    box.set_right(loss_box, bar_index)
+
+
+
+// alerts
+alertcondition(long_entry, title = 'Long Entry', message = 'Long Entry')
+alertcondition(short_entry, title = 'Short Entry', message = 'Short Entry')
+alertcondition(long_exit, title = 'Long Exit', message = 'Long Exit')
+alertcondition(short_exit, title = 'Short Exit', message = 'Short Exit')
+

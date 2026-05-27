@@ -1,0 +1,381 @@
+// © goodgains
+
+//Remember, you have to manually insert {{strategy.order.alert_message}}
+//@version=5
+strategy("SHORT eMACD V08.23.5", overlay=true)
+
+// @keywords: short-emacd, macd-entry, ema-stack, short-strategy, three-candle-entry, bearish-crossunder, time-range-filter, date-range, profit-target, entry-modes, ema-parameters, macd-parameters, strategy-short, hour-filter, multi-condition-entry, exit-alerts, position-sizing, short-only, crossunder-signals, overlay-strategy
+
+symbol = input(title="Symbol", defval="", group = "Trade Paraeters",inline = "22")
+var string Entrymessage = "Default Entry Message"
+Entrymessage := input.string(title="Entry.M", defval='', group = "Trade Paraeters",inline = "22")
+var string Exitmessage = "Default Exit Message"
+Exitmessage := input.string(title="Exit.M", defval='', group = "Trade Paraeters",inline = "22")
+Profit = input(title="Profit", defval="", group = "Trade Paraeters",inline = "23")
+Trades = input.string(title="Trades", defval='', group = "Trade Paraeters",inline = "23")
+MaxDraw = input.string(title="MaxDraw", defval='', group = "Trade Paraeters",inline = "23")
+
+oncePerBar = input.bool(true, "Calculate once per bar?")
+
+startHour = input.int(0, "Start Hour (24h)", minval=0, maxval=24, group="Time Range",inline = "888")
+endHour = input.int(24, "End Hour (24h )", minval=0, maxval=24, group="Time Range",inline = "888")
+
+startDate = input.int(1, "S.Day", minval=1, maxval=31, step=1, tooltip="Start Day", inline='11', group="Date Range")
+startMonth = input.int(1, "S.Month", minval=1, maxval=12, step=1, tooltip="Start Month", inline='11', group="Date Range")
+startYear = input.int(2022, "S.Year", minval=1900, maxval=2100, step=1, tooltip="Start Date", inline='11', group="Date Range")
+
+endDate = input.int(1, "E.Day", minval=1, maxval=31, step=1, tooltip="End Day", inline='12', group="Date Range")
+endMonth = input.int(1, "E.Month", minval=1, maxval=12, step=1, tooltip="End Month", inline='12', group="Date Range")
+endYear = input.int(2100, "E.Year", minval=1900, maxval=2100, step=1, tooltip="End Date", inline='12', group="Date Range")
+
+currentHour = hour(time) 
+inDateRange = (time >= timestamp("GMT+2", startYear, startMonth, startDate, 0, 0) and  time < timestamp("GMT+2", endYear, endMonth, endDate, 0, 0)) and (currentHour >= startHour and currentHour < endHour)
+
+entryMode = input.string("MACD Entrance", title="Entry Mode", options=["MACD Entrance", "3Candles", "MACD&3C1EMA", "3Candles3Ema", "3C3EMA and MACD"])
+
+length1 = input.int(8, "1-Green", group = "EMA parameters", inline = "44")
+length2 = input.int(13, "2-Blue", group = "EMA parameters", inline = "44")
+length3 = input.int(21, "3-Red", group = "EMA parameters", inline = "44")
+macdShort = input.int(12, "Short", group = "MACD parameters", inline = "45")
+macdLong = input.int(26, "Long", group = "MACD parameters", inline = "45")
+macdSignalSmoothing = input.int(9, "Smoothing", group = "MACD parameters", inline = "45")
+
+emaCandles = input.int(3, "3 Candles EMA (Black)", group = "Entrance values")
+macdLevel = input.float(0.1, "MACD Level", step=0.01, tooltip = "hi", group = "Entrance values")
+// Define checkboxes for each condition
+condCandle1Checkbox = input.bool(true, "condCandle1", group = "Entry Conditions")
+condCandle2Checkbox = input.bool(true, "condCandle2", group = "Entry Conditions")
+bearishCrossunder0Checkbox = input.bool(false, "bearishCrossunder", group = "Entry Conditions")
+bearishCrossunder1Checkbox = input.bool(true, "bearishCrossunder[1]", group = "Entry Conditions")
+bearishCrossunder2Checkbox = input.bool(false, "bearishCrossunder[2]", group = "Entry Conditions")
+bearishCrossunder3Checkbox = input.bool(false, "bearishCrossunder[3]", group = "Entry Conditions")
+// Inputs for RSI
+useRSI = input.bool(false, "Use RSI", group="Entry Conditions",inline="904")
+rsiLength = input.int(14, "RSI Length", group="Entry Conditions",inline="904")
+rsiOversold = input.float(30, "RSI Oversold Level", group="Entry Conditions",inline="904")
+
+// Inputs for Bollinger Bands
+useBB = input.bool(false, "Use BB", group="Entry Conditions",inline="905")
+bbLength = input.int(20, "BB Length", group="Entry Conditions",inline="905")
+bbStdDev = input.float(2, "BB SD", group="Entry Conditions",inline="905")
+
+
+////// Correlations //////
+// Parameters
+thirtyMinuteTrendPositiveCheckbox = input.bool(false, "Same symbol trend is negative", group = "Entry Conditions", inline = "20")
+Interval = input.int(defval = 30,title = "Timeframe", tooltip = "קובע בשניות את האינטרוולהנוסף לפיו ייבדקו אם הוא גם חיובי", group = "Entry Conditions", inline = "20")    
+
+
+thirtyMinuteTrendPositiveCheckboxVIX = input.bool(false, "30-minute trend VIX is Negative", group = "VIX parameters",inline = "50")
+IntervalVIX = input.int(30, "IntervalVIX", tooltip = "IntervalVIX", group = "VIX parameters",inline = "50")
+length1VIX = input.int(8, "VEMA1", group = "VIX parameters",inline = "50")
+length2VIX = input.int(13, "VEMA2", group = "VIX parameters",inline = "50")
+length3VIX = input.int(21, "VEMA3", group = "VIX parameters",inline = "50")
+// GOLD Correlations
+thirtyMinuteTrendPositiveCheckboxGOLD = input.bool(false, "GOLD Correlation", group = "GOLD Correlations", inline = "66")
+IntervalGOLD = input.int(30, "IntervalGOLD", tooltip = "IntervalGOLD", group = "GOLD Correlations" ,inline = "66")
+rocPeriodGOLD = input.int(9, "GROC", group = "GOLD Correlations", inline = "66")
+
+// USD Correlations
+thirtyMinuteTrendPositiveCheckboxUSD = input.bool(false, "USD Correlation", group = "USD Correlations", inline = "68")
+IntervalUSD = input.int(30, "IntervalUSD", tooltip = "IntervalUSD", group = "USD Correlations" ,inline = "68")
+rocPeriodUSD = input.int(9, "UROC", group = "USD Correlations", inline = "68")
+
+//////////////////////////////
+
+exitCondMACD = input.bool(false, "MACD cross", tooltip = "hi", group = "Exit conditions")
+exitCondEMA1 = input.bool(false, "EMA1 > EMA2", tooltip = "hi", group = "Exit conditions")
+exitCondEMA2 = input.bool(false, "EMA2 > EMA3", tooltip = "hi", group = "Exit conditions")
+exit3candlesLong = input.bool(false, "exit3candlesLong", group = "Exit conditions")
+
+exitCondTP = input.bool(true, "Take Profit ", tooltip = "hi", group = "Exit conditions", inline = "99")
+takeProfitPoints = input.float(0, "TPPoints:", tooltip = "If it 0 it won't work", group = "Exit conditions", inline = "99")
+
+
+exitCondSL = input.bool(false, "Stop Loss ", tooltip = "hi", group = "Exit conditions", inline = "91")
+stopLossPoints = input.float(0, "SLPoints:", tooltip = "hi", group = "Exit conditions", inline = "91")
+
+
+exitCondXBars = input.bool(false, "Exit after X ", tooltip = "hi", group = "Exit conditions",inline = "92")
+exitAfterXBars = input.int(1, "Bars:", tooltip = "hi", group = "Exit conditions",inline = "92")
+
+
+exitCondEMA = input.bool(false, "Exit if close > EMA", tooltip = "hi", group = "Exit conditions",inline = "100")
+exitEMALength = input.int(8, "EMA(purple):", tooltip = "Related to Exit if close > EMA in Exit Conditions", group = "Exit conditions",inline = "100")
+
+
+exitCondTPTrail = input.bool(false, "Trailing Take Profit", tooltip = "hi", group = "Exit conditions",inline = "96")
+tpTrailPoints = input.float(200, title="TTPpoints:", tooltip = "hi", group = "Exit conditions",inline = "96")
+
+
+exitCondSLTrail = input.bool(false, "Trailing Stop Loss", tooltip = "hi", group = "Exit conditions", inline = "98")
+slTrailPoints = input.float(200, title="TSLpoints:", tooltip = "If you set a trailing stop loss of 10 points and the market price increases by 20 points, the stop loss level would also increase by 20 points. However, if the market price then decreased by 10 points, the trade would close.", group = "Exit conditions", inline = "98")
+// Inputs for RSI Exit Condition
+useRSIExit = input.bool(false, "RSI EXIT" , group = "Exit conditions", inline = "111")
+rsiOverbought = input.float(70, "RSI Overbought Level", group = "Exit conditions", inline = "111")
+
+// Inputs for Bollinger Bands Exit Condition
+useBBExit = input.bool(false, "Use BB Exit", group = "Exit conditions", inline = "112")
+bbLengthExit = input.int(20, "BB Length", group = "Exit conditions", inline = "112")
+bbStdDevExit = input.float(2, "BB Std", group = "Exit conditions", inline = "112")
+
+// Add ATR-related inputs
+useATRStopLoss = input.bool(false, "ATR SL Val", group = "Exit conditions", inline = "888")
+atrMultiplierSL = input.float(1, "ATR SL", group = "Exit conditions", inline = "888")
+atrLength = input.int(14, "ATR Length", minval=1,group = "Exit conditions", inline = "888")
+useATRTakeProfit = input.bool(false, "ATR TP Val", group = "Exit conditions", inline = "889")
+atrMultiplierTP = input.float(2, "ATR TP", group = "Exit conditions", inline = "889")
+
+// Add ATR-related variables
+atrVal = ta.atr(atrLength)
+var float atrStopLossLevel = na
+var float atrTakeProfitLevel = na
+
+Remarks = input.text_area(title="Remaarks", defval="{{strategy.order.alert_message}},https://tvwebhook.capitalise.ai")
+
+emaCandlesValue = ta.ema(close, emaCandles)
+ema1 = ta.ema(close, length1)
+ema2 = ta.ema(close, length2)
+ema3 = ta.ema(close, length3)
+exitEMA = ta.ema(close, exitEMALength)
+[macdLine, signalLine, _] = ta.macd(close, macdShort, macdLong, macdSignalSmoothing)
+macdHistogram = macdLine - signalLine
+
+// check conditions for 3candles entry (כניסה שהמצאתי 3 נרות רציפים מתחת לEMA)
+isBearishCandle(i) => close[i] < emaCandlesValue[i]
+isLowerThanPrevious(i) => i < 2 ? close[i] < (open[i+1] > close[i+1] ? open[i+1] : close[i+1]) : true 
+condCandle3 =  isBearishCandle(0) and isBearishCandle(1) and isBearishCandle(2) and isLowerThanPrevious(0) and isLowerThanPrevious(1) and isLowerThanPrevious(2)
+entryCondition3Candles = condCandle3 and inDateRange
+
+//define entryCondition3Candles3Ema strategy
+var bool entryCondition3Candles3Ema = na
+entryCondition3Candles3Ema := (close[2] < ema1[2] and ema1[2] < ema2[2] and ema2[2] < ema3[2] and close[1] < ema1[1] and ema1[1] < ema2[1] and ema2[1] < ema3[1] and close < ema1 and ema1 < ema2 and ema2 < ema3) and inDateRange and  (close > close[1] and close[1]  > close[2])
+
+
+
+// Apply each entry condition
+condCandle1 = condCandle1Checkbox ? (close < ema1 and ema1 < ema2 and ema2 < ema3 and macdHistogram < 0 and macdHistogram < -macdLevel) : true
+condCandle2 = condCandle2Checkbox ? (close[1] < ema1[1] and ema1[1] < ema2[1] and ema2[1] < ema3[1] and macdHistogram[1] < 0 and macdHistogram[1] < -macdLevel) : true
+bearishCrossunder0 = bearishCrossunder0Checkbox ? ta.crossunder(macdLine, signalLine) : true
+bearishCrossunder1 = bearishCrossunder1Checkbox ? ta.crossunder(macdLine, signalLine)[1] : true
+bearishCrossunder2 = bearishCrossunder2Checkbox ? ta.crossunder(macdLine, signalLine)[2] : true
+bearishCrossunder3 = bearishCrossunder3Checkbox ? ta.crossunder(macdLine, signalLine)[3] : true
+
+/////// Corrolations /////////
+// Function to avoid repainting while using the security function
+//@version=5
+f_security(_sym, _res, _src, _rep) => 
+    _data = request.security(_sym, _res, _src[not _rep and barstate.isconfirmed ? 1 : 0], lookahead = barmerge.lookahead_on)
+    _data[_rep or barstate.isconfirmed ? 0 : 1]
+
+
+// Same Symbol Trend Check
+thirtyMinuteClose = f_security(syminfo.tickerid, str.tostring(Interval), close, false)
+thirtyMinuteEMA21 = f_security(syminfo.tickerid, str.tostring(Interval), ta.ema(close, 21), false)
+thirtyMinuteEMA13 = f_security(syminfo.tickerid, str.tostring(Interval), ta.ema(close, 13), false)
+thirtyMinuteEMA08 = f_security(syminfo.tickerid, str.tostring(Interval), ta.ema(close, 8), false)
+thirtyMinuteTrendNegative = thirtyMinuteClose < thirtyMinuteEMA21 and thirtyMinuteClose < thirtyMinuteEMA13 and thirtyMinuteClose < thirtyMinuteEMA08
+thirtyMinuteTrendCondition = thirtyMinuteTrendPositiveCheckbox ? thirtyMinuteTrendNegative : true
+
+// VIX Trend Check
+thirtyMinuteCloseVIX = f_security("CBOE:VIX", str.tostring(IntervalVIX), close, false)
+thirtyMinuteEMA21VIX = f_security("CBOE:VIX", str.tostring(IntervalVIX), ta.ema(close, length3VIX), false)
+thirtyMinuteEMA13VIX = f_security("CBOE:VIX", str.tostring(IntervalVIX), ta.ema(close, length2VIX), false)
+thirtyMinuteEMA08VIX = f_security("CBOE:VIX", str.tostring(IntervalVIX), ta.ema(close, length1VIX), false)
+thirtyMinuteTrendPositiveVIX = thirtyMinuteCloseVIX > thirtyMinuteEMA21VIX and thirtyMinuteCloseVIX > thirtyMinuteEMA13VIX and thirtyMinuteCloseVIX > thirtyMinuteEMA08VIX
+thirtyMinuteTrendConditionVIX = thirtyMinuteTrendPositiveCheckboxVIX ? thirtyMinuteTrendPositiveVIX : true
+
+// GOLD Trend Check
+thirtyMinuteROC_GOLD = f_security("GOLD", str.tostring(IntervalGOLD), ta.roc(close, rocPeriodGOLD), false)
+thirtyMinuteTrendPositiveGOLD = thirtyMinuteROC_GOLD > 0
+thirtyMinuteTrendConditionGOLD = thirtyMinuteTrendPositiveCheckboxGOLD ? thirtyMinuteTrendPositiveGOLD : true
+
+// USD Trend Check
+thirtyMinuteROC_USD = f_security("USD", str.tostring(IntervalUSD), ta.roc(close, rocPeriodUSD), false)
+thirtyMinuteTrendPositiveUSD = thirtyMinuteROC_USD > 0
+thirtyMinuteTrendConditionUSD = thirtyMinuteTrendPositiveCheckboxUSD ? thirtyMinuteTrendPositiveUSD : true
+
+///////////////////////////END CORROLATIONS //////////////////////////////////////////////////////////////////////////////////////////////
+
+// Calculate RSI
+rsiValue = ta.rsi(close, rsiLength)
+
+// Calculate Bollinger Bands
+bbMiddle = ta.sma(close, bbLength)
+stdDev = ta.variance(close, bbLength) * 0.5
+bbUpper = bbMiddle + bbStdDev * stdDev
+bbLower = bbMiddle - bbStdDev * stdDev
+
+// RSI and Bollinger Bands Entry Conditions
+entryConditionRSI = useRSI ? rsiValue > rsiOversold : true
+entryConditionBB = useBB ? close > bbLower : true
+// Check the MACD entry condition with the additional 30-minute trend condition
+var bool entryConditionMACD = na
+if  condCandle1 and condCandle2 and bearishCrossunder3 and bearishCrossunder1 and bearishCrossunder2 and bearishCrossunder0 and inDateRange and thirtyMinuteTrendCondition and thirtyMinuteTrendConditionVIX and thirtyMinuteTrendConditionGOLD and thirtyMinuteTrendConditionUSD and entryConditionRSI and entryConditionBB
+    entryConditionMACD := true      
+else
+    entryConditionMACD := false
+
+var bool entryCondition = na
+if entryMode == "MACD Entrance"
+    entryCondition := entryConditionMACD
+else if entryMode == "3 Candles"
+    entryCondition := entryCondition3Candles
+else if entryMode == "3Candles3Ema"
+    entryCondition := entryCondition3Candles3Ema
+else if entryMode == "3C3E and MACD"
+    entryCondition := entryConditionMACD or entryCondition3Candles3Ema
+else
+    entryCondition := entryConditionMACD or entryCondition3Candles
+
+// Initialize crossunderOccurred and labelPlotted variables
+var crossunderOccurred = false
+var labelPlotted = false
+
+// Check for bearish crossunder and entry condition not met
+if (bearishCrossunder0 or bearishCrossunder1 or bearishCrossunder2 or bearishCrossunder3) and not entryCondition and not crossunderOccurred
+    conditionCheck = "False:"
+    if not inDateRange
+        conditionCheck += "Not date"
+    if not condCandle1
+        conditionCheck += "Candle1"
+    if not condCandle2
+        conditionCheck += "Candle2"
+
+    // Plot the label only if it hasn't already been plotted in the current bar or the previous bar
+    if not labelPlotted or barstate.islast
+        labelPlotted := true
+        label.new(bar_index, high,text=conditionCheck,color=color.red,textcolor=color.white,style=label.style_label_down,yloc=yloc.abovebar)
+
+        // Set crossunderOccurred to true to avoid plotting the label again in this crossunder occurrence
+        crossunderOccurred := true
+else if not (bearishCrossunder0 or bearishCrossunder1 or bearishCrossunder2 or bearishCrossunder3)
+    // Reset crossunderOccurred and labelPlotted if the bearish crossunder condition is not met
+    crossunderOccurred := false
+    labelPlotted := false
+
+
+// check conditions for 3candles Long for exit condition: exit3candlesLong
+isBullshCandle(i) => close[i] >  emaCandlesValue[i]
+ishigherThanPrevious(i) => i < 2 ? close[i] > (open[i+1] < close[i+1] ? open[i+1] : close[i+1]) : true 
+exit3candlecon =  isBullshCandle(0) and isBullshCandle(1) and isBullshCandle(2) and ishigherThanPrevious(0) and ishigherThanPrevious(1) and ishigherThanPrevious(2)
+
+// Calculate RSI for exit
+rsiValueExit = ta.rsi(close, rsiLength)
+
+// Calculate Bollinger Bands for exit
+bbMiddleExit = ta.sma(close, bbLengthExit)
+stdDevExit = ta.variance(close, bbLengthExit) * 0.5
+bbUpperExit = bbMiddleExit + bbStdDevExit * stdDevExit
+bbLowerExit = bbMiddleExit - bbStdDevExit * stdDevExit
+
+// RSI and Bollinger Bands Exit Conditions
+exitConditionRSI = useRSIExit and rsiValueExit < rsiOverbought
+exitConditionBB = useBBExit and close < bbUpperExit
+exitCondition1 = exitCondMACD and ta.crossover(macdLine, signalLine)
+exitCondition2 = exitCondEMA1 and ema1 > ema2
+exitCondition3 = exitCondEMA2 and ema2 > ema3
+exitCondition4 = exitCondEMA and close > exitEMA
+exit3Long = exit3candlesLong and exit3candlecon
+
+// Define entryPrice as a variable that keeps its value bar to bar
+var float entryPrice = na
+var int entryBar = na
+var float highestPrice = na
+var float lowestPrice = na
+var float trailStopPriceLong = na
+var float trailStopPriceShort = na
+
+
+if oncePerBar
+    if entryCondition
+        entryPrice := open
+        entryBar := bar_index
+        strategy.entry("Short", strategy.short,alert_message = Entrymessage)
+
+takeProfitLevel = strategy.position_avg_price - takeProfitPoints
+stoplossLevel = strategy.position_avg_price + takeProfitPoints
+
+// Calculate ATR-based stop loss and take profit levels for short strategy
+if strategy.position_size < 0
+    if na(atrStopLossLevel)
+        atrStopLossLevel := strategy.position_avg_price + (atrVal * atrMultiplierSL)
+    if na(atrTakeProfitLevel)
+        atrTakeProfitLevel := strategy.position_avg_price - (atrVal * atrMultiplierTP)
+
+if strategy.position_size < 0
+    if (exitCondTPTrail)
+        if (na(lowestPrice) or low < lowestPrice)
+            lowestPrice := low
+        trailStopPriceLong := lowestPrice + tpTrailPoints
+    if (exitCondSLTrail)
+        if (na(highestPrice) or high > highestPrice)
+            highestPrice := high
+        trailStopPriceShort := highestPrice - slTrailPoints
+        
+
+if exitCondTPTrail and strategy.position_size < 0 and high > trailStopPriceLong
+    strategy.close("Short", comment = "Exit Trailing Take Profit:"  + str.tostring(takeProfitLevel), alert_message = Exitmessage)
+
+if exitCondSLTrail and strategy.position_size < 0 and low < trailStopPriceShort
+    strategy.close("Short", comment = "Exit Trailing Stop Loss:" + str.tostring(trailStopPriceShort) + "low: " + str.tostring(low), alert_message = Exitmessage)
+
+else if exitCondXBars and (bar_index - entryBar >= exitAfterXBars)
+    strategy.close("Short", comment = "Exit After X Bars",alert_message = Exitmessage)
+else if exitCondition1
+    strategy.close("Short", comment = "Exit by MACD cross",alert_message = Exitmessage)
+else if exitCondition2
+    strategy.close("Short", comment = "Exit by EMA1 > EMA2",alert_message = Exitmessage)
+else if exitCondition3
+    strategy.close("Short", comment = "Exit by EMA2 > EMA3",alert_message = Exitmessage)
+else if exitCondition4
+    strategy.close("Short", comment = "Exit if Close > EMA",alert_message = Exitmessage)
+/// Take profit condition
+else if exitCondTP and open <= takeProfitLevel
+    strategy.exit("Take Profit", "Short", limit=takeProfitLevel, qty=strategy.position_size, comment = "Exit by TP/takeProfitLevel: " + str.tostring(takeProfitLevel) + " open:" + str.tostring(open) , alert_message = Exitmessage)
+// Stop loss condition
+else if exitCondSL and open >= stoplossLevel
+    strategy.exit("Stop Loss", "Short", stop=entryPrice + stopLossPoints, comment = "Exit by SL/stoplossLevel: " + str.tostring(stoplossLevel) + " open:" + str.tostring(open) , alert_message = Exitmessage)
+else if exit3Long
+    strategy.close("Short", comment = "Exit 3 Long",alert_message = Exitmessage)
+// Add conditions to close short position based on ATR levels
+else if useATRStopLoss and strategy.position_size < 0 and high >= atrStopLossLevel
+    strategy.close("Short", comment = "Exit by ATR SL/stoplossLevel: "+ str.tostring(atrStopLossLevel) + " high:" + str.tostring(high), alert_message = Exitmessage)
+else if useATRTakeProfit and strategy.position_size < 0 and low <= atrTakeProfitLevel
+    strategy.close("Short", comment = "Exit by ATR TP/takeProfitLevel: " + str.tostring(atrTakeProfitLevel) + " low:" + str.tostring(low), alert_message = Exitmessage)
+else if exitConditionRSI
+    strategy.close("Long", comment = "Exit by RSI Overbought", alert_message = Exitmessage)
+else if exitConditionBB
+    strategy.close("Long", comment = "Exit by Bollinger Bands", alert_message = Exitmessage)
+
+// Reset ATR levels when position is closed
+if strategy.position_size[1] > 0 and strategy.position_size == 0
+    atrStopLossLevel := na
+    atrTakeProfitLevel := na
+
+if strategy.position_size[1] < 0 and strategy.position_size == 0
+    highestPrice := na
+    lowestPrice := na
+
+plot(ema1, title="8 EMA", color=color.rgb(56, 169, 50), linewidth=2)
+plot(ema2, title="13 EMA", color=color.rgb(50, 112, 163), linewidth=2)
+plot(ema3, title="21 EMA", color=color.rgb(250, 2, 2), linewidth=2)
+plot(exitEMA, title="Exit EMA", color=color.purple, linewidth=2)
+plot(emaCandlesValue, title="3Candles 1EMA Entry Black", color=color.black, linewidth=2)
+
+if not na(entryPrice) and strategy.position_size < 0
+    line.new(x1=bar_index[1], y1=entryPrice - stopLossPoints * syminfo.mintick, x2=bar_index, y2=entryPrice - stopLossPoints * syminfo.mintick, color=color.red, width = 1)
+    line.new(x1=bar_index[1], y1=entryPrice + takeProfitPoints * syminfo.mintick, x2=bar_index, y2=entryPrice + takeProfitPoints * syminfo.mintick, color=color.green, width = 1)
+
+
+// Define the MACD function
+macd_line = ta.ema(close, macdShort) - ta.ema(close, macdLong)
+signal_line = ta.ema(macd_line, macdSignalSmoothing)
+histogram = macd_line - signal_line
+
+// Plot the MACD on the chart using line and histogram plot types
+plot(macd_line, color=color.blue, title="MACD")
+plot(signal_line, color=color.red, title="Signal Line")
+plot(histogram, color=(histogram >= 0 ? color.green : color.red), style=plot.style_histogram, title="Histogram")
+
+
